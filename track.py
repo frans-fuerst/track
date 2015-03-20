@@ -8,6 +8,7 @@ import signal
 import logging
 import subprocess
 import re
+from datetime import datetime
 
 import idle
 
@@ -49,30 +50,51 @@ def get_active_window_title():
 
     return "Active window not found"
 
+   
+def seconds_since_midnight():
+    now = datetime.now()
+    return int((now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds())
 
-class track_ui(QtGui.QWidget):
+
+def minutes_since_midnight():
+    return int(seconds_since_midnight() / 60)
+
+
+class time_tracker():
+    def __init__(self):
+        self._start_minute = minutes_since_midnight()
+        
+    def update(self, idle, mainwindow):
+        _minute_index = minutes_since_midnight() - self._start_minute
+        print(minutes_since_midnight())
+        print(seconds_since_midnight())
+
+
+class track_ui(QtGui.QMainWindow):
 
     def __init__(self):
         super(track_ui, self).__init__()
-        print('init')
-        self.show()
-
+        self._tracker = time_tracker()
+        
         self.initUI()
         
     def initUI(self):      
-
-        self.setGeometry(300, 300, 280, 170)
-        self.setWindowTitle('Points')
+        uic.loadUi('track.ui', self)
+        
+        self.setGeometry(300, 300, 700, 300)
+        self.setWindowTitle('Track')
 
         _idle_timer = QtCore.QTimer(self)
         _idle_timer.timeout.connect(self.update_idle)
         _idle_timer.start(1000)
 
-        print(dir(QtCore.QTimer))
         self.show()
     
     def update_idle(self):
-        print("update idle: %d, avive window: %s" % (idle.getIdleSec(), get_active_window_title()))
+        _idle, _app = idle.getIdleSec(), get_active_window_title()
+        self.lbl_idle.setText(str(_idle))
+        print("update idle: %d, avive window: %s" % (_idle, _app))
+        self._tracker.update(_idle, _app)
 
     def paintEvent(self, e):
 
@@ -88,7 +110,7 @@ class track_ui(QtGui.QWidget):
         size = self.size()
         
         for i in range(1000):
-            qp.drawLine(i, 100, i, 200)   
+            qp.drawLine(i, 300, i, 400)   
 
     def system_signal(self, s):
         sig_name = "unknown"

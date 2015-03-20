@@ -1,6 +1,7 @@
 == progress
 
 === Todo
+[ ] save day-log and resume on restart
 [ ] port to Python 3
 [ ] generate bar graph from work/private/inactive times
 [ ] support rules for work/private (later more?)

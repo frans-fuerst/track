@@ -6,30 +6,50 @@ import sys
 import random
 import signal
 import logging
+import subprocess
+import re
+
+import idle
 
 # http://thp.io/2007/09/x11-idle-time-and-focused-window-in.html
 
-import ctypes
-import os
+def get_stdout(command):
+    """ run a command and return stdout 
+    """
+    _p = subprocess.Popen(
+                args=command, 
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE,)
+    _stdout, _stderr =_p.communicate()
+    if _p.returncode is not 0:
+        raise Exception('command "%s" did not return properly' % ' '.join(command))
+    return _stdout.split('\n')
 
-class XScreenSaverInfo( ctypes.Structure):
-  """ typedef struct { ... } XScreenSaverInfo; """
-  _fields_ = [('window',      ctypes.c_ulong), # screen saver window
-              ('state',       ctypes.c_int),   # off,on,disabled
-              ('kind',        ctypes.c_int),   # blanked,internal,external
-              ('since',       ctypes.c_ulong), # milliseconds
-              ('idle',        ctypes.c_ulong), # milliseconds
-              ('event_mask',  ctypes.c_ulong)] # events
+def get_active_window_title():
 
-xlib = ctypes.cdll.LoadLibrary( 'libX11.so')
-dpy = xlib.XOpenDisplay( os.environ['DISPLAY'])
-root = xlib.XDefaultRootWindow( dpy)
-xss = ctypes.cdll.LoadLibrary( 'libXss.so')
-xss.XScreenSaverAllocInfo.restype = ctypes.POINTER(XScreenSaverInfo)
-xss_info = xss.XScreenSaverAllocInfo()
-xss.XScreenSaverQueryInfo( dpy, root, xss_info)
-print "Idle time in milliseconds: %d" % ( xss_info.contents.idle, )
-       
+    _xprop = get_stdout(['xprop', '-root', '_NET_ACTIVE_WINDOW'])
+    _id_w = None
+    for line in _xprop:
+        m = re.search('^_NET_ACTIVE_WINDOW.* ([\w]+)$', line)
+        if m is not None:
+            id_ = m.group(1)
+            _id_w = get_stdout(['xprop', '-id', id_, 'WM_NAME'])
+            _id_w = get_stdout(['xprop', '-id', id_])
+            break
+#    print(_id_w)
+    if _id_w is not None:
+        for line in _id_w:
+            if '/bin' in line:
+                print(line)
+
+        for line in _id_w:
+            match = re.match("WM_NAME\(\w+\) = (?P<name>.+)$", line)
+            if match != None:
+                return match.group("name")
+
+    return "Active window not found"
+
+
 class track_ui(QtGui.QWidget):
 
     def __init__(self):
@@ -43,7 +63,16 @@ class track_ui(QtGui.QWidget):
 
         self.setGeometry(300, 300, 280, 170)
         self.setWindowTitle('Points')
+
+        _idle_timer = QtCore.QTimer(self)
+        _idle_timer.timeout.connect(self.update_idle)
+        _idle_timer.start(1000)
+
+        print(dir(QtCore.QTimer))
         self.show()
+    
+    def update_idle(self):
+        print("update idle: %d, avive window: %s" % (idle.getIdleSec(), get_active_window_title()))
 
     def paintEvent(self, e):
 
@@ -59,8 +88,6 @@ class track_ui(QtGui.QWidget):
         size = self.size()
         
         for i in range(1000):
-            x = random.randint(1, size.width()-1)
-            y = random.randint(1, size.height()-1)
             qp.drawLine(i, 100, i, 200)   
 
     def system_signal(self, s):

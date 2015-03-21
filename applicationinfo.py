@@ -5,6 +5,10 @@ import logging
 import subprocess
 import re
 
+import wnck
+import psutil
+
+
 # http://thp.io/2007/09/x11-idle-time-and-focused-window-in.html
 
 def get_stdout(command):
@@ -30,7 +34,7 @@ def get_active_window_title():
             _id_w = get_stdout(['xprop', '-id', id_, 'WM_NAME'])
             _id_w = get_stdout(['xprop', '-id', id_])
             break
-#    print(_id_w)
+
     if _id_w is not None:
         for line in _id_w:
             if '/bin' in line:
@@ -39,7 +43,24 @@ def get_active_window_title():
         for line in _id_w:
             match = re.match("WM_NAME\(\w+\) = (?P<name>.+)$", line)
             if match != None:
-                return match.group("name")
+                return match.group("name").strip('"')
 
     return "Active window not found"
+
+
+def get_active_process_name():
+    # http://askubuntu.com/questions/152191
+    try:
+        screen = wnck.screen_get_default()
+        window = screen.get_active_window()
+        pid = window.get_pid()
+        process = psutil.Process(pid)
+        # print(pid)
+        # print(process.name)
+        # print(process.exe)
+        # print(process.cmdline)
+        return ' '.join(process.cmdline)
+        
+    except AttributeError:
+        return ""
 

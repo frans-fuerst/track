@@ -6,7 +6,6 @@ from PyQt4 import QtGui, QtCore, Qt, uic
 class timegraph(QtGui.QFrame):
 
     def __init__(self, parent):
-        print('yey')
         self._tracker = None
         super(timegraph, self).__init__(parent)
     
@@ -38,3 +37,6 @@ class timegraph(QtGui.QFrame):
 
             qp.drawLine(i + 1, 0, i + 1, self.height() - 2)
 
+if __name__ == '__main__':
+    print('this is just the bargraph widget. run track.py')
+    

@@ -6,8 +6,6 @@ import sys
 import signal
 import logging
 
-import idle
-import applicationinfo
 import timetracker
 
 
@@ -33,12 +31,22 @@ class track_ui(QtGui.QMainWindow):
 
     
     def update_idle(self):
-        _idle = idle.getIdleSec()
-        _app = applicationinfo.get_active_window_title() 
+        self._tracker.update()
+        _idle = self._tracker.get_idle()
+        _app = self._tracker.get_current_app_title()
+    
         self.lbl_idle.setText(str(_idle))
         self.lbl_active.setText(str(self._tracker.get_active_time()))
-        print("update idle: %d, avive window: %s" % (_idle, _app))
-        self._tracker.update(_idle, _app)
+        self.lbl_title.setText(self._tracker.get_current_app_title())
+        self.lbl_process.setText(self._tracker.get_current_process_name())
+        
+        p = self.lbl_idle.palette()
+        if self._tracker.user_is_active():
+            p.setColor(self.lbl_idle.backgroundRole(), QtCore.Qt.green)
+        else:
+            p.setColor(self.lbl_idle.backgroundRole(), QtCore.Qt.gray)
+        self.lbl_idle.setPalette(p)
+        
         self.update()
 
 
@@ -61,3 +69,4 @@ if __name__ == '__main__':
     for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
         signal.signal(s, lambda signal, frame: ex.system_signal(signal))
     sys.exit(app.exec_())
+    

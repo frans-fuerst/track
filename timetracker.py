@@ -12,7 +12,7 @@ def seconds_since_midnight():
 
 
 def minutes_since_midnight():
-    #return int(seconds_since_midnight() / 5)
+    #return int(seconds_since_midnight() / 2)
     return int(seconds_since_midnight() / 60)
 
 
@@ -49,10 +49,17 @@ class time_tracker():
     def first_index(self):
         return self._start_minute
 
+    def start_time(self):
+        _s = self._start_minute
+        return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
+
     def is_active(self, minute):
         if minute in self._minutes:
             return True
         return False
+
+    def is_private(self, minute):
+        return int(minute / 2) % 2 == 0
 
     def get_active_time(self):
         _result = ""
@@ -77,6 +84,7 @@ class time_tracker():
         
     def user_is_active(self):
         return self._user_is_active
+
 
 if __name__ == '__main__':
     print('this is the timetracker core module. run track.py')

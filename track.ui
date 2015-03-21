@@ -58,7 +58,7 @@
          <item row="6" column="0">
           <widget class="QLabel" name="lbl_idle_5">
            <property name="text">
-            <string>idle secs</string>
+            <string>idle secs:</string>
            </property>
           </widget>
          </item>
@@ -73,6 +73,13 @@
           <widget class="QLabel" name="label_4">
            <property name="text">
             <string>current app process:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLabel" name="lbl_title">
+           <property name="text">
+            <string>TextLabel</string>
            </property>
           </widget>
          </item>
@@ -93,8 +100,15 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="1">
-          <widget class="QLabel" name="lbl_title">
+         <item row="7" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>start time:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="QLabel" name="lbl_start_time">
            <property name="text">
             <string>TextLabel</string>
            </property>

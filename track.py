@@ -39,6 +39,7 @@ class track_ui(QtGui.QMainWindow):
         self.lbl_active.setText(str(self._tracker.get_active_time()))
         self.lbl_title.setText(self._tracker.get_current_app_title())
         self.lbl_process.setText(self._tracker.get_current_process_name())
+        self.lbl_start_time.setText(self._tracker.start_time())
         
         p = self.lbl_idle.palette()
         if self._tracker.user_is_active():

@@ -160,6 +160,9 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="sortingEnabled">
+         <bool>true</bool>
+        </property>
         <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
          <bool>true</bool>
         </attribute>

@@ -8,6 +8,7 @@ from datetime import datetime
 import idle
 import applicationinfo
 
+
 def seconds_since_midnight():
     now = datetime.now()
     return int((now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds())
@@ -17,11 +18,14 @@ def minutes_since_midnight():
     #return int(seconds_since_midnight() / 2)
     return int(seconds_since_midnight() / 60)
 
+
 class matrix_table_model(QtCore.QAbstractTableModel):
     def __init__(self, parent, *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self._mylist = [('eins', 'zwei', 'drei')]
         self.header = ['1', '2', '3']
+        self._sort_col = 0
+        self._sort_reverse = False
 
     def rowCount(self, parent):
         return len(self._mylist)
@@ -42,15 +46,16 @@ class matrix_table_model(QtCore.QAbstractTableModel):
         return None
         
     def sort(self, col, order):
-        """sort table by given column number col"""
         self.layoutAboutToBeChanged.emit()
-        #self.emit(SIGNAL("layoutAboutToBeChanged()"))
-        self._mylist = sorted(self._mylist,
-            key=operator.itemgetter(col))
-        if order == QtCore.Qt.DescendingOrder:
-            self._mylist.reverse()
-        #self.emit(SIGNAL("layoutChanged()"))
+        self._sort_col = col
+        self._sort_reverse = (order != QtCore.Qt.DescendingOrder)
+        self._sort()
         self.layoutChanged.emit()
+        
+    def _sort(self):
+        self._mylist.sort(
+            key=lambda tup: tup[self._sort_col],
+            reverse=self._sort_reverse)
         
         
 class active_applications(matrix_table_model):
@@ -72,6 +77,8 @@ class active_applications(matrix_table_model):
             self._mylist.append(_new)
         else:
             self._apps[app][1] += 1
+
+        self._sort()
         # print('===')
         # for i in self._mylist:
         #     print(i)
@@ -127,7 +134,7 @@ class time_tracker():
         return False
 
     def is_private(self, minute):
-        return int(minute / 2) % 2 == 0
+        return False # int(minute / 2) % 2 == 0
 
     def get_active_time(self):
         _result = ""

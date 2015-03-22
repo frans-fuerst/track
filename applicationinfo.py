@@ -25,26 +25,25 @@ def get_stdout(command):
 
 def get_active_window_title():
 
-    _xprop = get_stdout(['xprop', '-root', '_NET_ACTIVE_WINDOW'])
-    _id_w = None
-    for line in _xprop:
-        m = re.search('^_NET_ACTIVE_WINDOW.* ([\w]+)$', line)
-        if m is not None:
-            id_ = m.group(1)
-            _id_w = get_stdout(['xprop', '-id', id_, 'WM_NAME'])
-            _id_w = get_stdout(['xprop', '-id', id_])
-            break
-
-    if _id_w is not None:
-        for line in _id_w:
-            if '/bin' in line:
-                print(line)
-
-        for line in _id_w:
-            match = re.match("WM_NAME\(\w+\) = (?P<name>.+)$", line)
-            if match != None:
-                return match.group("name").strip('"')
-
+    try:
+        _xprop = get_stdout(['xprop', '-root', '_NET_ACTIVE_WINDOW'])
+        _id_w = None
+        for line in _xprop:
+            m = re.search('^_NET_ACTIVE_WINDOW.* ([\w]+)$', line)
+            if m is not None:
+                id_ = m.group(1)
+                _id_w = get_stdout(['xprop', '-id', id_, 'WM_NAME'])
+                # _id_w = get_stdout(['xprop', '-id', id_])
+                break
+    
+        if _id_w is not None:
+    
+            for line in _id_w:
+                match = re.match("WM_NAME\(\w+\) = (?P<name>.+)$", line)
+                if match != None:
+                    return match.group("name").decode().strip('"')
+    except Exception as e:
+        logging.warn("got exception: %s" % str(e))
     return "Active window not found"
 
 

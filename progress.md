@@ -1,30 +1,37 @@
 ## progress
 
 ### ToDo
-- [ ] find a better name (suggestions?)
-- [ ] sort application table
-- [ ] save day-log and resume on restart
-- [ ] port to Python 3
-- [ ] allow detailed per minute information when hovering over time bar
+
+#### version 2.0
 - [ ] allow subsequent assignment of time sections to private or work
-- [ ] generate bar graph from work/private/inactive times
-- [ ] support rules for work/private (later more?)
-- [ ] support Windows
+- [ ] provide usage statistics over a week/month/..
+- [ ] connect to scheduling tools like Outlook to get more information
+- [ ] support more states (private, project1, project2, ...)
+
+#### version 1.0
+- [ ] find a better name (suggestions?)
 - [ ] generate distribution script for Linux
 - [ ] generate distribution script for Windows
+- [ ] support to Python 3
+- [ ] support Windows
+- [ ] save day-log and resume on restart
+- [ ] allow detailed per minute information when hovering over time bar
+- [ ] work/private/inactive states in time bar
+- [ ] support regex rules for work/private
+- [ ] sort application table
 
 ### release notes
 
 #### 2015.03.22
-* show time bar indicating active and inactive times
-* show list with active applications
-* show active time, start time
-* retrieve process name
+- [x] show time bar indicating active and inactive times
+- [x] show list with active applications
+- [x] show active time, start time
+- [x] retrieve process name
 
 #### 2015.03.20
-* read current window title
-* read idle times with help from Gajim
+- [x] read current window title
+- [x] read idle times with help from Gajim
 
 #### 2015.03.18
-* big bang: http://productivity.stackexchange.com/questions/13913
+- [X] big bang: http://productivity.stackexchange.com/questions/13913
 

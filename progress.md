@@ -1,6 +1,7 @@
 ## progress
 
 ### ToDo
+- [ ] find a better name (suggestions?)
 - [ ] sort application table
 - [ ] save day-log and resume on restart
 - [ ] port to Python 3

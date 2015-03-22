@@ -16,13 +16,13 @@
 - [ ] support Windows
 - [ ] save day-log and resume on restart
 - [ ] allow detailed per minute information when hovering over time bar
-- [ ] work/private/inactive states in time bar
 - [ ] support regex rules for work/private
-- [ ] sort application table
 
 ### release notes
 
 #### 2015.03.22
+- [x] work/private/inactive states in time bar
+- [x] sort application table
 - [x] show time bar indicating active and inactive times
 - [x] show list with active applications
 - [x] show active time, start time

@@ -20,6 +20,8 @@ def minutes_since_midnight():
 
 
 class matrix_table_model(QtCore.QAbstractTableModel):
+    """ generic model holding a sortable list of list-likes
+    """
     def __init__(self, parent, *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self._mylist = [('eins', 'zwei', 'drei')]
@@ -56,27 +58,63 @@ class matrix_table_model(QtCore.QAbstractTableModel):
         self._mylist.sort(
             key=lambda tup: tup[self._sort_col],
             reverse=self._sort_reverse)
+
+global_app_categories = {}
+
+class application():
+    """ holds immutable information about an application
+    """
+    def __init__(self, identifier):
+        self._identifier = identifier
+            
+
+class app_count_category():
+    """ combines an app identifier, a category and a time count to something
+        that behaves like a list
+    """
+    
+    def __init__(self, title):
+        self._app = application(title)
+        self._count = 0
         
+    def __getitem__(self, index):
+        if index == 0:
+            return self._app._identifier
+        elif index == 1:
+            return self._count
+        elif index == 2:
+            return global_app_categories[self._app]
+        else:
+            raise Exception("must not happen")
+
         
 class active_applications(matrix_table_model):
     def __init__(self, parent, *args):
         matrix_table_model.__init__(self, parent, *args)
-        self._mylist = []
         self.header = ['application title', 'time', 'category']
-        self._apps = {}
+        self._mylist = [] # list of app_count_category instances
+        self._apps = {}   # app identifier -> app_count_category instance
 
     def columnCount(self, parent):
         return 3
     
-    def add(self, app):
+    def get_and_update(self, title):
         self.layoutAboutToBeChanged.emit()
-        if app not in self._apps:
-            _new = [app, 1, None]
+        
+        if title not in self._apps:
+            _new = app_count_category(title)
             
-            self._apps[app] = _new
+            self._apps[title] = _new
             self._mylist.append(_new)
-        else:
-            self._apps[app][1] += 1
+            
+            if "Firefox" in title:
+                global_app_categories[_new._app] = 1
+            else:
+                global_app_categories[_new._app] = 0
+                
+        _result = self._apps[title]
+            
+        _result._count += 1
 
         self._sort()
         # print('===')
@@ -84,18 +122,46 @@ class active_applications(matrix_table_model):
         #     print(i)
         # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
         self.layoutChanged.emit()
-            
+        
+        return _result._app
+
+       
+class minute():
+    """ a minute holds a category and a list of apps
+    """
+    def __init__(self):
+        self._category = 0
+        self._apps = {} # app -> count
+        
+    def _rebuild(self):
+        _categories = {} # category -> sum
+        for a, c in self._apps.items():
+            _cat = global_app_categories[a]
+            if _cat not in _categories:
+                _categories[_cat] = c
+            else:
+                _categories[_cat] += c
+        self._category = _categories.keys()[_categories.values().index(max(_categories.values()))]
+        
+    def add(self, app_instance):
+        if app_instance not in self._apps:
+            self._apps[app_instance] = 1
+        else:
+            self._apps[app_instance] += 1
+        self._rebuild()
+    
+
 class time_tracker():
 
     def __init__(self, parent):
         self._start_minute = minutes_since_midnight()
-        self._minutes = {}
         self._max_minute = 0
         self._idle = 0
         self._current_app_title = ""
         self._current_process_exe = ""
         self._user_is_active = True
         self._applications = active_applications(parent)
+        self._minutes = {}
         
     def get_applications_model(self):
         return self._applications
@@ -110,16 +176,17 @@ class time_tracker():
 
         self._max_minute = _minute_index
 
-        if self._idle > 5:
+        if self._idle > 10:
             self._user_is_active = False
             return
+        
         self._user_is_active = True
  
-        self._applications.add(self._current_app_title)
+        _app = self._applications.get_and_update(self._current_app_title)
         
         if _minute_index not in self._minutes:
-            self._minutes[_minute_index] = []
-        self._minutes[_minute_index].append(self._current_app_title)
+            self._minutes[_minute_index] = minute()
+        self._minutes[_minute_index].add(_app)
 
     def first_index(self):
         return self._start_minute
@@ -134,7 +201,9 @@ class time_tracker():
         return False
 
     def is_private(self, minute):
-        return False # int(minute / 2) % 2 == 0
+        if minute not in self._minutes:
+            return False
+        return self._minutes[minute]._category != 0
 
     def get_active_time(self):
         _result = ""

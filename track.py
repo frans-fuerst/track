@@ -31,6 +31,7 @@ class track_ui(QtGui.QMainWindow):
         
         self.setGeometry(300, 300, 700, 500)
         self.setWindowTitle('Track')
+        # self.lbl_color_work.setColor(self.lbl_idle.backgroundRole(), QtCore.Qt.cyan)
 
         _idle_timer = QtCore.QTimer(self)
         _idle_timer.timeout.connect(self.update_idle)

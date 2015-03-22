@@ -36,7 +36,7 @@ class timegraph(QtGui.QFrame):
                 qp.setPen(QtCore.Qt.black)
             elif not self._tracker.is_active(_index):
                 qp.setPen(QtCore.Qt.white)
-            elif not self._tracker.is_private(_index):
+            elif self._tracker.is_private(_index):
                 qp.setPen(QtCore.Qt.darkCyan)
             else:
                 qp.setPen(QtCore.Qt.cyan)

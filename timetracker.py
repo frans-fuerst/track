@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
+from PyQt4 import QtCore #, Qt, uic, QtGui
+
 from datetime import datetime
 
 import idle
@@ -15,10 +17,70 @@ def minutes_since_midnight():
     #return int(seconds_since_midnight() / 2)
     return int(seconds_since_midnight() / 60)
 
+class matrix_table_model(QtCore.QAbstractTableModel):
+    def __init__(self, parent, *args):
+        QtCore.QAbstractTableModel.__init__(self, parent, *args)
+        self._mylist = [('eins', 'zwei', 'drei')]
+        self.header = ['1', '2', '3']
 
+    def rowCount(self, parent):
+        return len(self._mylist)
+        
+    def columnCount(self, parent):
+        return len(self._mylist[0])
+        
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        elif role != QtCore.Qt.DisplayRole:
+            return None
+        return self._mylist[index.row()][index.column()]
+        
+    def headerData(self, col, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            return self.header[col]
+        return None
+        
+    def sort(self, col, order):
+        """sort table by given column number col"""
+        self.layoutAboutToBeChanged.emit()
+        #self.emit(SIGNAL("layoutAboutToBeChanged()"))
+        self._mylist = sorted(self._mylist,
+            key=operator.itemgetter(col))
+        if order == QtCore.Qt.DescendingOrder:
+            self._mylist.reverse()
+        #self.emit(SIGNAL("layoutChanged()"))
+        self.layoutChanged.emit()
+        
+        
+class active_applications(matrix_table_model):
+    def __init__(self, parent, *args):
+        matrix_table_model.__init__(self, parent, *args)
+        self._mylist = []
+        self.header = ['application title', 'time', 'category']
+        self._apps = {}
+
+    def columnCount(self, parent):
+        return 3
+    
+    def add(self, app):
+        self.layoutAboutToBeChanged.emit()
+        if app not in self._apps:
+            _new = [app, 1, None]
+            
+            self._apps[app] = _new
+            self._mylist.append(_new)
+        else:
+            self._apps[app][1] += 1
+        # print('===')
+        # for i in self._mylist:
+        #     print(i)
+        # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
+        self.layoutChanged.emit()
+            
 class time_tracker():
 
-    def __init__(self):
+    def __init__(self, parent):
         self._start_minute = minutes_since_midnight()
         self._minutes = {}
         self._max_minute = 0
@@ -26,6 +88,10 @@ class time_tracker():
         self._current_app_title = ""
         self._current_process_exe = ""
         self._user_is_active = True
+        self._applications = active_applications(parent)
+        
+    def get_applications_model(self):
+        return self._applications
         
     def update(self):
    
@@ -41,6 +107,8 @@ class time_tracker():
             self._user_is_active = False
             return
         self._user_is_active = True
+ 
+        self._applications.add(self._current_app_title)
         
         if _minute_index not in self._minutes:
             self._minutes[_minute_index] = []

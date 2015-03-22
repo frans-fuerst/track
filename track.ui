@@ -140,7 +140,14 @@
        </widget>
       </item>
       <item>
-       <widget class="QTableWidget" name="tableWidget">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>active applications by time</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTableView" name="tbl_active_applications">
         <property name="minimumSize">
          <size>
           <width>660</width>
@@ -153,6 +160,15 @@
           <height>16777215</height>
          </size>
         </property>
+        <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
+         <bool>true</bool>
+        </attribute>
+        <attribute name="horizontalHeaderStretchLastSection">
+         <bool>true</bool>
+        </attribute>
+        <attribute name="verticalHeaderVisible">
+         <bool>false</bool>
+        </attribute>
        </widget>
       </item>
      </layout>

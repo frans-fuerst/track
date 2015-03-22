@@ -13,16 +13,23 @@ class track_ui(QtGui.QMainWindow):
 
     def __init__(self):
         super(track_ui, self).__init__()
-        self._tracker = timetracker.time_tracker()
+        self._tracker = timetracker.time_tracker(self)
         
         self.initUI()
         self.frm_timegraph.setTracker(self._tracker)
+        self.tbl_active_applications.setModel(self._tracker.get_applications_model())
+        
+        self.tbl_active_applications.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
+
+        self.tbl_active_applications.setColumnWidth(0, self.tbl_active_applications.width() * 0.7)
+        self.tbl_active_applications.setColumnWidth(1, self.tbl_active_applications.width() * 0.1)
+        
         self.show()
         
     def initUI(self):      
         uic.loadUi('track.ui', self)
         
-        self.setGeometry(300, 300, 700, 300)
+        self.setGeometry(300, 300, 700, 500)
         self.setWindowTitle('Track')
 
         _idle_timer = QtCore.QTimer(self)

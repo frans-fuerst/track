@@ -9,6 +9,9 @@ import wnck
 import psutil
 
 
+class UncriticalException(Exception):
+    pass
+
 # http://thp.io/2007/09/x11-idle-time-and-focused-window-in.html
 
 def get_stdout(command):
@@ -48,8 +51,8 @@ def get_active_window_title():
 
 
 def get_active_process_name():
-    # http://askubuntu.com/questions/152191
     try:
+        # http://askubuntu.com/questions/152191
         screen = wnck.screen_get_default()
         window = screen.get_active_window()
         pid = window.get_pid()
@@ -59,8 +62,6 @@ def get_active_process_name():
         # print(process.exe)
         # print(process.cmdline)
         return ' '.join(process.cmdline)
-        
-    # todo: add NoSuchProcess
-    except AttributeError:
-        return ""
+    except AttributeError as e:
+        raise UncriticalException()        
 

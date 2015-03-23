@@ -13,9 +13,9 @@ def secs_to_str(mins):
     _result = ""
     _minutes = mins
     if _minutes >= 60:
-        _result = str(int(_minutes / 60))+"h "
+        _result = str(int(_minutes / 60))+"m "
         _minutes %= 60
-    _result += str(_minutes ) + "m"
+    _result += str(_minutes ) + "s"
     return _result
 
 def seconds_since_midnight():
@@ -90,7 +90,7 @@ class app_count_category():
         if index == 0:
             return self._app._identifier
         elif index == 1:
-            return self._count
+            return secs_to_str(self._count)
         elif index == 2:
             return global_app_categories[self._app]
         else:
@@ -176,26 +176,29 @@ class time_tracker():
         return self._applications
         
     def update(self):
-   
-        self._idle = idle.getIdleSec()
-        self._current_app_title = applicationinfo.get_active_window_title() 
-        self._current_process_exe = applicationinfo.get_active_process_name()
-        
-        _minute_index = minutes_since_midnight()
+        try:
+            _minute_index = minutes_since_midnight()
 
-        self._max_minute = _minute_index
+            self._max_minute = _minute_index
 
-        if self._idle > 10:
-            self._user_is_active = False
-            return
-        
-        self._user_is_active = True
- 
-        _app = self._applications.get_and_update(self._current_app_title)
-        
-        if _minute_index not in self._minutes:
-            self._minutes[_minute_index] = minute()
-        self._minutes[_minute_index].add(_app)
+            
+            self._user_is_active = True
+       
+            self._idle = idle.getIdleSec()
+            self._current_app_title = applicationinfo.get_active_window_title() 
+            self._current_process_exe = applicationinfo.get_active_process_name()
+            if self._idle > 10:
+                self._user_is_active = False
+                return
+
+            _app = self._applications.get_and_update(self._current_app_title)
+            
+            if _minute_index not in self._minutes:
+                self._minutes[_minute_index] = minute()
+            self._minutes[_minute_index].add(_app)
+        except applicationinfo.UncriticalException as e:
+            print(e)
+            pass
 
     def first_index(self):
         return self._start_minute
@@ -218,14 +221,26 @@ class time_tracker():
             return False
         return self._minutes[minute]._category != 0
 
-    def get_active_time(self):
-        return secs_to_str(len(self._minutes))
+    def get_time_total(self):
+        return minutes_since_midnight() - self._start_minute + 1
 
-    def get_private_time(self):
+    def get_time_active(self):
+        return len(self._minutes)
+
+    def get_time_work(self):
+        r = 0
+        for i, m in self._minutes.items():
+            r += m._category == 0
+        return r
+
+    def get_time_private(self):
         r = 0
         for i, m in self._minutes.items():
             r += m._category != 0
-        return secs_to_str(r)
+        return r
+
+    def get_time_idle(self):
+        return self.get_time_total() - len(self._minutes)
 
     def get_current_minute(self):
         return self._max_minute

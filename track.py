@@ -8,6 +8,14 @@ import logging
 
 import timetracker
 
+def mins_to_str(mins):
+    _result = ""
+    _minutes = mins
+    if _minutes >= 60:
+        _result = str(int(_minutes / 60))+"h "
+        _minutes %= 60
+    _result += str(_minutes ) + "m"
+    return _result
 
 class track_ui(QtGui.QMainWindow):
 
@@ -43,14 +51,34 @@ class track_ui(QtGui.QMainWindow):
         _idle = self._tracker.get_idle()
         _app = self._tracker.get_current_app_title()
     
-        self.lbl_idle.setText(str(_idle))
-        self.lbl_active.setText(str(self._tracker.get_active_time()))
-        self.lbl_private.setText(str(self._tracker.get_private_time()))
-        self.lbl_title.setText(self._tracker.get_current_app_title())
-        self.lbl_process.setText(self._tracker.get_current_process_name())
-        self.lbl_start_time.setText(self._tracker.start_time())
-        self.lbl_now.setText(self._tracker.now())
-        
+        try:
+            self.lbl_idle.setText(str(_idle))
+            #self.lbl_private.setText(str(self._tracker.get_private_time()))
+            self.lbl_title.setText(self._tracker.get_current_app_title())
+            self.lbl_process.setText(self._tracker.get_current_process_name())
+
+            # now-begin, active (.x) work (.x)
+            _time_total = self._tracker.get_time_total()
+            _time_active = self._tracker.get_time_active()
+            _time_work = self._tracker.get_time_work()
+            _time_private = self._tracker.get_time_private()
+            _time_idle = self._tracker.get_time_idle()
+
+            self.lbl_times.setText(
+                "T: %s  A: %s (%.1f)  W: %s (%.1f)  "
+                "P: %s (%.1f)  I: %s (%.1f)" %
+                (mins_to_str(_time_total),
+                 mins_to_str(_time_active), _time_active / float(_time_total), 
+                 mins_to_str(_time_work), _time_work / float(_time_total),
+                 mins_to_str(_time_private), _time_private / float(_time_total),
+                 mins_to_str(_time_idle), _time_idle / float(_time_total)))
+
+
+            self.lbl_start_time.setText("%s - %s" % (
+                 self._tracker.start_time(), self._tracker.now()))
+        except Exception as e:
+            logging.error(e)
+
         p = self.lbl_idle.palette()
         if self._tracker.user_is_active():
             p.setColor(self.lbl_idle.backgroundRole(), QtCore.Qt.green)

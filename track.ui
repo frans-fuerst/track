@@ -41,36 +41,27 @@
          <enum>QFrame::Sunken</enum>
         </property>
         <layout class="QGridLayout" name="gridLayout_2">
-         <item row="4" column="1">
-          <widget class="QLabel" name="lbl_process">
-           <property name="text">
-            <string>TextLabel</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="1">
-          <widget class="QLabel" name="lbl_active">
-           <property name="text">
-            <string>TextLabel</string>
-           </property>
-          </widget>
-         </item>
          <item row="6" column="0">
-          <widget class="QLabel" name="lbl_idle_5">
-           <property name="text">
-            <string>idle secs:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="0">
           <widget class="QLabel" name="label_3">
+           <property name="maximumSize">
+            <size>
+             <width>180</width>
+             <height>16777215</height>
+            </size>
+           </property>
            <property name="text">
-            <string>total active time:</string>
+            <string>total active/private time:</string>
            </property>
           </widget>
          </item>
          <item row="4" column="0">
           <widget class="QLabel" name="label_4">
+           <property name="maximumSize">
+            <size>
+             <width>180</width>
+             <height>16777215</height>
+            </size>
+           </property>
            <property name="text">
             <string>current app process:</string>
            </property>
@@ -83,7 +74,74 @@
            </property>
           </widget>
          </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label">
+           <property name="maximumSize">
+            <size>
+             <width>180</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>current app title:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLabel" name="lbl_process">
+           <property name="text">
+            <string>TextLabel</string>
+           </property>
+          </widget>
+         </item>
          <item row="6" column="1">
+          <widget class="QLabel" name="lbl_active">
+           <property name="text">
+            <string>TextLabel</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="maximumSize">
+            <size>
+             <width>180</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>start time / now:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="1">
+          <widget class="QLabel" name="lbl_start_time">
+           <property name="text">
+            <string>TextLabel</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="2">
+          <widget class="QLabel" name="lbl_now">
+           <property name="text">
+            <string>TextLabel</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="lbl_idle_5">
+           <property name="maximumSize">
+            <size>
+             <width>180</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>idle secs:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
           <widget class="QLabel" name="lbl_idle">
            <property name="autoFillBackground">
             <bool>true</bool>
@@ -93,22 +151,8 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>current app title:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="0">
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>start time:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="1">
-          <widget class="QLabel" name="lbl_start_time">
+         <item row="6" column="2">
+          <widget class="QLabel" name="lbl_private">
            <property name="text">
             <string>TextLabel</string>
            </property>
@@ -152,14 +196,14 @@
          <widget class="QLabel" name="lbl_color_work">
           <property name="minimumSize">
            <size>
-            <width>20</width>
-            <height>20</height>
+            <width>16</width>
+            <height>16</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>20</width>
-            <height>20</height>
+            <width>16</width>
+            <height>16</height>
            </size>
           </property>
           <property name="palette">
@@ -260,14 +304,14 @@
          <widget class="QLabel" name="label_6">
           <property name="minimumSize">
            <size>
-            <width>20</width>
-            <height>20</height>
+            <width>16</width>
+            <height>16</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>20</width>
-            <height>20</height>
+            <width>16</width>
+            <height>16</height>
            </size>
           </property>
           <property name="palette">
@@ -368,14 +412,14 @@
          <widget class="QLabel" name="label_11">
           <property name="minimumSize">
            <size>
-            <width>20</width>
-            <height>20</height>
+            <width>16</width>
+            <height>16</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>20</width>
-            <height>20</height>
+            <width>16</width>
+            <height>16</height>
            </size>
           </property>
           <property name="palette">
@@ -476,14 +520,14 @@
          <widget class="QLabel" name="label_9">
           <property name="minimumSize">
            <size>
-            <width>20</width>
-            <height>20</height>
+            <width>16</width>
+            <height>16</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>20</width>
-            <height>20</height>
+            <width>16</width>
+            <height>16</height>
            </size>
           </property>
           <property name="palette">

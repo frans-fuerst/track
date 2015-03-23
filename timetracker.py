@@ -9,6 +9,15 @@ import idle
 import applicationinfo
 
 
+def secs_to_str(mins):
+    _result = ""
+    _minutes = mins
+    if _minutes >= 60:
+        _result = str(int(_minutes / 60))+"h "
+        _minutes %= 60
+    _result += str(_minutes ) + "m"
+    return _result
+
 def seconds_since_midnight():
     now = datetime.now()
     return int((now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds())
@@ -195,6 +204,10 @@ class time_tracker():
         _s = self._start_minute
         return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
 
+    def now(self):
+        _s = minutes_since_midnight()
+        return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
+
     def is_active(self, minute):
         if minute in self._minutes:
             return True
@@ -206,13 +219,13 @@ class time_tracker():
         return self._minutes[minute]._category != 0
 
     def get_active_time(self):
-        _result = ""
-        _minutes = len(self._minutes)
-        if _minutes >= 60:
-            _result = str(int(_minutes / 60))+"h "
-            _minutes %= 60
-        _result += str(_minutes ) + "m"
-        return _result
+        return secs_to_str(len(self._minutes))
+
+    def get_private_time(self):
+        r = 0
+        for i, m in self._minutes.items():
+            r += m._category != 0
+        return secs_to_str(r)
 
     def get_current_minute(self):
         return self._max_minute

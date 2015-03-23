@@ -7,16 +7,23 @@
 - [ ] provide usage statistics over a week/month/..
 - [ ] connect to scheduling tools like Outlook to get more information
 - [ ] support more states (private, project1, project2, ...)
+- [ ] statistics: compare yourself with your average data
+- [ ] statistics: draw efficiency graph
+- [ ] click and mark sections for summary and subsequent assignments
+
 
 #### version 1.0
-- [ ] find a better name (suggestions?)
+- [ ] find a better name (suggestions?) (time, time machine, eta, invest)
 - [ ] generate distribution script for Linux
 - [ ] generate distribution script for Windows
 - [ ] support to Python 3
 - [ ] support Windows
-- [ ] save day-log and resume on restart
 - [ ] allow detailed per minute information when hovering over time bar
 - [ ] support regex rules for work/private
+- [ ] save day-log and resume on restart
+- [ ] preprocess title
+- [ ] display all times with h:mm
+- [ ] add total, active, private ratio
 
 ### release notes
 

@@ -60,6 +60,7 @@ def get_active_process_name():
         # print(process.cmdline)
         return ' '.join(process.cmdline)
         
+    # todo: add NoSuchProcess
     except AttributeError:
         return ""
 

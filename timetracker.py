@@ -242,7 +242,6 @@ class time_tracker():
                 self._minutes[_minute_index] = minute()
             self._minutes[_minute_index].add(_app)
         except applicationinfo.UncriticalException as e:
-            print(e)
             pass
 
     def first_index(self):

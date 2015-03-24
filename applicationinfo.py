@@ -35,14 +35,14 @@ def get_active_window_title():
             m = re.search('^_NET_ACTIVE_WINDOW.* ([\w]+)$', line)
             if m is not None:
                 id_ = m.group(1)
-                _id_w = get_stdout(['xprop', '-id', id_, 'WM_NAME'])
+                _id_w = get_stdout(['xprop', '-id', id_, 'WM_NAME', '_NET_WM_NAME'])
                 # _id_w = get_stdout(['xprop', '-id', id_])
                 break
     
         if _id_w is not None:
     
             for line in _id_w:
-                match = re.match("WM_NAME\(\w+\) = (?P<name>.+)$", line)
+                match = re.match(".*WM_NAME\(\w+\) = (?P<name>.+)$", line)
                 if match != None:
                     return match.group("name").decode().strip('"')
     except Exception as e:

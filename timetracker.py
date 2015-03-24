@@ -49,10 +49,14 @@ class matrix_table_model(QtCore.QAbstractTableModel):
             return None
         elif role != QtCore.Qt.DisplayRole:
             return None
-        return self._mylist[index.row()][index.column()]
-        
+        return self._data(index.row(), index.column())
+    
+    def _data(self, row, column):
+        return self._mylist[row][column]
+
     def headerData(self, col, orientation, role):
-        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+        if (orientation == QtCore.Qt.Horizontal and 
+                   role == QtCore.Qt.DisplayRole):
             return self.header[col]
         return None
         
@@ -75,6 +79,9 @@ class application():
     """
     def __init__(self, identifier):
         self._identifier = identifier
+
+    def __str__(self):
+        return self._identifier
             
 
 class app_count_category():
@@ -85,12 +92,14 @@ class app_count_category():
     def __init__(self, title):
         self._app = application(title)
         self._count = 0
-        
+    def __str__(self):
+        return "%s (%d)" % (self._app, self._count)
+
     def __getitem__(self, index):
         if index == 0:
             return self._app._identifier
         elif index == 1:
-            return secs_to_str(self._count)
+            return self._count
         elif index == 2:
             return global_app_categories[self._app]
         else:
@@ -104,8 +113,17 @@ class active_applications(matrix_table_model):
         self._mylist = [] # list of app_count_category instances
         self._apps = {}   # app identifier -> app_count_category instance
 
+    def get_indexed_data(self):
+        return {self._apps.keys()[i]:(i, self._apps.values()[i]) 
+                    for i in range(len(self._apps))}
+
     def columnCount(self, parent):
         return 3
+
+    def _data(self, row, column):
+        if column == 1:
+            return secs_to_str(self._mylist[row][column])
+        return self._mylist[row][column]
     
     def get_and_update(self, title):
         self.layoutAboutToBeChanged.emit()
@@ -126,9 +144,11 @@ class active_applications(matrix_table_model):
         _result._count += 1
 
         self._sort()
+
         # print('===')
         # for i in self._mylist:
         #     print(i)
+        
         # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
         self.layoutChanged.emit()
         
@@ -150,7 +170,9 @@ class minute():
                 _categories[_cat] = c
             else:
                 _categories[_cat] += c
-        self._category = _categories.keys()[_categories.values().index(max(_categories.values()))]
+        self._category = _categories.keys()[
+                                _categories.values().index(
+                                    max(_categories.values()))]
         
     def add(self, app_instance):
         if app_instance not in self._apps:
@@ -163,15 +185,38 @@ class minute():
 class time_tracker():
 
     def __init__(self, parent):
-        self._start_minute = minutes_since_midnight()
+        self._idle_current = 0
         self._max_minute = 0
-        self._idle = 0
         self._current_app_title = ""
         self._current_process_exe = ""
         self._user_is_active = True
+
+        # -- persist
+        self._start_minute = minutes_since_midnight()
         self._applications = active_applications(parent)
-        self._minutes = {}
-        
+        self._minutes = {}  # min -> [apps], category
+
+    def __cmp__(self, other):
+        pass
+
+    def load(self):
+        pass
+
+    def save(self):
+        _file_name = "track.json"
+        _app_data = self._applications.get_indexed_data()
+        print(_app_data)
+        with open(_file_name, 'w') as _file:
+            _file.write('{')
+            _file.write('start:   "",')
+            _file.write('end:     "",')
+            _file.write('apps:    {')
+            for k, (i, c) in _app_data.items():
+                print((k, i, c))
+            _file.write('},')
+            _file.write('minutes: "",')
+            _file.write('}')
+
     def get_applications_model(self):
         return self._applications
         
@@ -184,10 +229,10 @@ class time_tracker():
             
             self._user_is_active = True
        
-            self._idle = idle.getIdleSec()
+            self._idle_current = idle.getIdleSec()
             self._current_app_title = applicationinfo.get_active_window_title() 
             self._current_process_exe = applicationinfo.get_active_process_name()
-            if self._idle > 10:
+            if self._idle_current > 10:
                 self._user_is_active = False
                 return
 
@@ -246,7 +291,7 @@ class time_tracker():
         return self._max_minute
 
     def get_idle(self):
-        return self._idle
+        return self._idle_current
         
     def get_current_app_title(self):
         return self._current_app_title

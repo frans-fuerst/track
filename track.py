@@ -43,9 +43,13 @@ class track_ui(QtGui.QMainWindow):
 
         _idle_timer = QtCore.QTimer(self)
         _idle_timer.timeout.connect(self.update_idle)
+        self.pb_save.clicked.connect(self.pb_save_clicked)
         _idle_timer.start(1000)
 
-    
+    def pb_save_clicked(self):
+        print("save")
+        self._tracker.save()
+
     def update_idle(self):
         self._tracker.update()
         _idle = self._tracker.get_idle()

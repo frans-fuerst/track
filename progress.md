@@ -20,10 +20,10 @@
 - [ ] support Windows
 - [ ] allow detailed per minute information when hovering over time bar
 - [ ] support regex rules for work/private
-- [ ] save day-log and resume on restart
 - [ ] preprocess title
-- [ ] display all times with h:mm
-- [ ] add total, active, private ratio
+- [ ] save day-log and resume on restart
+- [x] display all times with h:mm
+- [x] add total, active, private ratio
 
 ### release notes
 

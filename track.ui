@@ -623,6 +623,19 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QPushButton" name="pb_load">
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>l</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>

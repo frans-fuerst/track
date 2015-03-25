@@ -90,9 +90,10 @@ class app_count_category():
         that behaves like a list
     """
     
-    def __init__(self, title):
+    def __init__(self, title, count=0):
         self._app = application(title)
-        self._count = 0
+        self._count = count
+
     def __str__(self):
         return "%s (%d)" % (self._app, self._count)
 
@@ -117,6 +118,9 @@ class active_applications(matrix_table_model):
     def get_indexed_data(self):
         return {self._apps.keys()[i]:(i, self._apps.values()[i]) 
                     for i in range(len(self._apps))}
+
+    def set_indexed_data(self, data):
+        pass
 
     def columnCount(self, parent):
         return 3
@@ -203,7 +207,17 @@ class time_tracker():
         pass
 
     def load(self):
-        pass
+        _file_name = "load.json"
+        with open(_file_name) as _file:
+            _struct = json.load(_file)
+        assert 'apps' in _struct
+        assert 'minutes' in _struct
+        _appdata = []
+        for a in _struct['apps']:
+            _appdata.append(app_count_category([a[0], a[1]]))
+        print(len(_appdata))
+        for m in _struct['minutes']:
+            print(m)
 
     def save(self):
         _file_name = "track.json"
@@ -224,27 +238,6 @@ class time_tracker():
             json.dump(_struct, _file, 
                       sort_keys=True,
                       indent=4, separators=(',', ': '))
-        """
-        _file.write('{\n')
-        _file.write('  start:   "",\n')
-        _file.write('  end:     "",\n')
-        _file.write('  apps:    [\n')
-        for k, (i, c) in _app_data.items():
-            print(('app', k, i, c))
-            _file.write("    (%s, %s)\n" % (k, c._count))
-        _file.write('  ],\n')
-        _file.write('  minutes: [\n')
-        for m, c in self._minutes.items():
-
-            _indexed_apps = [_app_data[a._identifier][0] 
-                                for a in c._apps.keys()]
-            print(('min', m, c._category, _indexed_apps))
-            _file.write("    (%d, %d, %s)\n" 
-                         % (m, c._category, str(_indexed_apps)))
-
-        _file.write('  ],\n')
-        _file.write('}\n')
-        """
 
     def get_applications_model(self):
         return self._applications

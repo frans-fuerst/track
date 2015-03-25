@@ -11,6 +11,7 @@
 - [ ] statistics: draw efficiency graph
 - [ ] click and mark sections for summary and subsequent assignments
 - [ ] allow correction of work day start
+- [ ] get parent of window (e.g. 'file changed')
 
 
 #### version 1.0

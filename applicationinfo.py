@@ -62,6 +62,6 @@ def get_active_process_name():
         # print(process.exe)
         # print(process.cmdline)
         return ' '.join(process.cmdline)
-    except AttributeError as e:
+    except (NoSuchProcess, AttributeError) as e:
         raise UncriticalException()        
 

@@ -10,17 +10,20 @@
 - [ ] statistics: compare yourself with your average data
 - [ ] statistics: draw efficiency graph
 - [ ] click and mark sections for summary and subsequent assignments
+- [ ] allow correction of work day start
 
 
 #### version 1.0
 - [ ] find a better name (suggestions?) (time, time machine, eta, invest)
-- [ ] generate distribution script for Linux
+- [ ] generate distributio n script for Linux
 - [ ] generate distribution script for Windows
 - [ ] support to Python 3
 - [ ] support Windows
 - [ ] allow detailed per minute information when hovering over time bar
 - [ ] support regex rules for work/private
 - [ ] preprocess title
+- [ ] start/end of working day should not be application time but usage
+- [ ] recognize end of day and start over
 - [ ] save day-log and resume on restart
 - [x] display all times with h:mm
 - [x] add total, active, private ratio

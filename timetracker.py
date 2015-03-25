@@ -7,6 +7,7 @@ from datetime import datetime
 
 import idle
 import applicationinfo
+import json
 
 
 def secs_to_str(mins):
@@ -145,9 +146,11 @@ class active_applications(matrix_table_model):
 
         self._sort()
 
+        """
         print('===')
         for i in self._mylist:
             print(i)
+        """
         
         # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
         self.layoutChanged.emit()
@@ -206,41 +209,42 @@ class time_tracker():
         _file_name = "track.json"
         _app_data = self._applications.get_indexed_data()
         # print(_app_data)
+        _struct = {
+                'start':0,
+                'end':0,
+                'apps':
+                    [(k, c._count) 
+                        for k, (i, c) in _app_data.items()],
+                'minutes': 
+                    [(m, c._category, [_app_data[a._identifier][0] 
+                        for a in c._apps.keys()])
+                            for m, c in self._minutes.items()]
+            }
         with open(_file_name, 'w') as _file:
-            _struct = {
-                    'start':0,
-                    'end':0,
-                    'apps':
-                        [(k, c._count) 
-                            for k, (i, c) in _app_data.items()],
-                    'minutes': 
-                        [(m, c._category, [_app_data[a._identifier][0] 
-                            for a in c._apps.keys()])
-                                for m, c in self._minutes.items()]
-                }
-            import ast
-            ast.dump(_file, _struct)
-            """
-            _file.write('{\n')
-            _file.write('  start:   "",\n')
-            _file.write('  end:     "",\n')
-            _file.write('  apps:    [\n')
-            for k, (i, c) in _app_data.items():
-                print(('app', k, i, c))
-                _file.write("    (%s, %s)\n" % (k, c._count))
-            _file.write('  ],\n')
-            _file.write('  minutes: [\n')
-            for m, c in self._minutes.items():
+            json.dump(_struct, _file, 
+                      sort_keys=True,
+                      indent=4, separators=(',', ': '))
+        """
+        _file.write('{\n')
+        _file.write('  start:   "",\n')
+        _file.write('  end:     "",\n')
+        _file.write('  apps:    [\n')
+        for k, (i, c) in _app_data.items():
+            print(('app', k, i, c))
+            _file.write("    (%s, %s)\n" % (k, c._count))
+        _file.write('  ],\n')
+        _file.write('  minutes: [\n')
+        for m, c in self._minutes.items():
 
-                _indexed_apps = [_app_data[a._identifier][0] 
-                                    for a in c._apps.keys()]
-                print(('min', m, c._category, _indexed_apps))
-                _file.write("    (%d, %d, %s)\n" 
-                             % (m, c._category, str(_indexed_apps)))
+            _indexed_apps = [_app_data[a._identifier][0] 
+                                for a in c._apps.keys()]
+            print(('min', m, c._category, _indexed_apps))
+            _file.write("    (%d, %d, %s)\n" 
+                         % (m, c._category, str(_indexed_apps)))
 
-            _file.write('  ],\n')
-            _file.write('}\n')
-            """
+        _file.write('  ],\n')
+        _file.write('}\n')
+        """
 
     def get_applications_model(self):
         return self._applications

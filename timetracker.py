@@ -120,7 +120,9 @@ class active_applications(matrix_table_model):
                     for i in range(len(self._apps))}
 
     def set_indexed_data(self, data):
-        pass
+        self.layoutAboutToBeChanged.emit()
+        self._sort()
+        self.layoutChanged.emit()
 
     def columnCount(self, parent):
         return 3
@@ -165,9 +167,9 @@ class active_applications(matrix_table_model):
 class minute():
     """ a minute holds a category and a list of apps
     """
-    def __init__(self):
+    def __init__(self, category=0, apps={}):
         self._category = 0
-        self._apps = {} # app -> count
+        self._apps = apps # app -> count
         
     def _rebuild(self):
         _categories = {} # category -> sum
@@ -216,8 +218,10 @@ class time_tracker():
         for a in _struct['apps']:
             _appdata.append(app_count_category([a[0], a[1]]))
         print(len(_appdata))
-        for m in _struct['minutes']:
-            print(m)
+        _new_minutes = {}
+        for m, c, a in _struct['minutes']:
+            _new_minutes[m] = minute(c, {})
+            print({_appdata[_a]: 1 for _a in a})
 
     def save(self):
         _file_name = "track.json"

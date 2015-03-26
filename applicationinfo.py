@@ -44,7 +44,11 @@ def get_active_window_title():
             for line in _id_w:
                 match = re.match(".*WM_NAME\(\w+\) = (?P<name>.+)$", line)
                 if match != None:
-                    return match.group("name").decode().strip('"')
+                    
+                    _result = match.group("name").decode().strip('"')
+                    if _result.strip() == "":
+                        pass
+                    return _result
     except Exception as e:
         logging.warn("got exception: %s" % str(e))
     return "Active window not found"

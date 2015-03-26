@@ -73,7 +73,7 @@ class matrix_table_model(QtCore.QAbstractTableModel):
             key=lambda tup: tup[self._sort_col],
             reverse=self._sort_reverse)
 
-global_app_categories = {}
+global_app_categories = {}  # acc -> category
 
 class application():
     """ holds immutable information about an application
@@ -121,6 +121,21 @@ class active_applications(matrix_table_model):
 
     def set_indexed_data(self, data):
         self.layoutAboutToBeChanged.emit()
+
+        #_appdata = [app_count_category([a[0], a[1]]) 
+        #                for a in _struct['apps']]
+
+        for acc in data:
+            print(acc.__dict__)
+        global global_app_categories
+        print(global_app_categories)
+        print("============")
+        global_app_categories = {acc._app: 0 for acc in data}
+        print(global_app_categories)
+
+        self._mylist = data
+        self._apps = {acc._app._identifier: acc for acc in self._mylist}
+        
         self._sort()
         self.layoutChanged.emit()
 
@@ -174,11 +189,15 @@ class minute():
     def _rebuild(self):
         _categories = {} # category -> sum
         for a, c in self._apps.items():
-            _cat = global_app_categories[a]
-            if _cat not in _categories:
-                _categories[_cat] = c
-            else:
-                _categories[_cat] += c
+            try:
+                _cat = global_app_categories[a]
+                if _cat not in _categories:
+                    _categories[_cat] = c
+                else:
+                    _categories[_cat] += c
+            except:
+                pass
+                    
         self._category = _categories.keys()[
                                 _categories.values().index(
                                     max(_categories.values()))]
@@ -214,14 +233,21 @@ class time_tracker():
             _struct = json.load(_file)
         assert 'apps' in _struct
         assert 'minutes' in _struct
-        _appdata = []
-        for a in _struct['apps']:
-            _appdata.append(app_count_category([a[0], a[1]]))
-        print(len(_appdata))
-        _new_minutes = {}
-        for m, c, a in _struct['minutes']:
-            _new_minutes[m] = minute(c, {})
-            print({_appdata[_a]: 1 for _a in a})
+
+        _appdata = [app_count_category(a[0], a[1]) 
+                        for a in _struct['apps']]
+
+        _new_minutes = {m: minute(c, {_appdata[_a]: 1 for _a in a}) 
+                                        for m, c, a in _struct['minutes']}
+
+        print("apps: %s" % len(_appdata))
+        print("mins: %s" % len(_new_minutes))
+
+        # with lock
+        _app_data = self._applications.set_indexed_data(_appdata)
+        self._minutes = _new_minutes
+        print("<<<<<")
+
 
     def save(self):
         _file_name = "track.json"

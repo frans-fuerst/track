@@ -73,18 +73,18 @@ class matrix_table_model(QtCore.QAbstractTableModel):
             key=lambda tup: tup[self._sort_col],
             reverse=self._sort_reverse)
 
-global_app_categories = {}  # acc -> category
 
-class application():
-    """ holds immutable information about an application
-    """
-    def __init__(self, identifier):
-        self._identifier = identifier
+class app_info()
+    def __init__(self, windowtitle, cmdline):
+        self._wndtitle = windowtitle
+        self._cmdline = cmdline
+        self._cat = 0
+        self._count = 0
 
-    def __str__(self):
-        return self._identifier
+    def generate_identifier(self):
+        return self._wndtitle
 
-
+'''
 class app_count_category():
     """ combines an app identifier, a category and a time count to something
         that behaves like a list
@@ -106,15 +106,52 @@ class app_count_category():
             return global_app_categories[self._app]
         else:
             raise Exception("must not happen")
+'''
 
-
+# todo: separate qt model
 class active_applications(matrix_table_model):
+    ''' the data model which holds all application usage data for one
+        day. That is:
+
+        app_data:  {app_id: application}
+
+        minutes:   {i_min => [app_id], i_cat}
+
+        where
+
+        application:  (i_secs, i_cat, s_title, s_process)        
+
+
+        model_list:
+            * sortable by key
+            * can be done with list of keys sorted by given value
+            [(app_id, i_secs, i_cat)]
+
+    '''
+
     def __init__(self, parent, *args):
         matrix_table_model.__init__(self, parent, *args)
         self.header = ['application title', 'time', 'category']
-        self._mylist = [] # list of app_count_category instances
-        self._apps = {}   # app identifier -> app_count_category instance
+        self._apps = {}     # app identifier => app_info instance
+        self._minutes = {}  # i_min          => minute
 
+    def columnCount(self, parent):
+        return 3
+
+    def _data(self, row, column):
+        if column == 1:
+            return secs_to_str(self._mylist[row][column])
+        return self._mylist[row][column]
+
+    def __dict__(self):
+        # todo
+        pass
+
+    def from_dict(self, data):
+        # todo
+        pass
+
+    '''
     def get_indexed_data(self):
         return {self._apps.keys()[i]:(i, self._apps.values()[i])
                     for i in range(len(self._apps))}
@@ -138,16 +175,9 @@ class active_applications(matrix_table_model):
 
         self._sort()
         self.layoutChanged.emit()
+    '''
 
-    def columnCount(self, parent):
-        return 3
-
-    def _data(self, row, column):
-        if column == 1:
-            return secs_to_str(self._mylist[row][column])
-        return self._mylist[row][column]
-
-    def get_and_update(self, title):
+    def update(self, minute_index, app):
         self.layoutAboutToBeChanged.emit()
 
         if title not in self._apps:
@@ -165,18 +195,14 @@ class active_applications(matrix_table_model):
 
         _result._count += 1
 
-        self._sort()
+        if _minute_index not in self._minutes:
+            self._minutes[_minute_index] = minute()
+        self._minutes[_minute_index].add(_app)
 
-        """
-        print('===')
-        for i in self._mylist:
-            print(i)
-        """
+        self._sort()
 
         # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
         self.layoutChanged.emit()
-
-        return _result._app
 
 
 class minute():
@@ -215,40 +241,34 @@ class minute():
 
 
 class time_tracker():
-
+    """ * retrieves system data
+        * holds the application data object as
+          well as some meta information
+        * provides persistence
+    """
     def __init__(self, parent):
         self._idle_current = 0
-        self._max_minute = 0
+        self._max_minute = 0  # does not need to be highest minute index
         self._current_app_title = ""
         self._current_process_exe = ""
         self._user_is_active = True
 
         # -- persist
-        self._start_minute = minutes_since_midnight()
         self._applications = active_applications(parent)
-        self._minutes = {}  # min -> [apps], category
 
     def __cmp__(self, other):
+        # todo: for testing
         pass
 
     def load(self):
         _file_name = "load.json"
         with open(_file_name) as _file:
             _struct = json.load(_file)
-        assert 'apps' in _struct
-        assert 'minutes' in _struct
 
-        _appdata = [app_count_category(a[0], a[1])
-                        for a in _struct['apps']]
+        # todo - which keys?
+        self._applications.from_dict(_struct)
 
-        _new_minutes = {m: minute(c, {_appdata[_a]: 1 for _a in a})
-                                        for m, c, a in _struct['minutes']}
-
-        # print("apps: %s" % len(_appdata))
-        # print("mins: %s" % len(_new_minutes))
-
-        # with lock
-        _app_data = self._applications.set_indexed_data(_appdata)
+        # with lock?
         self._minutes = _new_minutes
         # print("<<<<<")
 
@@ -257,17 +277,9 @@ class time_tracker():
         _file_name = "track.json"
         _app_data = self._applications.get_indexed_data()
         # print(_app_data)
-        _struct = {
-                'start':0,
-                'end':0,
-                'apps':
-                    [(k, c._count)
-                        for k, (i, c) in _app_data.items()],
-                'minutes':
-                    [(m, c._category, [_app_data[a._identifier][0]
-                        for a in c._apps.keys()])
-                            for m, c in self._minutes.items()]
-            }
+
+        # todo
+        _struct = {            }
         with open(_file_name, 'w') as _file:
             json.dump(_struct, _file,
                       sort_keys=True,
@@ -278,10 +290,7 @@ class time_tracker():
 
     def update(self):
         try:
-            _minute_index = minutes_since_midnight()
-
-            self._max_minute = _minute_index
-
+            self._max_minute = minutes_since_midnight()
 
             self._user_is_active = True
 
@@ -292,11 +301,11 @@ class time_tracker():
                 self._user_is_active = False
                 return
 
-            _app = self._applications.get_and_update(self._current_app_title)
+            _app = self._applications.update(
+                        self._max_minute,
+                        app_info(self._current_app_title, 
+                                 self._current_process_exe))
 
-            if _minute_index not in self._minutes:
-                self._minutes[_minute_index] = minute()
-            self._minutes[_minute_index].add(_app)
         except applicationinfo.UncriticalException as e:
             pass
 

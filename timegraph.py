@@ -8,7 +8,7 @@ class timegraph(QtGui.QFrame):
     def __init__(self, parent):
         self._tracker = None
         super(timegraph, self).__init__(parent)
-    
+
     def setTracker(self, tracker):
         self._tracker = tracker
 
@@ -24,10 +24,14 @@ class timegraph(QtGui.QFrame):
         qp.end()
 
     def drawPoints(self, qp):
-      
+
         _start_index = self._tracker.first_index() - 50
         for i in range(self.width() - 2):
             _index = _start_index + i
+
+            # undo: evaluate always
+            _is_private = self._tracker.is_private(_index)
+
             if i < 50 or _index > self._tracker.get_current_minute():
                 # dark gray on borders of tracked time
                 qp.setPen(QtCore.Qt.gray)
@@ -36,7 +40,7 @@ class timegraph(QtGui.QFrame):
                 qp.setPen(QtCore.Qt.black)
             elif not self._tracker.is_active(_index):
                 qp.setPen(QtCore.Qt.white)
-            elif self._tracker.is_private(_index):
+            elif _is_private:
                 qp.setPen(QtCore.Qt.darkCyan)
             else:
                 qp.setPen(QtCore.Qt.cyan)
@@ -45,4 +49,4 @@ class timegraph(QtGui.QFrame):
 
 if __name__ == '__main__':
     print('this is just the bargraph widget. run track.py')
-    
+

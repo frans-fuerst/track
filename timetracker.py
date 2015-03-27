@@ -8,6 +8,7 @@ from datetime import datetime
 import idle
 import applicationinfo
 import json
+import operator
 
 
 def secs_to_str(mins):
@@ -18,6 +19,7 @@ def secs_to_str(mins):
         _minutes %= 60
     _result += str(_minutes ) + "s"
     return _result
+
 
 def seconds_since_midnight():
     now = datetime.now()
@@ -74,7 +76,8 @@ class matrix_table_model(QtCore.QAbstractTableModel):
             reverse=self._sort_reverse)
 
 
-class app_info()
+class app_info():
+    
     def __init__(self, windowtitle, cmdline):
         self._wndtitle = windowtitle
         self._cmdline = cmdline
@@ -134,22 +137,47 @@ class active_applications(matrix_table_model):
         self.header = ['application title', 'time', 'category']
         self._apps = {}     # app identifier => app_info instance
         self._minutes = {}  # i_min          => minute
+        self._index_min = None
+        self._index_max = None
+        self._sorted_keys = []
 
-    def columnCount(self, parent):
+    def rowCount(self, parent):
+        return len(self._sorted_keys)
+
+    def columnCount(self, parent):  # const
         return 3
 
-    def _data(self, row, column):
-        if column == 1:
-            return secs_to_str(self._mylist[row][column])
-        return self._mylist[row][column]
+    def _data(self, row, column):  # const
+        #todo
+        #if column == 1:
+        #    return secs_to_str(self._mylist[row][column])
+        #return self._mylist[row][column]
+        return 0
 
-    def __dict__(self):
+    def _sort(self):
+        if self._sort_col == 0:
+            self._sorted_keys = [x[0] for x in sorted(
+                self._apps.items(), key=lambda x: x[1]._wndtitle)]
+        elif self._sort_col == 1:
+            self._sorted_keys = [x[0] for x in sorted(
+                self._apps.items(), key=lambda x: x[1]._count)]
+        elif self._sort_col == 2:
+            self._sorted_keys = [x[0] for x in sorted(
+                self._apps.items(), key=lambda x: x[1]._cat)]
+    
+    def __dict__(self):  # const
         # todo
         pass
 
     def from_dict(self, data):
         # todo
         pass
+    
+    def begin_index(self):  # const
+        return self._index_min if self._index_min else 0
+
+    def end_index(self):  # const
+        return self._index_max if self._index_max else 0
 
     '''
     def get_indexed_data(self):
@@ -179,31 +207,47 @@ class active_applications(matrix_table_model):
 
     def update(self, minute_index, app):
         self.layoutAboutToBeChanged.emit()
+        
+        _app_id = app.generate_identifier()
 
-        if title not in self._apps:
-            _new = app_count_category(title)
+        if _app_id not in self._apps:
+            self._apps[_app_id] = app
 
-            self._apps[title] = _new
-            self._mylist.append(_new)
-
-            if "Firefox" in title:
-                global_app_categories[_new._app] = 1
+            if "Firefox" in _app_id:
+                app._category = 1
             else:
-                global_app_categories[_new._app] = 0
+                app._category = 0
+        app._count += 1
 
-        _result = self._apps[title]
+        if minute_index not in self._minutes:
+            self._minutes[minute_index] = minute()
+            if not self._index_min or self._index_min > minute_index:
+                self._index_min = minute_index
+                
+            if not self._index_max or self._index_max < minute_index:
+                self._index_max = minute_index
 
-        _result._count += 1
-
-        if _minute_index not in self._minutes:
-            self._minutes[_minute_index] = minute()
-        self._minutes[_minute_index].add(_app)
+        self._minutes[minute_index].add(app)
 
         self._sort()
 
         # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
         self.layoutChanged.emit()
 
+    def is_active(self, minute):
+        if minute in self._minutes:
+            return True
+        return False
+
+    def is_private(self, minute):
+        if minute not in self._minutes:
+            return False
+        # print("%d: %s" %
+        #      (minute, str([global_app_categories[a]
+        #                    for a in self._minutes[minute]._apps])))
+        # print(' '.join(reversed(["(%d: %d)" % (s, m._category)
+        #                for s, m in self._minutes.items()])))
+        return self._minutes[minute]._category != 0
 
 class minute():
     """ a minute holds a category and a list of apps
@@ -216,14 +260,16 @@ class minute():
             self._apps = apps # app -> count
 
     def _rebuild(self):
+        if len(self._apps) == 0:
+            return 0  # todo: need undefined
+        
         _categories = {} # category -> sum
         for a, c in self._apps.items():
             try:
-                _cat = global_app_categories[a]
-                if _cat not in _categories:
-                    _categories[_cat] = c
+                if a._cat not in _categories:
+                    _categories[a._cat] = c
                 else:
-                    _categories[_cat] += c
+                    _categories[a._cat] += c
             except:
                 pass
 
@@ -309,52 +355,43 @@ class time_tracker():
         except applicationinfo.UncriticalException as e:
             pass
 
-    def first_index(self):
-        return self._start_minute
+    def begin_index(self):
+        return self._applications.begin_index()
 
     def start_time(self):
-        _s = self._start_minute
+        _s = self._applications.begin_index()
         return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
 
     def now(self):
-        _s = minutes_since_midnight()
+        _s = self._max_minute
         return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
 
     def is_active(self, minute):
-        if minute in self._minutes:
-            return True
-        return False
+        return self._applications.is_active(minute)
 
     def is_private(self, minute):
-        if minute not in self._minutes:
-            return False
-        print("%d: %s" %
-              (minute, str([global_app_categories[a]
-                            for a in self._minutes[minute]._apps])))
-        print(' '.join(reversed(["(%d: %d)" % (s, m._category)
-                        for s, m in self._minutes.items()])))
-        return self._minutes[minute]._category != 0
+        return self._applications.is_private(minute)
 
     def get_time_total(self):
-        return minutes_since_midnight() - self._start_minute + 1
+        return self._max_minute - self._applications.begin_index() + 1
 
     def get_time_active(self):
-        return len(self._minutes)
+        return len(self._applications._minutes)
 
     def get_time_work(self):
         r = 0
-        for i, m in self._minutes.items():
-            r += m._category == 0
+        for i, m in self._applications._minutes.items():
+            r += 1 if m._category == 0 else 0
         return r
 
     def get_time_private(self):
         r = 0
-        for i, m in self._minutes.items():
+        for i, m in self._applications._minutes.items():
             r += m._category != 0
         return r
 
     def get_time_idle(self):
-        return self.get_time_total() - len(self._minutes)
+        return self.get_time_total() - len(self._applications._minutes)
 
     def get_current_minute(self):
         return self._max_minute

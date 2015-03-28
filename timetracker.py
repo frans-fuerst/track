@@ -87,29 +87,43 @@ class app_info():
     def generate_identifier(self):
         return self._wndtitle
 
-'''
-class app_count_category():
-    """ combines an app identifier, a category and a time count to something
-        that behaves like a list
+
+class minute():
+    """ a minute holds a category and a list of apps
     """
-
-    def __init__(self, title, count=0):
-        self._app = application(title)
-        self._count = count
-
-    def __str__(self):
-        return "%s (%d)" % (self._app, self._count)
-
-    def __getitem__(self, index):
-        if index == 0:
-            return self._app._identifier
-        elif index == 1:
-            return self._count
-        elif index == 2:
-            return global_app_categories[self._app]
+    def __init__(self, category=0, apps=None):
+        self._category = 0
+        if apps is None:
+            self._apps = {}
         else:
-            raise Exception("must not happen")
-'''
+            self._apps = apps # app -> count
+
+    def _rebuild(self):
+        if len(self._apps) == 0:
+            return 0  # todo: need undefined
+        
+        _categories = {} # category -> sum
+        for a, c in self._apps.items():
+            try:
+                if a._cat not in _categories:
+                    _categories[a._cat] = c
+                else:
+                    _categories[a._cat] += c
+            except:
+                pass
+
+        self._category = _categories.keys()[
+                                _categories.values().index(
+                                    max(_categories.values()))]
+        # print(self._category)
+
+    def add(self, app_instance):
+        if app_instance not in self._apps:
+            self._apps[app_instance] = 1
+        else:
+            self._apps[app_instance] += 1
+        self._rebuild()
+        
 
 # todo: separate qt model
 class active_applications(matrix_table_model):
@@ -149,21 +163,30 @@ class active_applications(matrix_table_model):
 
     def _data(self, row, column):  # const
         #todo
-        #if column == 1:
-        #    return secs_to_str(self._mylist[row][column])
-        #return self._mylist[row][column]
+        
+        if column == 0:
+            return self._apps[self._sorted_keys[row]]._wndtitle
+        if column == 1:
+            return secs_to_str(self._apps[self._sorted_keys[row]]._count)
+        if column == 2:
+            return self._apps[self._sorted_keys[row]]._cat
+        #    return 
         return 0
 
     def _sort(self):
+        # print([x[1]._count for x in self._apps.items()])
+        # print(self._sort_col)
         if self._sort_col == 0:
             self._sorted_keys = [x[0] for x in sorted(
-                self._apps.items(), key=lambda x: x[1]._wndtitle)]
+                self._apps.items(), key=lambda x: x[1]._wndtitle, reverse=self._sort_reverse)]
         elif self._sort_col == 1:
             self._sorted_keys = [x[0] for x in sorted(
-                self._apps.items(), key=lambda x: x[1]._count)]
+                self._apps.items(), 
+                key=lambda x: x[1]._count,
+                reverse=self._sort_reverse)]
         elif self._sort_col == 2:
             self._sorted_keys = [x[0] for x in sorted(
-                self._apps.items(), key=lambda x: x[1]._cat)]
+                self._apps.items(), key=lambda x: x[1]._cat,reverse=self._sort_reverse)]
     
     def __dict__(self):  # const
         # todo
@@ -217,7 +240,9 @@ class active_applications(matrix_table_model):
                 app._category = 1
             else:
                 app._category = 0
-        app._count += 1
+                
+        _app = self._apps[_app_id]
+        _app._count += 1
 
         if minute_index not in self._minutes:
             self._minutes[minute_index] = minute()
@@ -227,7 +252,7 @@ class active_applications(matrix_table_model):
             if not self._index_max or self._index_max < minute_index:
                 self._index_max = minute_index
 
-        self._minutes[minute_index].add(app)
+        self._minutes[minute_index].add(_app)
 
         self._sort()
 
@@ -248,42 +273,6 @@ class active_applications(matrix_table_model):
         # print(' '.join(reversed(["(%d: %d)" % (s, m._category)
         #                for s, m in self._minutes.items()])))
         return self._minutes[minute]._category != 0
-
-class minute():
-    """ a minute holds a category and a list of apps
-    """
-    def __init__(self, category=0, apps=None):
-        self._category = 0
-        if apps is None:
-            self._apps = {}
-        else:
-            self._apps = apps # app -> count
-
-    def _rebuild(self):
-        if len(self._apps) == 0:
-            return 0  # todo: need undefined
-        
-        _categories = {} # category -> sum
-        for a, c in self._apps.items():
-            try:
-                if a._cat not in _categories:
-                    _categories[a._cat] = c
-                else:
-                    _categories[a._cat] += c
-            except:
-                pass
-
-        self._category = _categories.keys()[
-                                _categories.values().index(
-                                    max(_categories.values()))]
-        # print(self._category)
-
-    def add(self, app_instance):
-        if app_instance not in self._apps:
-            self._apps[app_instance] = 1
-        else:
-            self._apps[app_instance] += 1
-        self._rebuild()
 
 
 class time_tracker():
@@ -307,6 +296,7 @@ class time_tracker():
         pass
 
     def load(self):
+        return
         _file_name = "load.json"
         with open(_file_name) as _file:
             _struct = json.load(_file)
@@ -320,6 +310,7 @@ class time_tracker():
 
 
     def save(self):
+        return
         _file_name = "track.json"
         _app_data = self._applications.get_indexed_data()
         # print(_app_data)

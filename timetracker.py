@@ -25,6 +25,10 @@ def secs_to_str(mins):
 def today_str():
     return datetime.fromtimestamp(time.time()).strftime('%Y%m%d')
 
+def today_int():
+    now = datetime.now()
+    return now.year*10000 + now.month * 100 + now.day
+
 
 def seconds_since_midnight():
     now = datetime.now()
@@ -205,6 +209,14 @@ class active_applications(matrix_table_model):
         self._apps = {}     # app identifier => app_info instance
         self._minutes = {}  # i_min          => minute
 
+    def clear(self):
+        self.layoutAboutToBeChanged.emit()  # todo: this is not threadsafe
+        self._index_min = None
+        self._index_max = None
+        self._apps = {}     # app identifier => app_info instance
+        self._minutes = {}  # i_min          => minute
+        self.layoutChanged.emit()
+
     def rowCount(self, parent):
         return len(self._sorted_keys)
 
@@ -313,7 +325,7 @@ class active_applications(matrix_table_model):
         return self._index_max if self._index_max else 0
 
     def update(self, minute_index, app):
-        self.layoutAboutToBeChanged.emit()
+        self.layoutAboutToBeChanged.emit()  # todo: this is not threadsafe
         
         _app_id = app.generate_identifier()
 
@@ -371,12 +383,18 @@ class time_tracker():
         self._current_app_title = ""
         self._current_process_exe = ""
         self._user_is_active = True
+        self._active_day = today_int()
+        
 
         # -- persist
         self._applications = active_applications(parent)
 
     def __eq__(self, other):
         return False
+
+    def clear(self):
+        # must not be overwritten - we need the instance
+        self._applications.clear()
 
     def load(self, filename=None):
         _file_name = filename if filename else "track-%s.json" % today_str()
@@ -410,6 +428,16 @@ class time_tracker():
 
     def update(self):
         try:
+            _today = today_int()
+
+            if self._active_day < _today:
+                print("current minute is %d - it's midnight" % _current_minute)
+                #midnight!
+                self.save('track-log-%d.json' % self._active_day)
+                self.clear()
+
+            self._active_day = today_int()
+
             self._max_minute = minutes_since_midnight()
 
             self._user_is_active = True

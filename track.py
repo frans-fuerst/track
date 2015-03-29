@@ -22,6 +22,8 @@ class track_ui(QtGui.QMainWindow):
     def __init__(self):
         super(track_ui, self).__init__()
         self._tracker = timetracker.time_tracker(self)
+
+        self._tracker.load()
         
         self.initUI()
         self.frm_timegraph.setTracker(self._tracker)
@@ -49,11 +51,11 @@ class track_ui(QtGui.QMainWindow):
 
     def pb_save_clicked(self):
         print("save")
-        self._tracker.save()
+        self._tracker.save('track-manualsave.json')
 
     def pb_load_clicked(self):
         print("load")
-        self._tracker.load()
+        self._tracker.load('track-manualsave.json')
 
     def update_idle(self):
         self._tracker.update()
@@ -97,6 +99,8 @@ class track_ui(QtGui.QMainWindow):
         
         self.update()
 
+    def closeEvent(self, event):
+        self._tracker.save()
 
     def system_signal(self, s):
         sig_name = "unknown"

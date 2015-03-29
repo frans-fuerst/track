@@ -9,6 +9,7 @@ import idle
 import applicationinfo
 import json
 import operator
+import time
 
 
 def secs_to_str(mins):
@@ -19,6 +20,10 @@ def secs_to_str(mins):
         _minutes %= 60
     _result += str(_minutes ) + "s"
     return _result
+
+
+def today_str():
+    return datetime.fromtimestamp(time.time()).strftime('%Y%m%d')
 
 
 def seconds_since_midnight():
@@ -271,7 +276,7 @@ class active_applications(matrix_table_model):
         _indexed = [app_info().load(d) for d in _a]
         _m = data['minutes']
         _minutes = {
-            i : minute().init(
+            int(i) : minute().init(
                 (
                     m[0],
                     {
@@ -299,7 +304,7 @@ class active_applications(matrix_table_model):
         self._sort()
         self.layoutChanged.emit()
         
-        print(_minutes)
+        # print(_minutes)
     
     def begin_index(self):  # const
         return self._index_min if self._index_min else 0
@@ -370,21 +375,26 @@ class time_tracker():
         # -- persist
         self._applications = active_applications(parent)
 
-    def __cmp__(self, other):
-        # todo: for testing
-        pass
+    def __eq__(self, other):
+        return False
 
-    def load(self):
-        _file_name = "track.json"
-        with open(_file_name) as _file:
-            _struct = json.load(_file)
+    def load(self, filename=None):
+        _file_name = filename if filename else "track-%s.json" % today_str()
+        # print(_file_name)
+        try:
+            with open(_file_name) as _file:
+                _struct = json.load(_file)
+        except IOError:
+            if filename is not None:
+                logging.warn('file "%s" does not exist' % filename)
+            return
 
-        # todo - which keys?
         self._applications.from_dict(_struct)
 
 
-    def save(self):
-        _file_name = "track.json"
+    def save(self, filename=None):
+        _file_name = filename if filename else "track-%s.json" % today_str() 
+        # print(_file_name)
         _app_data = self._applications.__data__()
         with open(_file_name, 'w') as _file:
             json.dump(_app_data, _file,

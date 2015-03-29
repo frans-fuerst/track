@@ -78,11 +78,36 @@ class matrix_table_model(QtCore.QAbstractTableModel):
 
 class app_info():
     
-    def __init__(self, windowtitle, cmdline):
+    def __init__(self, windowtitle="", cmdline=""):
         self._wndtitle = windowtitle
         self._cmdline = cmdline
-        self._cat = 0
+        self._category = 0
         self._count = 0
+        
+    def __eq__(self, other):
+        if not self._wndtitle == other._wndtitle:
+            return False
+        if not self._cmdline == other._cmdline:
+            return False
+        if not self._category == other._category:
+            return False
+        if not self._count == other._count:
+            return False
+        return True
+    
+    def __hash__(self):
+        x = hash((self._wndtitle, self._cmdline))
+        return x
+    
+    def __str__(self):
+        return "%s - [%d %d]" % (self._wndtitle, self._category, self._count)
+    
+    def load(self, data):
+        self._wndtitle, self._category, self._count, self._cmdline = data
+        return self
+    
+    def __data__(self):  # const
+        return (self._wndtitle, self._category, self._count, self._cmdline)
 
     def generate_identifier(self):
         return self._wndtitle
@@ -96,8 +121,26 @@ class minute():
         if apps is None:
             self._apps = {}
         else:
-            self._apps = apps # app -> count
+            self._apps = apps  # app_info -> count
 
+    def __eq__(self, other):
+        if not self._category == other._category:
+            return False
+        if not self._apps == other._apps:
+            for a, c in self._apps.items():
+                print("s: %s:'%s' - %d" % (hex(id(a)), a, c))
+            for a, c in other._apps.items():
+                print("o: %s - %d" % (a, c))
+            return False
+        return True
+    
+    def dump(self):
+        print("category %d" % self._category)
+            
+    def init(self, data):
+        self._category, self._apps = data
+        return self
+    
     def _rebuild(self):
         if len(self._apps) == 0:
             return 0  # todo: need undefined
@@ -105,10 +148,10 @@ class minute():
         _categories = {} # category -> sum
         for a, c in self._apps.items():
             try:
-                if a._cat not in _categories:
-                    _categories[a._cat] = c
+                if a._category not in _categories:
+                    _categories[a._category] = c
                 else:
-                    _categories[a._cat] += c
+                    _categories[a._category] += c
             except:
                 pass
 
@@ -149,11 +192,13 @@ class active_applications(matrix_table_model):
     def __init__(self, parent, *args):
         matrix_table_model.__init__(self, parent, *args)
         self.header = ['application title', 'time', 'category']
-        self._apps = {}     # app identifier => app_info instance
-        self._minutes = {}  # i_min          => minute
         self._index_min = None
         self._index_max = None
         self._sorted_keys = []
+        
+        # to be persisted
+        self._apps = {}     # app identifier => app_info instance
+        self._minutes = {}  # i_min          => minute
 
     def rowCount(self, parent):
         return len(self._sorted_keys)
@@ -162,23 +207,31 @@ class active_applications(matrix_table_model):
         return 3
 
     def _data(self, row, column):  # const
-        #todo
-        
         if column == 0:
             return self._apps[self._sorted_keys[row]]._wndtitle
-        if column == 1:
+        elif column == 1:
             return secs_to_str(self._apps[self._sorted_keys[row]]._count)
-        if column == 2:
-            return self._apps[self._sorted_keys[row]]._cat
-        #    return 
+        elif column == 2:
+            return self._apps[self._sorted_keys[row]]._category
         return 0
+    
+    def __eq__(self, other):
+        if not self._apps == other._apps:
+            return False
+        if not self._minutes == other._minutes:
+            for m in self._minutes:
+                pass
+            return False
+        return True
 
     def _sort(self):
         # print([x[1]._count for x in self._apps.items()])
         # print(self._sort_col)
         if self._sort_col == 0:
             self._sorted_keys = [x[0] for x in sorted(
-                self._apps.items(), key=lambda x: x[1]._wndtitle, reverse=self._sort_reverse)]
+                self._apps.items(), 
+                key=lambda x: x[1]._wndtitle, 
+                reverse=self._sort_reverse)]
         elif self._sort_col == 1:
             self._sorted_keys = [x[0] for x in sorted(
                 self._apps.items(), 
@@ -186,47 +239,73 @@ class active_applications(matrix_table_model):
                 reverse=self._sort_reverse)]
         elif self._sort_col == 2:
             self._sorted_keys = [x[0] for x in sorted(
-                self._apps.items(), key=lambda x: x[1]._cat,reverse=self._sort_reverse)]
+                self._apps.items(), 
+                key=lambda x: x[1]._category, 
+                reverse=self._sort_reverse)]
     
-    def __dict__(self):  # const
-        # todo
-        pass
+    def __data__(self):  # const
+        """ we have to create an indexed list here because the minutes
+            dict has to store references to app_info.
+            intermediate: _indexed: {app_id => (i_index, app_info)} 
+            result:    app:     [app_info]
+                       minutes: {i_minute: (i_category, [(app_info, i_count)])}
+            
+            """
+        _indexed = {a: i for i, a in enumerate(self._apps.values())}
+        _apps = [d[1] for d in sorted([(e[1], e[0].__data__()) 
+                                       for e in _indexed.items()])]
+        # print(_apps)
+        _minutes = {i: (m._category, [(_indexed[a], c) 
+                                      for a, c in m._apps.items()])
+                    for i, m in self._minutes.items()}
+        
+        #print(_minutes)
+                
+        return { 'apps': _apps,
+                 'minutes': _minutes}
 
     def from_dict(self, data):
-        # todo
-        pass
+        assert 'apps' in data
+        assert 'minutes' in data
+        _a = data['apps']
+        _indexed = [app_info().load(d) for d in _a]
+        _m = data['minutes']
+        _minutes = {
+            i : minute().init(
+                (
+                    m[0],
+                    {
+                        _indexed[a]: c for a, c in m[1]
+                    }
+                )
+            ) 
+            for i, m in _m.items()
+        }
+        
+        # x = {i:len({a:0 for a in i}) for i in l}
+        _apps = {a.generate_identifier(): a for a in _indexed}
+        self.layoutAboutToBeChanged.emit()
+
+        self._apps = _apps
+        self._minutes = _minutes
+
+        if len(self._minutes) > 0:
+            self._index_min = min(self._minutes.keys())
+            self._index_max = max(self._minutes.keys())
+        else:
+            self._index_min = None
+            self._index_max = None
+            
+        self._sort()
+        self.layoutChanged.emit()
+        
+        print(_minutes)
     
     def begin_index(self):  # const
         return self._index_min if self._index_min else 0
 
     def end_index(self):  # const
         return self._index_max if self._index_max else 0
-
-    '''
-    def get_indexed_data(self):
-        return {self._apps.keys()[i]:(i, self._apps.values()[i])
-                    for i in range(len(self._apps))}
-
-    def set_indexed_data(self, data):
-        self.layoutAboutToBeChanged.emit()
-
-        #_appdata = [app_count_category([a[0], a[1]])
-        #                for a in _struct['apps']]
-
-        for acc in data:
-            print(acc.__dict__)
-        global global_app_categories
-        print(global_app_categories)
-        print("============")
-        global_app_categories = {acc._app: 0 for acc in data}
-        print(global_app_categories)
-
-        self._mylist = data
-        self._apps = {acc._app._identifier: acc for acc in self._mylist}
-
-        self._sort()
-        self.layoutChanged.emit()
-    '''
 
     def update(self, minute_index, app):
         self.layoutAboutToBeChanged.emit()
@@ -240,7 +319,7 @@ class active_applications(matrix_table_model):
                 app._category = 1
             else:
                 app._category = 0
-                
+        # print([a._category for a in self._apps.values()])
         _app = self._apps[_app_id]
         _app._count += 1
 
@@ -296,31 +375,25 @@ class time_tracker():
         pass
 
     def load(self):
-        return
-        _file_name = "load.json"
+        _file_name = "track.json"
         with open(_file_name) as _file:
             _struct = json.load(_file)
 
         # todo - which keys?
         self._applications.from_dict(_struct)
 
-        # with lock?
-        self._minutes = _new_minutes
-        # print("<<<<<")
-
 
     def save(self):
-        return
         _file_name = "track.json"
-        _app_data = self._applications.get_indexed_data()
-        # print(_app_data)
-
-        # todo
-        _struct = {            }
+        _app_data = self._applications.__data__()
         with open(_file_name, 'w') as _file:
-            json.dump(_struct, _file,
-                      sort_keys=True,
-                      indent=4, separators=(',', ': '))
+            json.dump(_app_data, _file,
+                      sort_keys=True) #, indent=4, separators=(',', ': '))
+            
+        _test_model = active_applications(None)
+        _test_model.from_dict(_app_data)
+        assert self._applications == _test_model
+        
 
     def get_applications_model(self):
         return self._applications

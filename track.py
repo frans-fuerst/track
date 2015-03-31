@@ -26,20 +26,25 @@ class track_ui(QtGui.QMainWindow):
         self._tracker.load()
         
         self.initUI()
-        self.frm_timegraph.setTracker(self._tracker)
-        self.tbl_active_applications.setModel(self._tracker.get_applications_model())
-        
-        self.tbl_active_applications.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
 
+        self.frm_timegraph.setTracker(self._tracker)
+
+        self.tbl_active_applications.setModel(self._tracker.get_applications_model())
+        self.tbl_active_applications.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
         self.tbl_active_applications.setColumnWidth(0, self.tbl_active_applications.width() * 0.7)
         self.tbl_active_applications.setColumnWidth(1, self.tbl_active_applications.width() * 0.1)
+
+        self.tbl_category_rules.setModel(self._tracker.get_rules_model())
+        self.tbl_category_rules.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
+        self.tbl_category_rules.setColumnWidth(0, self.tbl_category_rules.width() * 0.05)
+        self.tbl_category_rules.setColumnWidth(1, self.tbl_category_rules.width() * 0.8)
         
         self.show()
         
     def initUI(self):      
         uic.loadUi('track.ui', self)
         
-        self.setGeometry(300, 300, 700, 500)
+        self.setGeometry(300, 0, 700, 680)  # todo: maximize vertically
         self.setWindowTitle('Track')
         # self.lbl_color_work.setColor(self.lbl_idle.backgroundRole(), QtCore.Qt.cyan)
 

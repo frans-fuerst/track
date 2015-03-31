@@ -12,7 +12,7 @@
 - [ ] click and mark sections for summary and subsequent assignments
 - [ ] allow correction of work day start
 - [ ] get parent of window (e.g. 'file changed')
-
+- [ ] command line tool for statistics, tests etc.
 
 #### version 1.0
 - [ ] find a better name (suggestions?) (time, time machine, eta, invest)
@@ -23,13 +23,15 @@
 - [ ] allow detailed per minute information when hovering over time bar
 - [ ] support regex rules for work/private
 - [ ] preprocess title
-- [ ] start/end of working day should not be application time but usage
-- [ ] recognize end of day and start over
-- [ ] save day-log and resume on restart
-- [x] display all times with h:mm
-- [x] add total, active, private ratio
 
 ### release notes
+
+#### 2015.03.30
+- [x] start/end of working day is defined by usage rather than run time
+- [x] recognize end of day and start over
+- [x] save day-log and resume on restart
+- [x] display all times with h:mm
+- [x] add total, active, private ratio
 
 #### 2015.03.22
 - [x] work/private/inactive states in time bar

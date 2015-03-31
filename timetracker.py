@@ -10,6 +10,7 @@ import applicationinfo
 import json
 import operator
 import time
+import re
 
 
 def secs_to_str(mins):
@@ -24,6 +25,7 @@ def secs_to_str(mins):
 
 def today_str():
     return datetime.fromtimestamp(time.time()).strftime('%Y%m%d')
+
 
 def today_int():
     now = datetime.now()
@@ -84,6 +86,50 @@ class matrix_table_model(QtCore.QAbstractTableModel):
             key=lambda tup: tup[self._sort_col],
             reverse=self._sort_reverse)
 
+
+class rules_model(matrix_table_model):
+
+    def __init__(self, parent, *args):
+        matrix_table_model.__init__(self, parent, *args)
+        self.header = ['M', 'regex', 'category']
+        self._rules = [(".* - Mozilla Firefox.*", 1),
+                       (".*gedit.*", 0)]
+        self._matching = []
+
+    def columnCount(self, parent):  # const
+        return 3
+
+    def rowCount(self, parent):
+        return len(self._rules) + 1
+
+    def _data(self, row, column):  # const
+        if row == 0:
+            return(None, 'new', None)[column]
+        if column == 0:
+            if len(self._matching) >= row and self._matching[row - 1]:
+                return 'X' 
+        if column == 1:
+            return self._rules[row - 1][0]
+        if column == 2:
+            return self._rules[row - 1][1]
+        return None
+    
+    def __data__(self):  # const
+        return ""
+
+    def from_dict(self, data):
+        pass
+
+    def highlight_string(self, string):
+        self.layoutAboutToBeChanged.emit()
+        self._matching = []
+        for i, (r, c) in enumerate(self._rules):
+            if re.search(r, string):
+                print("'%s' matches" % r)
+                self._matching.append(True)
+            else:
+                self._matching.append(False)
+        self.layoutChanged.emit()
 
 class app_info():
     
@@ -388,6 +434,7 @@ class time_tracker():
 
         # -- persist
         self._applications = active_applications(parent)
+        self._rules = rules_model(parent)
 
     def __eq__(self, other):
         return False
@@ -409,7 +456,6 @@ class time_tracker():
 
         self._applications.from_dict(_struct)
 
-
     def save(self, filename=None):
         _file_name = filename if filename else "track-%s.json" % today_str() 
         # print(_file_name)
@@ -425,6 +471,9 @@ class time_tracker():
 
     def get_applications_model(self):
         return self._applications
+
+    def get_rules_model(self):
+        return self._rules
 
     def update(self):
         try:
@@ -445,6 +494,9 @@ class time_tracker():
             self._idle_current = idle.getIdleSec()
             self._current_app_title = applicationinfo.get_active_window_title()
             self._current_process_exe = applicationinfo.get_active_process_name()
+
+            self._rules.highlight_string(self._current_app_title)
+
             if self._idle_current > 10:
                 self._user_is_active = False
                 return

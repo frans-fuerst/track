@@ -115,7 +115,7 @@ class rules_model(matrix_table_model):
 
     def _data(self, row, column):  # const
         if row == 0:
-            return(None, 'new', None)[column]
+            return(None, ' - add new - ', None)[column]
         if column == 0:
             if len(self._matching) >= row and self._matching[row - 1]:
                 return 'X' 
@@ -136,10 +136,17 @@ class rules_model(matrix_table_model):
             self._matching = []
             for i, (r, c) in enumerate(self._rules):
                 if re.search(r, string):
-                    print("'%s' matches" % r)
+                    # print("'%s' matches" % r)
                     self._matching.append(True)
                 else:
                     self._matching.append(False)
+
+    def get_first_matching_key(self, app):
+        _string = app.generate_identifier()
+        for r, c in self._rules:
+            if re.search(r, _string):
+                return c
+        return 0
 
 class app_info():
     
@@ -386,10 +393,10 @@ class active_applications(matrix_table_model):
             if _app_id not in self._apps:
                 self._apps[_app_id] = app
 
-                if "Firefox" in _app_id:
-                    app._category = 1
-                else:
-                    app._category = 0
+#                if "Firefox" in _app_id:
+#                    app._category = 1
+#                else:
+#                    app._category = 0
             # print([a._category for a in self._apps.values()])
             _app = self._apps[_app_id]
             _app._count += 1
@@ -432,7 +439,7 @@ class time_tracker():
     """
     def __init__(self, parent):
         self._idle_current = 0
-        self._max_minute = 0  # does not need to be highest minute index
+        self._current_minute = 0  # does not need to be highest minute index
         self._current_app_title = ""
         self._current_process_exe = ""
         self._user_is_active = True
@@ -484,17 +491,17 @@ class time_tracker():
     def update(self):
         try:
             _today = today_int()
-            self._max_minute = minutes_since_midnight()
+            self._current_minute = minutes_since_midnight()
 
             if self._active_day < _today:
-                print("current minute is %d - it's midnight" % self._max_minute)
+                print("current minute is %d - it's midnight" % self._current_minute)
                 #midnight!
                 self.save('track-log-%d.json' % self._active_day)
                 self.clear()
 
             self._active_day = _today
 
-            self._max_minute = minutes_since_midnight()
+            self._current_minute = minutes_since_midnight()
 
             self._user_is_active = True
 
@@ -508,10 +515,13 @@ class time_tracker():
                 self._user_is_active = False
                 return
 
+            _app = app_info(self._current_app_title, 
+                            self._current_process_exe)
+            _app._category = self._rules.get_first_matching_key(_app)
+
             _app = self._applications.update(
-                        self._max_minute,
-                        app_info(self._current_app_title, 
-                                 self._current_process_exe))
+                        self._current_minute,
+                        _app)
 
         except applicationinfo.UncriticalException as e:
             pass
@@ -524,7 +534,7 @@ class time_tracker():
         return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
 
     def now(self):
-        _s = self._max_minute
+        _s = self._current_minute
         return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
 
     def is_active(self, minute):
@@ -534,7 +544,7 @@ class time_tracker():
         return self._applications.is_private(minute)
 
     def get_time_total(self):
-        return self._max_minute - self._applications.begin_index() + 1
+        return self._current_minute - self._applications.begin_index() + 1
 
     def get_time_active(self):
         return len(self._applications._minutes)
@@ -554,8 +564,11 @@ class time_tracker():
     def get_time_idle(self):
         return self.get_time_total() - len(self._applications._minutes)
 
+    def get_max_minute(self):
+        return self._tracker.end_index()
+
     def get_current_minute(self):
-        return self._max_minute
+        return self._current_minute
 
     def get_idle(self):
         return self._idle_current

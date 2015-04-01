@@ -12,6 +12,18 @@ import operator
 import time
 import re
 
+class pushd:
+    def __init__(self, dirname):
+        self.cwd = os.path.realpath(dirname)
+
+    def __enter__(self):
+        self.original_dir = os.getcwd()
+        os.chdir(self.cwd)
+        return self
+
+    def __exit__(self, type, value, tb):
+        os.chdir(self.original_dir)
+
 
 def secs_to_str(mins):
     _result = ""
@@ -29,7 +41,7 @@ def today_str():
 
 def today_int():
     now = datetime.now()
-    return now.year*10000 + now.month * 100 + now.day
+    return now.year * 10000 + now.month * 100 + now.day
 
 
 def seconds_since_midnight():
@@ -467,7 +479,6 @@ class time_tracker():
         _test_model = active_applications(None)
         _test_model.from_dict(_app_data)
         assert self._applications == _test_model
-        
 
     def get_applications_model(self):
         return self._applications
@@ -478,14 +489,15 @@ class time_tracker():
     def update(self):
         try:
             _today = today_int()
+            self._max_minute = minutes_since_midnight()
 
             if self._active_day < _today:
-                print("current minute is %d - it's midnight" % _current_minute)
+                print("current minute is %d - it's midnight" % self._max_minute)
                 #midnight!
                 self.save('track-log-%d.json' % self._active_day)
                 self.clear()
 
-            self._active_day = today_int()
+            self._active_day = _today
 
             self._max_minute = minutes_since_midnight()
 

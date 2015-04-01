@@ -15,11 +15,11 @@ class UncriticalException(Exception):
 # http://thp.io/2007/09/x11-idle-time-and-focused-window-in.html
 
 def get_stdout(command):
-    """ run a command and return stdout 
+    """ run a command and return stdout
     """
     _p = subprocess.Popen(
-                args=command, 
-                stdout=subprocess.PIPE, 
+                args=command,
+                stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,)
     _stdout, _stderr =_p.communicate()
     if _p.returncode is not 0:
@@ -38,13 +38,13 @@ def get_active_window_title():
                 _id_w = get_stdout(['xprop', '-id', id_, 'WM_NAME', '_NET_WM_NAME'])
                 # _id_w = get_stdout(['xprop', '-id', id_])
                 break
-    
+
         if _id_w is not None:
-    
+
             for line in _id_w:
                 match = re.match(".*WM_NAME\(\w+\) = (?P<name>.+)$", line)
                 if match != None:
-                    
+
                     _result = match.group("name").decode().strip('"')
                     if _result.strip() == "":
                         pass
@@ -67,5 +67,5 @@ def get_active_process_name():
         # print(process.cmdline)
         return ' '.join(process.cmdline)
     except (psutil.NoSuchProcess, AttributeError) as e:
-        raise UncriticalException()        
+        raise UncriticalException()
 

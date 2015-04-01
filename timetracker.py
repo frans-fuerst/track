@@ -12,17 +12,17 @@ import operator
 import time
 import re
 
-class pushd:
-    def __init__(self, dirname):
-        self.cwd = os.path.realpath(dirname)
+
+class change_emitter:
+    def __init__(self, emitter):
+        self._emitter = emitter
 
     def __enter__(self):
-        self.original_dir = os.getcwd()
-        os.chdir(self.cwd)
+        self._emitter.layoutAboutToBeChanged.emit()
         return self
 
     def __exit__(self, type, value, tb):
-        os.chdir(self.original_dir)
+        self._emitter.layoutChanged.emit()
 
 
 def secs_to_str(mins):
@@ -87,11 +87,10 @@ class matrix_table_model(QtCore.QAbstractTableModel):
         return None
 
     def sort(self, col, order):
-        self.layoutAboutToBeChanged.emit()
-        self._sort_col = col
-        self._sort_reverse = (order != QtCore.Qt.DescendingOrder)
-        self._sort()
-        self.layoutChanged.emit()
+        with change_emitter(self):
+            self._sort_col = col
+            self._sort_reverse = (order != QtCore.Qt.DescendingOrder)
+            self._sort()
 
     def _sort(self):
         self._mylist.sort(
@@ -133,15 +132,14 @@ class rules_model(matrix_table_model):
         pass
 
     def highlight_string(self, string):
-        self.layoutAboutToBeChanged.emit()
-        self._matching = []
-        for i, (r, c) in enumerate(self._rules):
-            if re.search(r, string):
-                print("'%s' matches" % r)
-                self._matching.append(True)
-            else:
-                self._matching.append(False)
-        self.layoutChanged.emit()
+        with change_emitter(self):
+            self._matching = []
+            for i, (r, c) in enumerate(self._rules):
+                if re.search(r, string):
+                    print("'%s' matches" % r)
+                    self._matching.append(True)
+                else:
+                    self._matching.append(False)
 
 class app_info():
     
@@ -268,12 +266,11 @@ class active_applications(matrix_table_model):
         self._minutes = {}  # i_min          => minute
 
     def clear(self):
-        self.layoutAboutToBeChanged.emit()  # todo: this is not threadsafe
-        self._index_min = None
-        self._index_max = None
-        self._apps = {}     # app identifier => app_info instance
-        self._minutes = {}  # i_min          => minute
-        self.layoutChanged.emit()
+        with change_emitter(self):
+            self._index_min = None
+            self._index_max = None
+            self._apps = {}     # app identifier => app_info instance
+            self._minutes = {}  # i_min          => minute
 
     def rowCount(self, parent):
         return len(self._sorted_keys)
@@ -359,20 +356,19 @@ class active_applications(matrix_table_model):
         
         # x = {i:len({a:0 for a in i}) for i in l}
         _apps = {a.generate_identifier(): a for a in _indexed}
-        self.layoutAboutToBeChanged.emit()
+        with change_emitter(self):
 
-        self._apps = _apps
-        self._minutes = _minutes
+            self._apps = _apps
+            self._minutes = _minutes
 
-        if len(self._minutes) > 0:
-            self._index_min = min(self._minutes.keys())
-            self._index_max = max(self._minutes.keys())
-        else:
-            self._index_min = None
-            self._index_max = None
-            
-        self._sort()
-        self.layoutChanged.emit()
+            if len(self._minutes) > 0:
+                self._index_min = min(self._minutes.keys())
+                self._index_max = max(self._minutes.keys())
+            else:
+                self._index_min = None
+                self._index_max = None
+                
+            self._sort()
         
         # print(_minutes)
     
@@ -383,35 +379,34 @@ class active_applications(matrix_table_model):
         return self._index_max if self._index_max else 0
 
     def update(self, minute_index, app):
-        self.layoutAboutToBeChanged.emit()  # todo: this is not threadsafe
+        with change_emitter(self):
         
-        _app_id = app.generate_identifier()
+            _app_id = app.generate_identifier()
 
-        if _app_id not in self._apps:
-            self._apps[_app_id] = app
+            if _app_id not in self._apps:
+                self._apps[_app_id] = app
 
-            if "Firefox" in _app_id:
-                app._category = 1
-            else:
-                app._category = 0
-        # print([a._category for a in self._apps.values()])
-        _app = self._apps[_app_id]
-        _app._count += 1
+                if "Firefox" in _app_id:
+                    app._category = 1
+                else:
+                    app._category = 0
+            # print([a._category for a in self._apps.values()])
+            _app = self._apps[_app_id]
+            _app._count += 1
 
-        if minute_index not in self._minutes:
-            self._minutes[minute_index] = minute()
-            if not self._index_min or self._index_min > minute_index:
-                self._index_min = minute_index
-                
-            if not self._index_max or self._index_max < minute_index:
-                self._index_max = minute_index
+            if minute_index not in self._minutes:
+                self._minutes[minute_index] = minute()
+                if not self._index_min or self._index_min > minute_index:
+                    self._index_min = minute_index
+                    
+                if not self._index_max or self._index_max < minute_index:
+                    self._index_max = minute_index
 
-        self._minutes[minute_index].add(_app)
+            self._minutes[minute_index].add(_app)
 
-        self._sort()
+            self._sort()
 
-        # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
-        self.layoutChanged.emit()
+            # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
 
     def is_active(self, minute):
         if minute in self._minutes:

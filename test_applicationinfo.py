@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-import idle
-import time
-import applicationinfo
+from desktop_usage_info import idle
+from desktop_usage_info import applicationinfo
 
+import time
 
 if __name__ == '__main__':
     while True:

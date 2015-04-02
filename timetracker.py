@@ -5,8 +5,9 @@ from PyQt4 import QtCore #, Qt, uic, QtGui
 
 from datetime import datetime
 
-import idle
-import applicationinfo
+from desktop_usage_info import idle
+from desktop_usage_info import applicationinfo
+
 import json
 import operator
 import time

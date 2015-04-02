@@ -68,7 +68,7 @@ try:
 
     rootwindow = libX11.XDefaultRootWindow(dpy_p)
     xss_available = True
-except OSError, e:
+except OSError as e:
     # Logging?
     xss_available = False
 
@@ -95,5 +95,5 @@ if __name__ == '__main__':
     import time
     while True:
         time.sleep(0.5)
-        print getIdleSec()
+        print(getIdleSec())
 

@@ -31,13 +31,13 @@ class track_ui(QtGui.QMainWindow):
 
         self.tbl_active_applications.setModel(self._tracker.get_applications_model())
         self.tbl_active_applications.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
-        self.tbl_active_applications.setColumnWidth(0, self.tbl_active_applications.width() * 0.7)
+        self.tbl_active_applications.setColumnWidth(0, self.tbl_active_applications.width() * 0.75)
         self.tbl_active_applications.setColumnWidth(1, self.tbl_active_applications.width() * 0.1)
 
         self.tbl_category_rules.setModel(self._tracker.get_rules_model())
         self.tbl_category_rules.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
         self.tbl_category_rules.setColumnWidth(0, self.tbl_category_rules.width() * 0.05)
-        self.tbl_category_rules.setColumnWidth(1, self.tbl_category_rules.width() * 0.8)
+        self.tbl_category_rules.setColumnWidth(1, self.tbl_category_rules.width() * 0.80)
         
         self.show()
         

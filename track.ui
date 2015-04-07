@@ -30,7 +30,7 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>700</width>
+          <width>16777215</width>
           <height>150</height>
          </size>
         </property>
@@ -157,7 +157,7 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>700</width>
+          <width>16777215</width>
           <height>100</height>
          </size>
         </property>
@@ -646,12 +646,6 @@
           <height>0</height>
          </size>
         </property>
-        <property name="maximumSize">
-         <size>
-          <width>700</width>
-          <height>16777215</height>
-         </size>
-        </property>
         <property name="sortingEnabled">
          <bool>true</bool>
         </property>
@@ -672,12 +666,6 @@
          <size>
           <width>700</width>
           <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>700</width>
-          <height>16777215</height>
          </size>
         </property>
         <property name="sortingEnabled">

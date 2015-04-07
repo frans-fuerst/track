@@ -13,8 +13,12 @@
 - [ ] allow correction of work day start
 - [ ] get parent of window (e.g. 'file changed')
 - [ ] command line tool for statistics, tests etc.
+- [ ] ability to import/combine day-charts
 
 #### version 1.0
+- [ ] autosave
+- [ ] highlight current app
+- [ ] bold titles
 - [ ] find a better name (suggestions?) (time, time machine, eta, invest)
 - [ ] generate distributio n script for Linux
 - [ ] generate distribution script for Windows

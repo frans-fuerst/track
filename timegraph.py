@@ -23,6 +23,12 @@ class timegraph(QtGui.QFrame):
         self.drawPoints(qp)
         qp.end()
 
+    def mouseMoveEvent(self, e):
+        print("graph: move  %s" % e)
+
+    def mousePressEvent(self, e):
+        print("graph: press %s" % e)
+
     def drawPoints(self, qp):
         x = self._tracker.begin_index()
         _start_index = self._tracker.begin_index() - 50

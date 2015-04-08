@@ -22,11 +22,11 @@
 - [ ] find a better name (suggestions?) (time, time machine, eta, invest)
 - [ ] generate distributio n script for Linux
 - [ ] generate distribution script for Windows
-- [ ] support to Python 3
-- [ ] support Windows
+- [ ] support to Python 3 (needs ckwnd for python3)
 - [ ] allow detailed per minute information when hovering over time bar
 - [ ] support regex rules for work/private
 - [ ] preprocess title
+- [ ] support Windows
 
 ### release notes
 

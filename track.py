@@ -107,10 +107,6 @@ class track_ui(QtGui.QMainWindow):
     def closeEvent(self, event):
         self._tracker.save()
 
-    def mouseMoveEvent(self, e):
-        print("main: move %s" % e.x())
-        #print(dir(e))
-
     def system_signal(self, s):
         sig_name = "unknown"
         if s == signal.SIGABRT:

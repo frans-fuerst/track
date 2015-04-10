@@ -527,9 +527,16 @@ class time_tracker():
         except applicationinfo.UncriticalException as e:
             pass
 
+    def info(self, minute):
+        if not self._applications.is_active(minute):
+            return "none"
+        _m = self._applications._minutes[minute]._apps
+        _a = max(_m, key=lambda x:_m[x])
+        return _a
+
     def begin_index(self):
         return self._applications.begin_index()
-
+    
     def start_time(self):
         _s = self._applications.begin_index()
         return("%0.2d:%0.2d" % (int(_s/60), _s % 60))

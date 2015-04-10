@@ -3,11 +3,21 @@
 
 from PyQt4 import QtGui, QtCore, Qt, uic
 
+def mins_to_str(mins):
+    _result = ""
+    _minutes = mins
+    if _minutes >= 60:
+        _result = str(int(_minutes / 60))+"h "
+        _minutes %= 60
+    _result += str(_minutes ) + "m"
+    return _result
+
 class timegraph(QtGui.QFrame):
 
     def __init__(self, parent):
         self._tracker = None
         super(timegraph, self).__init__(parent)
+        self.setMouseTracking(True)
 
     def setTracker(self, tracker):
         self._tracker = tracker
@@ -24,10 +34,11 @@ class timegraph(QtGui.QFrame):
         qp.end()
 
     def mouseMoveEvent(self, e):
-        print("graph: move  %s" % e)
-
-    def mousePressEvent(self, e):
-        print("graph: press %s" % e)
+        _index = self._tracker.begin_index() - 50 + e.x() - 1
+        _info = mins_to_str(_index) + ": " + str(self._tracker.info(_index))
+        print("time: %d/%s" % (
+            (e.x(), _info)))
+        self.setToolTip(_info)
 
     def drawPoints(self, qp):
         x = self._tracker.begin_index()

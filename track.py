@@ -1,10 +1,16 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-from PyQt4 import QtGui, QtCore, Qt, uic
 import sys
 import signal
 import logging
+try:
+    from PyQt4 import QtGui, QtCore, Qt1, uic
+except:
+    print("you have to have PyQt4 for your version of Python (%s) installed" 
+          % ".".join(str(x) for x in sys.version_info))
+
+    sys.exit(-1)
 
 import timetracker
 

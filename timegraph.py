@@ -7,9 +7,9 @@ def mins_to_str(mins):
     _result = ""
     _minutes = mins
     if _minutes >= 60:
-        _result = str(int(_minutes / 60))+"h "
+        _result = str(int(_minutes / 60))+":"
         _minutes %= 60
-    _result += str(_minutes ) + "m"
+    _result += str(_minutes )
     return _result
 
 class timegraph(QtGui.QFrame):
@@ -36,8 +36,8 @@ class timegraph(QtGui.QFrame):
     def mouseMoveEvent(self, e):
         _index = self._tracker.begin_index() - 50 + e.x() - 1
         _info = mins_to_str(_index) + ": " + str(self._tracker.info(_index))
-        print("time: %d/%s" % (
-            (e.x(), _info)))
+        # print("time: %d/%s" % (
+        #     (e.x(), _info)))
         self.setToolTip(_info)
 
     def drawPoints(self, qp):

@@ -26,7 +26,7 @@
 - [ ] allow detailed per minute information when hovering over time bar
 - [ ] support regex rules for work/private
 - [ ] preprocess title
-- [ ] support Windows
+- [x] support Windows
 
 ### release notes
 

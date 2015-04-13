@@ -36,6 +36,16 @@ def secs_to_str(mins):
     return _result
 
 
+def mins_to_str(mins):
+    _result = ""
+    _minutes = mins
+    if _minutes >= 60:
+        _result = str(int(_minutes / 60))+"h "
+        _minutes %= 60
+    _result += str(_minutes ) + "m"
+    return _result
+
+
 def today_str():
     return datetime.fromtimestamp(time.time()).strftime('%Y%m%d')
 
@@ -239,7 +249,10 @@ class minute():
         else:
             self._apps[app_instance] += 1
         self._rebuild()
-        
+
+    def get_main_app(self):
+        _a = max(self._apps, key=lambda x: self._apps[x])
+        return _a._wndtitle
 
 # todo: separate qt model
 class active_applications(matrix_table_model):
@@ -416,6 +429,46 @@ class active_applications(matrix_table_model):
 
             # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
 
+    def get_chunk_size(self, minute):
+        _begin = minute
+        _end = minute
+
+        if not self.is_active(minute):
+            return (_begin, _end)
+
+        _a = self._minutes[minute].get_main_app()
+        _minutes = sorted(self._minutes.keys())
+        _i = _minutes.index(minute)
+        # print(len(_minutes))
+
+        # print(minute)
+        # print(_i)
+        # print(_minutes[_minutes.index(minute)])
+        # print(list(reversed(range(_i))))
+        for i in reversed(range(_i)):
+            if _begin - _minutes[i] > 1:
+                break
+            if self._minutes[_minutes[i]].get_main_app() == _a:
+                _begin = _minutes[i]
+
+        # print(list(range(_i + 1, len(_minutes))))
+        for i in range(_i + 1, len(_minutes)):
+            if _minutes[i] - _end > 1:
+                break
+            if self._minutes[_minutes[i]].get_main_app() == _a:
+                _end = _minutes[i]
+
+        # todo: currently gap is max 1min - make configurable
+        return (_begin, _end)
+
+    def info(self, minute):
+        if not self.is_active(minute):
+            return None
+        _cs = self.get_chunk_size(minute)
+        # print(mins_to_str(_cs[1]-_cs[0]) + " / " + str(_cs))
+        return "%s (%s)" % (self._minutes[minute].get_main_app(),
+                           mins_to_str(_cs[1]-_cs[0]))
+
     def is_active(self, minute):
         if minute in self._minutes:
             return True
@@ -528,11 +581,7 @@ class time_tracker():
             pass
 
     def info(self, minute):
-        if not self._applications.is_active(minute):
-            return "none"
-        _m = self._applications._minutes[minute]._apps
-        _a = max(_m, key=lambda x:_m[x])
-        return _a
+        return self._applications.info(minute)
 
     def begin_index(self):
         return self._applications.begin_index()

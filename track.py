@@ -14,15 +14,6 @@ except:
 
 import timetracker
 
-def mins_to_str(mins):
-    _result = ""
-    _minutes = mins
-    if _minutes >= 60:
-        _result = str(int(_minutes / 60))+"h "
-        _minutes %= 60
-    _result += str(_minutes ) + "m"
-    return _result
-
 class track_ui(QtGui.QMainWindow):
 
     def __init__(self):
@@ -89,11 +80,11 @@ class track_ui(QtGui.QMainWindow):
             self.lbl_times.setText(
                 "T: %s  A: %s (%.1f)  W: %s (%.1f)  "
                 "P: %s (%.1f)  I: %s (%.1f)" %
-                (mins_to_str(_time_total),
-                 mins_to_str(_time_active), _time_active / float(_time_total), 
-                 mins_to_str(_time_work), _time_work / float(_time_total),
-                 mins_to_str(_time_private), _time_private / float(_time_total),
-                 mins_to_str(_time_idle), _time_idle / float(_time_total)))
+                (timetracker.mins_to_str(_time_total),
+                 timetracker.mins_to_str(_time_active), _time_active / float(_time_total), 
+                 timetracker.mins_to_str(_time_work), _time_work / float(_time_total),
+                 timetracker.mins_to_str(_time_private), _time_private / float(_time_total),
+                 timetracker.mins_to_str(_time_idle), _time_idle / float(_time_total)))
 
 
             self.lbl_start_time.setText("%s - %s" % (

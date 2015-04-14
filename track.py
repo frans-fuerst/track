@@ -5,7 +5,7 @@ import sys
 import signal
 import logging
 try:
-    from PyQt4 import QtGui, QtCore, Qt1, uic
+    from PyQt4 import QtGui, QtCore, Qt, uic
 except:
     print("you have to have PyQt4 for your version of Python (%s) installed" 
           % ".".join(str(x) for x in sys.version_info))

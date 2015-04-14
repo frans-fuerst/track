@@ -433,40 +433,52 @@ class active_applications(matrix_table_model):
         _begin = minute
         _end = minute
 
-        if not self.is_active(minute):
+        if self.is_active(minute):
+            _a = self._minutes[minute].get_main_app()
+        else:
+            _a = None
+
+        _minutes = sorted(self._minutes.keys())
+
+        _lower_range = [i for i in _minutes if i < minute]
+        _upper_range = [i for i in _minutes if i > minute]
+
+        if _a is None:
+            _begin = _lower_range[-1] if _lower_range != [] else _begin
+            _end = _upper_range[0] if _upper_range != [] else _end
             return (_begin, _end)
 
-        _a = self._minutes[minute].get_main_app()
-        _minutes = sorted(self._minutes.keys())
-        _i = _minutes.index(minute)
         # print(len(_minutes))
 
         # print(minute)
         # print(_i)
         # print(_minutes[_minutes.index(minute)])
         # print(list(reversed(range(_i))))
-        for i in reversed(range(_i)):
-            if _begin - _minutes[i] > 1:
+        for i in reversed(_lower_range):
+            if _begin - i > 1:
                 break
-            if self._minutes[_minutes[i]].get_main_app() == _a:
-                _begin = _minutes[i]
+            if self._minutes[i].get_main_app() == _a:
+                _begin = i
 
         # print(list(range(_i + 1, len(_minutes))))
-        for i in range(_i + 1, len(_minutes)):
-            if _minutes[i] - _end > 1:
+        for i in _upper_range:
+            if i - _end > 1:
                 break
-            if self._minutes[_minutes[i]].get_main_app() == _a:
-                _end = _minutes[i]
+            if self._minutes[i].get_main_app() == _a:
+                _end = i
 
         # todo: currently gap is max 1min - make configurable
         return (_begin, _end)
 
     def info(self, minute):
-        if not self.is_active(minute):
-            return None
+        if self.is_active(minute):
+            _activity = str(self._minutes[minute].get_main_app())
+        else:
+            _activity = 'idle'
+        
         _cs = self.get_chunk_size(minute)
         # print(mins_to_str(_cs[1]-_cs[0]) + " / " + str(_cs))
-        return "%s (%s)" % (self._minutes[minute].get_main_app(),
+        return "%s (%s)" % (_activity,
                            mins_to_str(_cs[1]-_cs[0]))
 
     def is_active(self, minute):

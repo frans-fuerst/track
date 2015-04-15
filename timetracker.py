@@ -433,6 +433,9 @@ class active_applications(matrix_table_model):
         _begin = minute
         _end = minute
 
+        if minute > self._index_max or minute < self._index_min:
+            return (_begin, _end)
+
         if self.is_active(minute):
             _a = self._minutes[minute].get_main_app()
         else:
@@ -478,8 +481,7 @@ class active_applications(matrix_table_model):
         
         _cs = self.get_chunk_size(minute)
         # print(mins_to_str(_cs[1]-_cs[0]) + " / " + str(_cs))
-        return "%s (%s)" % (_activity,
-                           mins_to_str(_cs[1]-_cs[0]))
+        return (_cs, _activity)
 
     def is_active(self, minute):
         if minute in self._minutes:

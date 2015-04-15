@@ -18,6 +18,10 @@ class timegraph(QtGui.QFrame):
         self._tracker = None
         super(timegraph, self).__init__(parent)
         self.setMouseTracking(True)
+        self._selected = None
+
+    def leaveEvent(self, e):
+        self.select()
 
     def setTracker(self, tracker):
         self._tracker = tracker
@@ -35,10 +39,15 @@ class timegraph(QtGui.QFrame):
 
     def mouseMoveEvent(self, e):
         _index = self._tracker.begin_index() - 50 + e.x() - 1
-        _info = mins_to_str(_index) + ": " + str(self._tracker.info(_index))
+        _cs, _activity = self._tracker.info(_index)
+
+        _info_str =  "%s: %s (%s)" % (
+                        mins_to_str(_index), _activity,
+                           mins_to_str(_cs[1]-_cs[0]))
         # print("time: %d/%s" % (
         #     (e.x(), _info)))
-        self.setToolTip(_info)
+        self.select(_cs[0], _cs[1])
+        self.setToolTip(_info_str)
 
     def drawPoints(self, qp):
         x = self._tracker.begin_index()
@@ -63,6 +72,20 @@ class timegraph(QtGui.QFrame):
                 qp.setPen(QtCore.Qt.cyan)
 
             qp.drawLine(i + 1, 0, i + 1, self.height() - 2)
+
+        if self._selected is None:
+            return
+
+        qp.setPen(QtCore.Qt.blue)
+        for i in range(self._selected[0], self._selected[1] + 1):
+            qp.drawLine(i - _start_index, 0 + 20, i - _start_index, self.height() - 2 - 20)
+
+    def select(self, begin=None, end=None):
+        if not begin:
+            self._selected = None
+        else:
+            self._selected = (begin, end)
+        self.update()
 
 if __name__ == '__main__':
     print('this is just the bargraph widget. run track.py')

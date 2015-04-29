@@ -4,6 +4,7 @@
 import sys
 import signal
 import logging
+
 try:
     from PyQt4 import QtGui, QtCore, Qt, uic
 except:

@@ -3,15 +3,13 @@
 
 from PyQt4 import QtCore #, Qt, uic, QtGui
 
-from datetime import datetime
+import json
+import operator
+import re
 
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
-
-import json
-import operator
-import time
-import re
+import track_common
 
 
 class change_emitter:
@@ -24,45 +22,6 @@ class change_emitter:
 
     def __exit__(self, type, value, tb):
         self._emitter.layoutChanged.emit()
-
-
-def secs_to_str(mins):
-    _result = ""
-    _minutes = mins
-    if _minutes >= 60:
-        _result = str(int(_minutes / 60))+"m "
-        _minutes %= 60
-    _result += str(_minutes ) + "s"
-    return _result
-
-
-def mins_to_str(mins):
-    _result = ""
-    _minutes = mins
-    if _minutes >= 60:
-        _result = str(int(_minutes / 60))+"h "
-        _minutes %= 60
-    _result += str(_minutes ) + "m"
-    return _result
-
-
-def today_str():
-    return datetime.fromtimestamp(time.time()).strftime('%Y%m%d')
-
-
-def today_int():
-    now = datetime.now()
-    return now.year * 10000 + now.month * 100 + now.day
-
-
-def seconds_since_midnight():
-    now = datetime.now()
-    return int((now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds())
-
-
-def minutes_since_midnight():
-    #return int(seconds_since_midnight() / 2)
-    return int(seconds_since_midnight() / 60)
 
 
 class matrix_table_model(QtCore.QAbstractTableModel):
@@ -178,6 +137,9 @@ class app_info():
             return False
         return True
     
+    def generate_identifier(self):
+        return self._wndtitle
+
     def __hash__(self):
         x = hash((self._wndtitle, self._cmdline))
         return x
@@ -191,9 +153,6 @@ class app_info():
     
     def __data__(self):  # const
         return (self._wndtitle, self._category, self._count, self._cmdline)
-
-    def generate_identifier(self):
-        return self._wndtitle
 
 
 class minute():
@@ -293,7 +252,7 @@ class active_applications(matrix_table_model):
             self._apps = {}     # app identifier => app_info instance
             self._minutes = {}  # i_min          => minute
 
-    def rowCount(self, parent):
+    def rowCount(self, parent=None):
         return len(self._sorted_keys)
 
     def columnCount(self, parent):  # const
@@ -303,7 +262,7 @@ class active_applications(matrix_table_model):
         if column == 0:
             return self._apps[self._sorted_keys[row]]._wndtitle
         elif column == 1:
-            return secs_to_str(self._apps[self._sorted_keys[row]]._count)
+            return track_common.secs_to_dur(self._apps[self._sorted_keys[row]]._count)
         elif column == 2:
             return self._apps[self._sorted_keys[row]]._category
         return 0
@@ -511,7 +470,7 @@ class time_tracker():
         self._current_app_title = ""
         self._current_process_exe = ""
         self._user_is_active = True
-        self._active_day = today_int()
+        self._active_day = track_common.today_int()
         
 
         # -- persist
@@ -526,7 +485,7 @@ class time_tracker():
         self._applications.clear()
 
     def load(self, filename=None):
-        _file_name = filename if filename else "track-%s.json" % today_str()
+        _file_name = filename if filename else "track-%s.json" % track_common.today_str()
         # print(_file_name)
         try:
             with open(_file_name) as _file:
@@ -539,7 +498,7 @@ class time_tracker():
         self._applications.from_dict(_struct)
 
     def save(self, filename=None):
-        _file_name = filename if filename else "track-%s.json" % today_str() 
+        _file_name = filename if filename else "track-%s.json" % track_common.today_str() 
         # print(_file_name)
         _app_data = self._applications.__data__()
         with open(_file_name, 'w') as _file:
@@ -558,8 +517,8 @@ class time_tracker():
 
     def update(self):
         try:
-            _today = today_int()
-            self._current_minute = minutes_since_midnight()
+            _today = track_common.today_int()
+            self._current_minute = track_common.minutes_since_midnight()
 
             if self._active_day < _today:
                 print("current minute is %d - it's midnight" % self._current_minute)
@@ -569,7 +528,7 @@ class time_tracker():
 
             self._active_day = _today
 
-            self._current_minute = minutes_since_midnight()
+            self._current_minute = track_common.minutes_since_midnight()
 
             self._user_is_active = True
 

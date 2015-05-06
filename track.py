@@ -14,6 +14,7 @@ except:
     sys.exit(-1)
 
 import timetracker
+import track_common
 
 class track_ui(QtGui.QMainWindow):
 
@@ -81,11 +82,11 @@ class track_ui(QtGui.QMainWindow):
             self.lbl_times.setText(
                 "T: %s  A: %s (%.1f)  W: %s (%.1f)  "
                 "P: %s (%.1f)  I: %s (%.1f)" %
-                (timetracker.mins_to_str(_time_total),
-                 timetracker.mins_to_str(_time_active), _time_active / float(_time_total), 
-                 timetracker.mins_to_str(_time_work), _time_work / float(_time_total),
-                 timetracker.mins_to_str(_time_private), _time_private / float(_time_total),
-                 timetracker.mins_to_str(_time_idle), _time_idle / float(_time_total)))
+                (track_common.mins_to_dur(_time_total),
+                 track_common.mins_to_dur(_time_active), _time_active / float(_time_total), 
+                 track_common.mins_to_dur(_time_work), _time_work / float(_time_total),
+                 track_common.mins_to_dur(_time_private), _time_private / float(_time_total),
+                 track_common.mins_to_dur(_time_idle), _time_idle / float(_time_total)))
 
 
             self.lbl_start_time.setText("%s - %s" % (

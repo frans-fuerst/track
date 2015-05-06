@@ -2,15 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from PyQt4 import QtGui, QtCore, Qt, uic
-
-def mins_to_str(mins):
-    _result = ""
-    _minutes = mins
-    if _minutes >= 60:
-        _result = str(int(_minutes / 60))+":"
-        _minutes %= 60
-    _result += str(_minutes )
-    return _result
+import track_common
 
 class timegraph(QtGui.QFrame):
 
@@ -42,8 +34,8 @@ class timegraph(QtGui.QFrame):
         _cs, _activity = self._tracker.info(_index)
 
         _info_str =  "%s: %s (%s)" % (
-                        mins_to_str(_index), _activity,
-                           mins_to_str(_cs[1]-_cs[0]))
+                        track_common.mins_to_dur(_index), _activity,
+                           track_common.mins_to_dur(_cs[1]-_cs[0]))
         # print("time: %d/%s" % (
         #     (e.x(), _info)))
         self.select(_cs[0], _cs[1])

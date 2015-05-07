@@ -148,7 +148,12 @@ class app_info():
         return "%s - [%d %d]" % (self._wndtitle, self._category, self._count)
     
     def load(self, data):
-        self._wndtitle, self._category, self._count, self._cmdline = data
+        try:
+            self._wndtitle, self._category, self._count, self._cmdline = data
+        except:
+            print('tried to expand %s to (title, category, count, cmdline)' % (
+                  str(data)))
+            raise Exception('could not load app_info data')
         return self
     
     def __data__(self):  # const

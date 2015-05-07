@@ -9,7 +9,7 @@ def mins_to_date(mins):
     _result = ""
     _minutes = mins
     if _minutes >= 60:
-        _result = str(int(_minutes / 60)) + ":"
+        _result = "%2d:" %(_minutes / 60)
         _minutes %= 60
     _result += str(_minutes )
     return _result

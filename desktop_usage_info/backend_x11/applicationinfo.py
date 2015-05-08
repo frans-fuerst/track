@@ -65,10 +65,14 @@ def get_active_process_name():
         # print(process.name)
         # print(process.exe)
         # print(process.cmdline)
-        return ' '.join(process.cmdline)
-    except TypeError as e:
-        print('strange: process.cmdline is of type "%s"' % type(process.cmdline))
-        return "error in get_active_process_name(%s)" % str(pid)
+        # print('strange: process.cmdline is of type "%s"' % type(process.cmdline))
+        try:
+            #  # in psutil 2+ cmdline is a getter
+            return ' '.join(process.cmdline())
+        except TypeError:
+            return ' '.join(process.cmdline)
+        except Exception:
+            return "error in get_active_process_name(%s)" % str(pid)
     except (psutil.NoSuchProcess, AttributeError) as e:
         raise UncriticalException()
 

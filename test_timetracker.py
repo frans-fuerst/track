@@ -44,7 +44,7 @@ def test_import():
                 track_common.mins_to_dur(_dur)))
             # print(re.search('track-.*.json', _file) is not None)
     print(track_common.mins_to_dur(_total_dur / _count))
-    print _lunch_time
+
 if __name__ == '__main__':
     test_import()
             

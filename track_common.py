@@ -11,7 +11,7 @@ def mins_to_date(mins):
     if _minutes >= 60:
         _result = "%2d:" %(_minutes / 60)
         _minutes %= 60
-    _result += str(_minutes )
+    _result += "%02d" % _minutes
     return _result
 
 def secs_to_dur(mins):
@@ -30,7 +30,9 @@ def mins_to_dur(mins):
     if _minutes >= 60:
         _result = str(int(_minutes / 60)) + "h "
         _minutes %= 60
-    _result += str(_minutes ) + "m"
+        _result += "%02d" % _minutes + "m"
+    else:
+        _result += "%d" % _minutes + "m"
     return _result
 
 

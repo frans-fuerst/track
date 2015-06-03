@@ -13,17 +13,23 @@ class test_ui(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
         tg = timegraph.timegraph(self)
         self.show()
-        #QtGui.QApplication.quit()
 
+    def closeEvent(self, event):
+        self.cleanup()
+    
+    def cleanup(self):
+        print("cleanup")
 
-def sigint_handler(*args):
+def sigint_handler(signal, window):
+    print("caught SIGINT - shutdown mainwindow")
+    window.cleanup()
     QtGui.QApplication.quit()
 
 def test_timegraph():
-    signal.signal(signal.SIGINT, sigint_handler)
     app = QtGui.QApplication(sys.argv)
-
-    x = test_ui()
+    mainwindow = test_ui()
+    signal.signal(signal.SIGINT, lambda signal, 
+                  frame: sigint_handler(signal, mainwindow))
     
     # catch the interpreter every now and then to be able to catch
     # signals

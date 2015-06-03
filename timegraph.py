@@ -79,6 +79,3 @@ class timegraph(QtGui.QFrame):
             self._selected = (begin, end)
         self.update()
 
-if __name__ == '__main__':
-    print('this is just the bargraph widget. run track.py')
-

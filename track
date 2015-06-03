@@ -5,6 +5,9 @@ import sys
 import signal
 import logging
 
+import track_qt
+
+
 try:
     from PyQt4 import QtGui, QtCore, Qt, uic
 except:
@@ -13,14 +16,14 @@ except:
 
     sys.exit(-1)
 
-import timetracker
+#import timetracker
 import track_common
 
 class track_ui(QtGui.QMainWindow):
 
     def __init__(self):
         super(track_ui, self).__init__()
-        self._tracker = timetracker.time_tracker(self)
+        self._tracker = track_qt.time_tracker(self)
 
         self._tracker.load()
         

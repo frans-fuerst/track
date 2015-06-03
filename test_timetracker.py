@@ -4,16 +4,17 @@
 import os
 import json
 import re
-import timetracker
+import track_qt
 import track_common
 
 def test_import():
-    a = timetracker.active_applications(None)
+    a = track_qt.active_applications(None)
     _total_dur = 0
     _count = 0
     _lunch_time = 12 * 60 + 50
     for root, dirs, files in os.walk('.'):
-        for _file in [f for f in sorted(files) if f.endswith('.json')]:
+        for _f in [f for f in sorted(files) if f.endswith('.json')]:
+            _file = os.path.join(root, _f)
             c = json.load(open(_file))
             try:
                 a.from_dict(c)

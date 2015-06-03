@@ -54,3 +54,104 @@ def minutes_since_midnight():
     #return int(seconds_since_midnight() / 2)
     return int(seconds_since_midnight() / 60)
 
+class app_info():
+    
+    def __init__(self, windowtitle="", cmdline=""):
+        self._wndtitle = windowtitle
+        self._cmdline = cmdline
+        self._category = 0
+        self._count = 0
+        
+    def __eq__(self, other):
+        if not self._wndtitle == other._wndtitle:
+            return False
+        if not self._cmdline == other._cmdline:
+            return False
+        if not self._category == other._category:
+            return False
+        if not self._count == other._count:
+            return False
+        return True
+    
+    def generate_identifier(self):
+        return self._wndtitle
+
+    def __hash__(self):
+        x = hash((self._wndtitle, self._cmdline))
+        return x
+    
+    def __str__(self):
+        return "%s - [%d %d]" % (self._wndtitle, self._category, self._count)
+    
+    def load(self, data):
+        try:
+            self._wndtitle, self._category, self._count, self._cmdline = data
+        except:
+            print('tried to expand %s to (title, category, count, cmdline)' % (
+                  str(data)))
+            raise Exception('could not load app_info data')
+        return self
+    
+    def __data__(self):  # const
+        return (self._wndtitle, self._category, self._count, self._cmdline)
+
+
+class minute():
+    """ a minute holds a category and a list of apps
+    """
+    def __init__(self, category=0, apps=None):
+        self._category = 0
+        if apps is None:
+            self._apps = {}
+        else:
+            self._apps = apps  # app_info -> count
+
+    def __eq__(self, other):
+        if not self._category == other._category:
+            return False
+        if not self._apps == other._apps:
+            for a, c in self._apps.items():
+                print("s: %s:'%s' - %d" % (hex(id(a)), a, c))
+            for a, c in other._apps.items():
+                print("o: %s - %d" % (a, c))
+            return False
+        return True
+    
+    def dump(self):
+        print("category %d" % self._category)
+            
+    def init(self, data):
+        self._category, self._apps = data
+        return self
+    
+    def _rebuild(self):
+        if len(self._apps) == 0:
+            return 0  # todo: need undefined
+        
+        _categories = {} # category -> sum
+        for a, c in self._apps.items():
+            try:
+                if a._category not in _categories:
+                    _categories[a._category] = c
+                else:
+                    _categories[a._category] += c
+            except:
+                pass
+
+        self._category = _categories.keys()[
+                                _categories.values().index(
+                                    max(_categories.values()))]
+        # print(self._category)
+
+    def add(self, app_instance):
+        if app_instance not in self._apps:
+            self._apps[app_instance] = 1
+        else:
+            self._apps[app_instance] += 1
+        self._rebuild()
+
+    def get_main_app(self):
+        _a = max(self._apps, key=lambda x: self._apps[x])
+        return _a._wndtitle
+
+

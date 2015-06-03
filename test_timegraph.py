@@ -20,17 +20,6 @@ class test_ui(QtGui.QMainWindow):
         print("quit()")
         QtCore.QCoreApplication.instance().quit()
 
-    def closeEvent(self, event):
-        self.cleanup()
-    
-    def cleanup(self):
-        print("cleanup")
-
-def sigint_handler(signal, window):
-    print("caught SIGINT - shutdown mainwindow")
-    window.cleanup()
-    QtGui.QApplication.quit()
-
 def test_timegraph():
     app = QtGui.QApplication(sys.argv)
     mainwindow = test_ui()

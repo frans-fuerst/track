@@ -108,26 +108,40 @@ class track_ui(QtGui.QMainWindow):
         self.update()
 
     def closeEvent(self, event):
+        self.cleanup()
+
+    def cleanup(self):
+        print("cleanup")
         self._tracker.save()
 
-    def system_signal(self, s):
-        sig_name = "unknown"
-        if s == signal.SIGABRT:
-            sig_name = "SIGABRT"
-        if s == signal.SIGINT:
-            sig_name = "SIGINT"
-        if s == signal.SIGSEGV:
-            sig_name = "SIGSEGV"
-        if s == signal.SIGTERM:
-            sig_name = "SIGTERM"
-        logging.info("got signal %s (%s)", sig_name, str(s))
-        self.close()
+
+def sigint_handler(s, window):
+    sig_name = "unknown"
+    if s == signal.SIGABRT:
+        sig_name = "SIGABRT"
+    if s == signal.SIGINT:
+        sig_name = "SIGINT"
+    if s == signal.SIGSEGV:
+        sig_name = "SIGSEGV"
+    if s == signal.SIGTERM:
+        sig_name = "SIGTERM"
+    logging.info("got signal %s (%s)", sig_name, str(s))
+    window.cleanup()
+    QtGui.QApplication.quit()
+
 
 if __name__ == '__main__':
     print(sys.executable)
     app = QtGui.QApplication(sys.argv)
     ex = track_ui()
     for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
-        signal.signal(s, lambda signal, frame: ex.system_signal(signal))
+        signal.signal(s, lambda signal, frame: sigint_handler(signal, ex))
+    
+    # catch the interpreter every now and then to be able to catch
+    # signals
+    timer = QtCore.QTimer()
+    timer.start(200)
+    timer.timeout.connect(lambda: None)
+
     sys.exit(app.exec_())
 

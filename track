@@ -47,7 +47,10 @@ class track_ui(QtGui.QMainWindow):
         trackui_path = os.path.join(self.directory, 'track.ui')
         uic.loadUi(trackui_path, self)
 
+mq based server (stub)
         self.setGeometry(300, 0, 700, 680)  # todo: maximize vertically
+#        self.setGeometry(300, 50, 700, 680)  # todo: maximize vertically
+
         self.setWindowTitle('Track')
         # self.lbl_color_work.setColor(self.lbl_idle.backgroundRole(), QtCore.Qt.cyan)
 

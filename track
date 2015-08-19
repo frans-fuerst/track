@@ -11,12 +11,11 @@ import track_qt
 try:
     from PyQt4 import QtGui, QtCore, Qt, uic
 except:
-    print("you have to have PyQt4 for your version of Python (%s) installed" 
+    print("you have to have PyQt4 for your version of Python (%s) installed"
           % ".".join(str(x) for x in sys.version_info))
 
     sys.exit(-1)
 
-#import timetracker
 import track_common
 
 class track_ui(QtGui.QMainWindow):
@@ -26,7 +25,7 @@ class track_ui(QtGui.QMainWindow):
         self._tracker = track_qt.time_tracker(self)
 
         self._tracker.load()
-        
+
         self.initUI()
 
         self.frm_timegraph.setTracker(self._tracker)
@@ -40,12 +39,12 @@ class track_ui(QtGui.QMainWindow):
         self.tbl_category_rules.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
         self.tbl_category_rules.setColumnWidth(0, self.tbl_category_rules.width() * 0.05)
         self.tbl_category_rules.setColumnWidth(1, self.tbl_category_rules.width() * 0.80)
-        
+
         self.show()
-        
-    def initUI(self):      
+
+    def initUI(self):
         uic.loadUi('track.ui', self)
-        
+
         self.setGeometry(300, 0, 700, 680)  # todo: maximize vertically
         self.setWindowTitle('Track')
         # self.lbl_color_work.setColor(self.lbl_idle.backgroundRole(), QtCore.Qt.cyan)
@@ -68,7 +67,7 @@ class track_ui(QtGui.QMainWindow):
         self._tracker.update()
         _idle = self._tracker.get_idle()
         _app = self._tracker.get_current_app_title()
-    
+
         try:
             self.lbl_idle.setText(str(_idle))
             #self.lbl_private.setText(str(self._tracker.get_private_time()))
@@ -86,7 +85,7 @@ class track_ui(QtGui.QMainWindow):
                 "T: %s  A: %s (%.1f)  W: %s (%.1f)  "
                 "P: %s (%.1f)  I: %s (%.1f)" %
                 (track_common.mins_to_dur(_time_total),
-                 track_common.mins_to_dur(_time_active), _time_active / float(_time_total), 
+                 track_common.mins_to_dur(_time_active), _time_active / float(_time_total),
                  track_common.mins_to_dur(_time_work), _time_work / float(_time_total),
                  track_common.mins_to_dur(_time_private), _time_private / float(_time_total),
                  track_common.mins_to_dur(_time_idle), _time_idle / float(_time_total)))
@@ -103,7 +102,7 @@ class track_ui(QtGui.QMainWindow):
         else:
             p.setColor(self.lbl_idle.backgroundRole(), QtCore.Qt.gray)
         self.lbl_idle.setPalette(p)
-        
+
         self.update()
 
     def closeEvent(self, event):
@@ -123,9 +122,10 @@ class track_ui(QtGui.QMainWindow):
         self.close()
 
 if __name__ == '__main__':
+    print(sys.executable)
     app = QtGui.QApplication(sys.argv)
     ex = track_ui()
     for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
         signal.signal(s, lambda signal, frame: ex.system_signal(signal))
     sys.exit(app.exec_())
-    
+

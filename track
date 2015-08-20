@@ -4,6 +4,7 @@
 import sys
 import signal
 import logging
+import os.path
 
 import track_qt
 
@@ -23,7 +24,7 @@ class track_ui(QtGui.QMainWindow):
     def __init__(self):
         super(track_ui, self).__init__()
         self._tracker = track_qt.time_tracker(self)
-
+        self.directory = os.path.dirname(os.path.realtpath(__file__))
         self._tracker.load()
 
         self.initUI()
@@ -43,7 +44,8 @@ class track_ui(QtGui.QMainWindow):
         self.show()
 
     def initUI(self):
-        uic.loadUi('track.ui', self)
+        trackui_path = os.path.join(self.directory, 'track.ui')
+        uic.loadUi(trackui_path, self)
 
         self.setGeometry(300, 0, 700, 680)  # todo: maximize vertically
         self.setWindowTitle('Track')

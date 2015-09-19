@@ -10,11 +10,13 @@ import re
 #import track_common
 import track_qt
 import qt_common
-from PyQt4 import QtCore 
+from PyQt4 import QtCore
+from PyQt4.QtCore import pyqtSignal
 
 
 class rules_model(qt_common.matrix_table_model):
 
+    modified_rules= pyqtSignal()
     def __init__(self, parent, *args):
         track_qt.matrix_table_model.__init__(self, parent, *args)
         self.header = ['M', 'regex', 'category']
@@ -68,6 +70,7 @@ class rules_model(qt_common.matrix_table_model):
     def setData(self, index, value,  role):
         if value!="":
             self._rules[index.row()-1][index.column()-1] = str(value.toString())
+            self.modified_rules.emit()
         return True
     def flags(self, index):
         if (self.isEditable(index)):

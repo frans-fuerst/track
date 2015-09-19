@@ -6,7 +6,7 @@ import track_common
 #import active_applications
 import track_qt
 #import rules_model
-
+from PyQt4.QtCore import pyqtSlot
 import json
 
 class time_tracker():
@@ -26,7 +26,11 @@ class time_tracker():
 
         # -- persist
         self._applications = track_qt.active_applications(parent)
+        
         self._rules = track_qt.rules_model(parent)
+
+        self._rules.modified_rules.connect(self.update_categories)
+
 
     def __eq__(self, other):
         return False
@@ -162,4 +166,6 @@ class time_tracker():
 
     def user_is_active(self):
         return self._user_is_active
-
+    @pyqtSlot()
+    def update_categories(self):
+        self._applications.update_all_categories(self._rules.get_first_matching_key)

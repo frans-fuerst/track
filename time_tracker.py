@@ -95,7 +95,7 @@ class time_tracker():
 
             _app = track_common.app_info(self._current_app_title, 
                             self._current_process_exe)
-            _app._category = self._rules.get_first_matching_key(_app)
+            _app.set_new_category(self._rules.get_first_matching_key(_app))
 
             _app = self._applications.update(
                         self._current_minute,

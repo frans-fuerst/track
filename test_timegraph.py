@@ -13,17 +13,12 @@ class test_ui(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
         tg = timegraph.timegraph(self)
         self.show()
-
-    def closeEvent(self, event):
-        self.cleanup()
+        q = QtCore.QTimer()
+        q.singleShot(1000, self.quit)
     
-    def cleanup(self):
-        print("cleanup")
-
-def sigint_handler(signal, window):
-    print("caught SIGINT - shutdown mainwindow")
-    window.cleanup()
-    QtGui.QApplication.quit()
+    def quit(self):
+        print("quit()")
+        QtCore.QCoreApplication.instance().quit()
 
 def test_timegraph():
     app = QtGui.QApplication(sys.argv)
@@ -37,7 +32,7 @@ def test_timegraph():
     timer.start(200)
     timer.timeout.connect(lambda: None)
 
-    sys.exit(app.exec_())
+    app.exec_()
 
 if __name__ == '__main__':
     test_timegraph()

@@ -8,6 +8,7 @@ import track_qt
 #import rules_model
 from PyQt4.QtCore import pyqtSlot
 import json
+import logging 
 
 class time_tracker():
     """ * retrieves system data

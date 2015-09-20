@@ -700,7 +700,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <widget class="QPushButton" name="regexRule">
+         <widget class="QPushButton" name="pb_regex">
           <property name="maximumSize">
            <size>
             <width>353</width>

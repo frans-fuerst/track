@@ -1,5 +1,6 @@
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
+import logging
 import track_common
 
 #import active_applications
@@ -90,7 +91,7 @@ class time_tracker():
             self._current_app_title = applicationinfo.get_active_window_title()
             try:
                 self._current_process_exe = applicationinfo.get_active_process_name()
-            except applicationinfo.UncriticalException as e:
+            except applicationinfo.UncriticalException as e: #necessary for i3
                 self._current_process_exe = "Process not found"
             self._rules.highlight_string(self._current_app_title)
 
@@ -170,3 +171,6 @@ class time_tracker():
     @pyqtSlot()
     def update_categories(self):
         self._applications.update_all_categories(self._rules.get_first_matching_key)
+
+    def new_regex_rule(self):
+        self._rules.add_rule()

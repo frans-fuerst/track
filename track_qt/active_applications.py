@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from PyQt4 import QtCore #, Qt, uic, QtGui
-
+from PyQt4.QtCore import pyqtSlot
 #import json
 #import operator
 #import re
@@ -248,7 +248,7 @@ class active_applications(qt_common.matrix_table_model):
         # print(' '.join(reversed(["(%d: %d)" % (s, m._category)
         #                for s, m in self._minutes.items()])))
         return self._minutes[minute]._category != 0
-    
+    @pyqtSlot()
     def update_all_categories(self, get_category_from_app):
         for i in self._apps:
             self._apps[i].set_new_category(get_category_from_app(self._apps[i]))

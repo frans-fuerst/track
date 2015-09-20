@@ -297,7 +297,7 @@
            </size>
           </property>
           <property name="text">
-           <string>tooling</string>
+           <string>work</string>
           </property>
          </widget>
         </item>
@@ -405,7 +405,7 @@
            </size>
           </property>
           <property name="text">
-           <string>punting</string>
+           <string>private</string>
           </property>
          </widget>
         </item>

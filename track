@@ -22,8 +22,11 @@ import track_common
 class track_ui(QtGui.QMainWindow):
 
     def __init__(self):
+        # initialize the Qt-MainWindow
         super(track_ui, self).__init__()
+
         self._tracker = track_qt.time_tracker(self)
+
         self.directory = os.path.dirname(os.path.realpath(__file__))
         self._tracker.load()
 
@@ -47,7 +50,6 @@ class track_ui(QtGui.QMainWindow):
         trackui_path = os.path.join(self.directory, 'track.ui')
         uic.loadUi(trackui_path, self)
 
-mq based server (stub)
         self.setGeometry(300, 0, 700, 680)  # todo: maximize vertically
 #        self.setGeometry(300, 50, 700, 680)  # todo: maximize vertically
 
@@ -139,7 +141,7 @@ if __name__ == '__main__':
     ex = track_ui()
     for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
         signal.signal(s, lambda signal, frame: sigint_handler(signal, ex))
-    
+
     # catch the interpreter every now and then to be able to catch
     # signals
     timer = QtCore.QTimer()

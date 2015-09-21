@@ -39,7 +39,8 @@ information already.
 * Python 2.7 (Python 3 coming soon)
 * PyQt4
 * python-libwnck
-
+* libXScrnSaver
+* python-psutil
 
 ### how to run
 

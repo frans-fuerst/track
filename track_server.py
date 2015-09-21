@@ -3,11 +3,14 @@
 
 import zmq
 import logging
+import time
+import threading
 
+log = logging.getLogger('track_server')
 
 def print_info():
-    logging.info("zeromq version: %s" % zmq.zmq_version())
-    logging.info("pyzmq version:  %s" % zmq.pyzmq_version())
+    log.info("zeromq version: %s" % zmq.zmq_version())
+    log.info("pyzmq version:  %s" % zmq.pyzmq_version())
 
 
 class request_malformed(Exception):
@@ -18,6 +21,12 @@ class track_server:
 
     def __init__(self):
         self._running = False
+        self._system_monitoring_thread = None
+        
+    def _system_monitoring_fn(self):
+        while self._running:
+            time.sleep(1)
+            log.info('sample')
 
     def handle_request(self, request):
         if 'type' not in request:
@@ -37,16 +46,21 @@ class track_server:
         context = zmq.Context()
         rep_socket = context.socket(zmq.REP)
         rep_socket.bind('tcp://127.0.0.1:3456')
+
         self._running = True
 
+        self._system_monitoring_thread = threading.Thread(
+            target=self._system_monitoring_fn)
+        self._system_monitoring_thread.start()
+        
         while self._running:
-            logging.info('listening..')
+            log.info('listening..')
             try:
                 request = rep_socket.recv_json()
             except KeyboardInterrupt:
-                logging.info("got keyboard interrupt - exit")
+                log.info("got keyboard interrupt - exit")
                 break
-            logging.debug(request)
+            log.debug(request)
             try:
                 reply = self.handle_request(request)
             except request_malformed as ex:
@@ -56,8 +70,11 @@ class track_server:
                 reply = {'type': 'error', 'what': str(ex)}
 
             rep_socket.send_json(reply)
-
-        logging.info('close..')
+        
+        if self._system_monitoring_thread:
+            self._system_monitoring_thread.join()
+            
+        log.info('close..')
         rep_socket.close()
 
 
@@ -65,5 +82,6 @@ def main():
     track_server().run()
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     main()
-    logging.info('quit')
+    log.info('quit')

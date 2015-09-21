@@ -6,6 +6,9 @@ import logging
 import time
 import threading
 
+from desktop_usage_info import idle
+from desktop_usage_info import applicationinfo
+
 log = logging.getLogger('track_server')
 
 def print_info():
@@ -26,7 +29,15 @@ class track_server:
     def _system_monitoring_fn(self):
         while self._running:
             time.sleep(1)
-            log.info('sample')
+            try:
+                self._idle_current = idle.getIdleSec()
+                self._current_app_title = applicationinfo.get_active_window_title()
+                self._current_process_exe = applicationinfo.get_active_process_name()
+                log.info('sample')
+                print(self._idle_current)
+                print(self._current_app_title)
+            except applicationinfo.UncriticalException as e:
+                pass
 
     def handle_request(self, request):
         if 'type' not in request:

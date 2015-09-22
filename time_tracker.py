@@ -1,4 +1,3 @@
-
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
 import track_common
@@ -7,6 +6,7 @@ import track_common
 import track_qt
 #import rules_model
 
+from PyQt4.QtCore import pyqtSlot
 import json
 import logging 
 
@@ -29,6 +29,7 @@ class time_tracker():
         self._applications = track_qt.active_applications(parent)
         self._rules = track_qt.rules_model(parent)
 
+        self._rules.modified_rules.connect(self.update_categories)
     def __eq__(self, other):
         return False
 
@@ -134,13 +135,13 @@ class time_tracker():
     def get_time_work(self):
         r = 0
         for i, m in self._applications._minutes.items():
-            r += 1 if m._category == 0 else 0
+            r += 1 if str(m._category) != "0" else 0
         return r
 
     def get_time_private(self):
         r = 0
         for i, m in self._applications._minutes.items():
-            r += m._category != 0
+            r += str(m._category) == "0"
         return r
 
     def get_time_idle(self):
@@ -164,3 +165,9 @@ class time_tracker():
     def user_is_active(self):
         return self._user_is_active
 
+    @pyqtSlot()
+    def update_categories(self):
+        self._applications.update_all_categories(self._rules.get_first_matching_key)
+
+    def new_regex_rule(self):
+        self._rules.add_rule()

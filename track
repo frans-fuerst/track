@@ -25,7 +25,7 @@ class track_ui(QtGui.QMainWindow):
         # initialize the Qt-MainWindow
         super(track_ui, self).__init__()
 
-        self._tracker = track_qt.time_tracker(self)
+        self._tracker = track_qt.time_tracker_qt(self)
 
         self.directory = os.path.dirname(os.path.realpath(__file__))
         self._tracker.load()

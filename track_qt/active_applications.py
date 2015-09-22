@@ -14,7 +14,7 @@ import track_qt
 
 
 # todo: separate qt model
-class active_applications(track_qt.matrix_table_model):
+class active_applications_qtmodel(track_qt.matrix_table_model):
     ''' the data model which holds all application usage data for one
         day. That is:
 

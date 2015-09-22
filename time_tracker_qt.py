@@ -1,16 +1,14 @@
 
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
-import track_common
 
-#import active_applications
+import track_common
 import track_qt
-#import rules_model
 
 import json
 import logging 
 
-class time_tracker():
+class time_tracker_qt():
     """ * retrieves system data
         * holds the application data object as
           well as some meta information
@@ -26,7 +24,7 @@ class time_tracker():
         
 
         # -- persist
-        self._applications = track_qt.active_applications(parent)
+        self._applications = track_qt.active_applications_qtmodel(parent)
         self._rules = track_qt.rules_model(parent)
 
     def __eq__(self, other):
@@ -57,7 +55,7 @@ class time_tracker():
             json.dump(_app_data, _file,
                       sort_keys=True) #, indent=4, separators=(',', ': '))
             
-        _test_model = track_qt.active_applications(None)
+        _test_model = track_qt.active_applications_qtmodel(None)
         _test_model.from_dict(_app_data)
         assert self._applications == _test_model
 

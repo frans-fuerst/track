@@ -8,10 +8,10 @@ import track_qt
 import track_common
 
 def test_active_applications():
-    aa = track_qt.active_applications(None)
+    aa = track_qt.active_applications_qtmodel(None)
 
 def test_import():
-    a = track_qt.active_applications(None)
+    a = track_qt.active_applications_qtmodel(None)
     _total_dur = 0
     _count = 0
     _lunch_time = 12 * 60 + 50

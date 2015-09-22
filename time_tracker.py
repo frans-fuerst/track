@@ -87,8 +87,11 @@ class time_tracker():
 
             self._idle_current = idle.getIdleSec()
             self._current_app_title = applicationinfo.get_active_window_title()
-            self._current_process_exe = applicationinfo.get_active_process_name()
-
+            try:
+                self._current_process_exe = applicationinfo.get_active_process_name()
+            except applicationinfo.UncriticalException as e: #necessary to run in i3
+                self._current_process_exe = "Process not found"
+                
             self._rules.highlight_string(self._current_app_title)
 
             if self._idle_current > 10:

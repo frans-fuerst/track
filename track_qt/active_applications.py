@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from PyQt4 import QtCore #, Qt, uic, QtGui
+from PyQt4.QtCore import pyqtSlot
 
 #import json
 #import operator
@@ -11,10 +12,10 @@ from PyQt4 import QtCore #, Qt, uic, QtGui
 #from desktop_usage_info import applicationinfo
 import track_common
 import track_qt
-
+import qt_common
 
 # todo: separate qt model
-class active_applications(track_qt.matrix_table_model):
+class active_applications(qt_common.matrix_table_model):
     ''' the data model which holds all application usage data for one
         day. That is:
 
@@ -255,7 +256,13 @@ class active_applications(track_qt.matrix_table_model):
         #                    for a in self._minutes[minute]._apps])))
         # print(' '.join(reversed(["(%d: %d)" % (s, m._category)
         #                for s, m in self._minutes.items()])))
-        return self._minutes[minute]._category != 0
+        return str(self._minutes[minute]._category) == "0"
 
+    @pyqtSlot()
+    def update_all_categories(self, get_category_from_app):
+        for i in self._apps:
+            self._apps[i].set_new_category(get_category_from_app(self._apps[i]))
+        for i in self._minutes:
+            self._minutes[i].rebuild_categories(get_category_from_app)
 
 

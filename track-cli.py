@@ -28,7 +28,10 @@ def handle_result(result):
 def main():
     args = sys.argv[1:]
 
-    if args == ['quit']:
+    if args == []:
+        print('no command provided')
+        return
+    elif args == ['quit']:
         request = {'type': 'quit'}
     elif args == ['info']:
         request = {'type': 'info'}

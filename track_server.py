@@ -32,7 +32,6 @@ class track_server:
         self._system_monitoring_thread = None
         self._applications = track_base.active_applications()
     
-    
     def _system_monitoring_fn(self):
         while self._running:
             time.sleep(1)
@@ -57,8 +56,9 @@ class track_server:
 
         elif request['type'] == 'quit':
             self._running = False
-            reply = {'type': 'ok'}
-
+            return {'type': 'ok'}
+        elif request['type'] == 'info':
+            return {'type': 'info', 'apps': self._applications.__data__()}
         else:
             raise request_malformed(
                 'command "%s" not known' % request['type'])

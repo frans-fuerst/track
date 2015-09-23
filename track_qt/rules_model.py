@@ -16,16 +16,15 @@ import json
 from PyQt4 import QtCore
 from PyQt4.QtCore import pyqtSignal
 
-class rules_model(qt_common.matrix_table_model):
-    _filename="regex_rules";
+class rules_model(track_qt.matrix_table_model):
+    _filename = "regex_rules"
     modified_rules= pyqtSignal()
+
     def __init__(self, parent, *args):
         track_qt.matrix_table_model.__init__(self, parent, *args)
         self.header = ['M', 'regex', 'category']
         self.load_from_disk();
         self._matching = []
-        
-
 
     def columnCount(self, parent):  # const
         return 3

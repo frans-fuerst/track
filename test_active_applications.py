@@ -4,25 +4,26 @@
 import os
 import json
 import re
-import track_qt
+import track_base
 import track_common
 
 def test_active_applications():
-    aa = track_qt.active_applications_qtmodel(None)
+    aa = track_base.active_applications()
 
 def test_import():
-    a = track_qt.active_applications_qtmodel(None)
+    a = track_base.active_applications()
     _total_dur = 0
     _count = 0
     _lunch_time = 12 * 60 + 50
     for root, dirs, files in os.walk('.'):
         for _f in [f for f in sorted(files) if f.endswith('.json')]:
             _file = os.path.join(root, _f)
-            c = json.load(open(_file))
+            c = json.loads(open(_file).read().decode())
             try:
                 a.from_dict(c)
-            except:
+            except Exception as ex:
                 print('ERROR: could not load "%s"' % _file)
+                print('ERROR: "%s"' % ex)
                 continue
             _end = a.end_index()
             _begin = a.begin_index()
@@ -41,13 +42,15 @@ def test_import():
                 print('WARNING: ignore "%s" - less than 5h tracked' % _file)
 
             print("f: %23s, count: %3d, begin: %s (%4d), end: %s (%4d), lunch: %7s, dur: %7s" % (
-                _file, a.rowCount(), 
+                _file, a.count(), 
                 track_common.mins_to_date(_begin), _begin, 
                 track_common.mins_to_date(_end), _end, 
                 track_common.mins_to_dur(_lunch_dur),
                 track_common.mins_to_dur(_dur)))
             # print(re.search('track-.*.json', _file) is not None)
-    print(track_common.mins_to_dur(_total_dur / _count))
+
+    if _count > 0:
+        print(track_common.mins_to_dur(_total_dur / _count))
 
 if __name__ == '__main__':
     test_active_applications()

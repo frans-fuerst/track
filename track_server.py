@@ -9,6 +9,9 @@ import threading
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
 
+import track_common
+import track_base
+
 log = logging.getLogger('track_server')
 
 def print_info():
@@ -25,19 +28,25 @@ class track_server:
     def __init__(self):
         self._running = False
         self._system_monitoring_thread = None
+        self._applications = track_base.active_applications()
         
     def _system_monitoring_fn(self):
         while self._running:
             time.sleep(1)
+            _idle_current = None
+            _current_app_title = None
+            _current_process_exe = None
             try:
-                self._idle_current = idle.getIdleSec()
-                self._current_app_title = applicationinfo.get_active_window_title()
-                self._current_process_exe = applicationinfo.get_active_process_name()
+                _idle_current = idle.getIdleSec()
+                _current_app_title = applicationinfo.get_active_window_title()
+                _current_process_exe = applicationinfo.get_active_process_name()
                 log.info('sample')
-                print(self._idle_current)
-                print(self._current_app_title)
             except applicationinfo.UncriticalException as e:
                 pass
+            
+            print(_idle_current)
+            print(_current_app_title)
+            print(_current_process_exe)
 
     def handle_request(self, request):
         if 'type' not in request:
@@ -56,7 +65,11 @@ class track_server:
 
         context = zmq.Context()
         rep_socket = context.socket(zmq.REP)
-        rep_socket.bind('tcp://127.0.0.1:3456')
+        try:
+            rep_socket.bind('tcp://127.0.0.1:3456')
+        except zmq.ZMQError as e:
+            log.error(e)
+            return
 
         self._running = True
 

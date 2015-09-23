@@ -58,7 +58,9 @@ def get_active_process_name():
     try:
         # http://askubuntu.com/questions/152191
         screen = wnck.screen_get_default()
+        # print screen
         window = screen.get_active_window()
+        # print window
         pid = window.get_pid()
         process = psutil.Process(pid)
         # print(pid)
@@ -74,5 +76,6 @@ def get_active_process_name():
         except Exception:
             return "error in get_active_process_name(%s)" % str(pid)
     except (psutil.NoSuchProcess, AttributeError) as e:
+        # print e
         raise UncriticalException()
 

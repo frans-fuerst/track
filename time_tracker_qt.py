@@ -1,10 +1,10 @@
-
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
 
 import track_common
 import track_qt
 
+from PyQt4.QtCore import pyqtSlot
 import json
 import logging 
 
@@ -26,6 +26,8 @@ class time_tracker_qt():
         # -- persist
         self._applications = track_qt.active_applications_qtmodel(parent)
         self._rules = track_qt.rules_model(parent)
+
+        self._rules.modified_rules.connect(self.update_categories)
 
     def __eq__(self, other):
         return False
@@ -84,8 +86,11 @@ class time_tracker_qt():
 
             self._idle_current = idle.getIdleSec()
             self._current_app_title = applicationinfo.get_active_window_title()
-            self._current_process_exe = applicationinfo.get_active_process_name()
-
+            try:
+                self._current_process_exe = applicationinfo.get_active_process_name()
+            except applicationinfo.UncriticalException as e: #necessary to run in i3
+                self._current_process_exe = "Process not found"
+                
             self._rules.highlight_string(self._current_app_title)
 
             if self._idle_current > 10:
@@ -132,13 +137,13 @@ class time_tracker_qt():
     def get_time_work(self):
         r = 0
         for i, m in self._applications._minutes.items():
-            r += 1 if m._category == 0 else 0
+            r += 1 if str(m._category) != "0" else 0
         return r
 
     def get_time_private(self):
         r = 0
         for i, m in self._applications._minutes.items():
-            r += m._category != 0
+            r += str(m._category) == "0"
         return r
 
     def get_time_idle(self):
@@ -162,3 +167,9 @@ class time_tracker_qt():
     def user_is_active(self):
         return self._user_is_active
 
+    @pyqtSlot()
+    def update_categories(self):
+        self._applications.update_all_categories(self._rules.get_first_matching_key)
+
+    def new_regex_rule(self):
+        self._rules.add_rule()

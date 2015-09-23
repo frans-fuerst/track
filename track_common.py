@@ -95,6 +95,11 @@ class app_info():
     def __data__(self):  # const
         return (self._wndtitle, self._category, self._count, self._cmdline)
 
+    def get_category(self):
+        return self._category
+        
+    def set_new_category(self, new_category):
+        self._category=new_category
 
 class minute():
     """ a minute holds a category and a list of apps
@@ -154,4 +159,7 @@ class minute():
         _a = max(self._apps, key=lambda x: self._apps[x])
         return _a._wndtitle
 
-
+    def rebuild_categories(self, get_category):
+        for a, c in self._apps.items():
+            a.set_new_category(get_category(a))
+        self._rebuild()

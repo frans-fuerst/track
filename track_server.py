@@ -3,7 +3,9 @@
 
 import zmq
 import logging
+import signal
 import time
+import sys
 import threading
 
 from desktop_usage_info import idle
@@ -29,7 +31,8 @@ class track_server:
         self._running = False
         self._system_monitoring_thread = None
         self._applications = track_base.active_applications()
-        
+    
+    
     def _system_monitoring_fn(self):
         while self._running:
             time.sleep(1)
@@ -75,16 +78,23 @@ class track_server:
 
         self._system_monitoring_thread = threading.Thread(
             target=self._system_monitoring_fn)
+        self._system_monitoring_thread.daemon = True
         self._system_monitoring_thread.start()
         
         while self._running:
             log.info('listening..')
             try:
                 request = rep_socket.recv_json()
+            except zmq.ZMQError:
+                self._running = False
+                self._system_monitoring_thread.join()
+                break
             except KeyboardInterrupt:
                 log.info("got keyboard interrupt - exit")
                 break
+            
             log.debug(request)
+            
             try:
                 reply = self.handle_request(request)
             except request_malformed as ex:
@@ -107,5 +117,9 @@ def main():
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
+
+    for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
+        signal.signal(s, lambda signal, frame: sys.exit)
+
     main()
     log.info('quit')

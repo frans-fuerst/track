@@ -6,17 +6,13 @@
 import re
 import qt_common
 
-
-#from desktop_usage_info import idle
-#from desktop_usage_info import applicationinfo
-#import track_common
 import track_qt
 
 import json
 from PyQt4 import QtCore
 from PyQt4.QtCore import pyqtSignal
 
-class rules_model(track_qt.matrix_table_model):
+class rules_model_qt(track_qt.matrix_table_model):
     _filename = "regex_rules"
     modified_rules= pyqtSignal()
 

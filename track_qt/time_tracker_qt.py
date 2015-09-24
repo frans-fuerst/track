@@ -2,7 +2,9 @@ from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
 
 import track_common
-import track_qt
+
+from active_applications_qtmodel import active_applications_qtmodel
+from rules_model_qt import rules_model_qt
 
 from PyQt4.QtCore import pyqtSlot
 import json
@@ -21,11 +23,10 @@ class time_tracker_qt():
         self._current_process_exe = ""
         self._user_is_active = True
         self._active_day = track_common.today_int()
-        
 
         # -- persist
-        self._applications = track_qt.active_applications_qtmodel(parent)
-        self._rules = track_qt.rules_model(parent)
+        self._applications = active_applications_qtmodel(parent)
+        self._rules = rules_model_qt(parent)
 
         self._rules.modified_rules.connect(self.update_categories)
 
@@ -57,7 +58,7 @@ class time_tracker_qt():
             json.dump(_app_data, _file,
                       sort_keys=True) #, indent=4, separators=(',', ': '))
             
-        _test_model = track_qt.active_applications_qtmodel(None)
+        _test_model = active_applications_qtmodel(None)
         _test_model.from_dict(_app_data)
         assert self._applications == _test_model
 

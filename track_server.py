@@ -31,6 +31,7 @@ class track_server:
         self._running = False
         self._system_monitoring_thread = None
         self._applications = track_base.active_applications()
+        self._tracker = track_base.time_tracker()
     
     def _system_monitoring_fn(self):
         while self._running:

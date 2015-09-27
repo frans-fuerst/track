@@ -5,6 +5,8 @@
 
 import re
 import qt_common
+import track_common
+
 
 import track_qt
 
@@ -18,13 +20,23 @@ class rules_model_qt(qt_common.matrix_table_model):
 
     def __init__(self, parent, *args):
         track_qt.matrix_table_model.__init__(self, parent, *args)
-        self.header = ['M', 'regex', 'category']
+        self.header = ['M', 'regex', 'category', 'time']
         self.load_from_disk();
         self._matching = []
+        self._time = {}
         self.setSupportedDragActions(QtCore.Qt.MoveAction)
 
+    def update_categories_time(self, new_time):
+        self._time=new_time
+
+    def get_time_category(self, rule):
+        category = rule[1]
+        if category in self._time:
+            return self._time[category]
+        else:
+            return 0
     def columnCount(self, parent):  # const
-        return 3
+        return 4
 
     def supportedDropActions(self):
          return QtCore.Qt.MoveAction|QtCore.Qt.CopyAction
@@ -39,6 +51,8 @@ class rules_model_qt(qt_common.matrix_table_model):
             return self._rules[row][0]
         if column == 2:
             return self._rules[row][1]
+        if column == 3: #time column
+            return track_common.secs_to_dur(self.get_time_category(self._rules[row]))
         return None
     
     def __data__(self):  # const

@@ -41,16 +41,17 @@ class track_ui(QtGui.QMainWindow):
         self.tbl_active_applications.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
         self.tbl_active_applications.setDragEnabled(True)
         self.tbl_active_applications.setDropIndicatorShown(True)
-        self.tbl_active_applications.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        #self.tbl_active_applications.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 
 
         self.tbl_category_rules.setModel(self._tracker.get_rules_model())
         self.tbl_category_rules.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
         self.tbl_category_rules.setColumnWidth(0, self.tbl_category_rules.width() * 0.05)
-        self.tbl_category_rules.setColumnWidth(1, self.tbl_category_rules.width() * 0.80)
-        
+        self.tbl_category_rules.setColumnWidth(1, self.tbl_category_rules.width() * 0.65)
+        self.tbl_category_rules.setColumnWidth(3, self.tbl_category_rules.width() * 0.10)
+
         self.tbl_category_rules.setDragEnabled(True)
-        self.tbl_category_rules.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        #self.tbl_category_rules.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
         self.tbl_category_rules.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
         self.tbl_category_rules.setDropIndicatorShown(True)
         self.tbl_category_rules.viewport().setAcceptDrops(True)

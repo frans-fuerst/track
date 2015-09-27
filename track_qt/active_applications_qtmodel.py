@@ -168,7 +168,6 @@ class active_applications_qtmodel(qt_common.matrix_table_model):
 
             if _app_id not in self._apps:
                 self._apps[_app_id] = app
-
 #                if "Firefox" in _app_id:
 #                    app._category = 1
 #                else:

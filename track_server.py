@@ -60,6 +60,8 @@ class track_server:
             return {'type': 'ok'}
         elif request['type'] == 'info':
             return {'type': 'info', 'apps': self._applications.__data__()}
+        elif request['type'] == 'rules':
+            return {'type': 'info', 'rules': self._tracker.get_rules_model().__data__()}
         else:
             raise request_malformed(
                 'command "%s" not known' % request['type'])

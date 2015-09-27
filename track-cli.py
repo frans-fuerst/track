@@ -35,6 +35,8 @@ def main():
         request = {'type': 'quit'}
     elif args == ['info']:
         request = {'type': 'info'}
+    elif args == ['rules']:
+        request = {'type': 'rules'}
     else:
         raise Exception('command not handled: %s' % args)
     

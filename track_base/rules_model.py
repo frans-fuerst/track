@@ -1,30 +1,19 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-#from PyQt4 import QtCore #, Qt, uic, QtGui
-
 import re
-#import qt_common
-
-#from desktop_usage_info import idle
-#from desktop_usage_info import applicationinfo
-#import track_common
-import track_qt
-
 import json
-from PyQt4 import QtCore
-from PyQt4.QtCore import pyqtSignal
 
 class rules_model():
-    _filename = "regex_rules"
-    modified_rules= pyqtSignal()
-
     def __init__(self):
-#        track_qt.matrix_table_model.__init__(self, parent, *args)
-        self.header = ['M', 'regex', 'category']
-        self.load_from_disk();
         self._matching = []
+        self._rules = []
 
+    def columnCount(self, parent):  # const
+        return 3
+
+    def rowCount(self, parent):
+        return len(self._rules)
 
     def _data(self, row, column):  # const
         if column == 0:
@@ -37,7 +26,7 @@ class rules_model():
         return None
     
     def __data__(self):  # const
-        return ""
+        return self._rules
 
     def from_dict(self, data):
         pass
@@ -59,7 +48,6 @@ class rules_model():
                 return c
         return 0
 
-    #Makes it editable:
     def setData(self, index, value,  role):
         if value!="":
             regex_str=str(value.toString())
@@ -76,34 +64,5 @@ class rules_model():
                 self._rules[index.row()][index.column()-1] = "invalid regex"
         return True
 
-    def flags(self, index):
-        if (self.isEditable(index)):
-            return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-        else:
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-
     def add_rule(self):
         self._rules.insert(0, ["new rule", 0])
-
-    def isEditable(self,index):
-        if (index.column()>0):
-            return True
-        else:
-            return False
-
-    def load_from_disk(self):
-        _file_name = self._filename
-        try:
-            with open(_file_name) as _file:
-                _struct = json.load(_file)
-        except:
-            _struct=[[".* - Mozilla Firefox.*", 1],
-                       [".*gedit.*", 0]]
-        self._rules = _struct;
-
-    def save_to_disk(self):
-        _file_name = self._filename
-        with open(_file_name, 'w') as _file:
-            json.dump(self._rules, _file,
-                      sort_keys=False) #, indent=4, separators=(',', ': '))
-            

@@ -12,7 +12,7 @@ import json
 from PyQt4 import QtCore
 from PyQt4.QtCore import pyqtSignal
 
-class rules_model_qt(track_qt.matrix_table_model):
+class rules_model_qt(qt_common.matrix_table_model):
     _filename = "regex_rules"
     modified_rules= pyqtSignal()
 
@@ -21,10 +21,13 @@ class rules_model_qt(track_qt.matrix_table_model):
         self.header = ['M', 'regex', 'category']
         self.load_from_disk();
         self._matching = []
+        self.setSupportedDragActions(QtCore.Qt.MoveAction)
 
     def columnCount(self, parent):  # const
         return 3
 
+    def supportedDropActions(self):
+         return QtCore.Qt.MoveAction|QtCore.Qt.CopyAction
     def rowCount(self, parent):
         return len(self._rules)
 
@@ -80,9 +83,9 @@ class rules_model_qt(track_qt.matrix_table_model):
 
     def flags(self, index):
         if (self.isEditable(index)):
-            return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+            return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable |QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsDropEnabled
         else:
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable| QtCore.Qt.ItemIsDropEnabled
 
     def add_rule(self):
         self._rules.insert(0, ["new rule", 0])

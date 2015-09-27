@@ -15,7 +15,7 @@ import track_qt
 import qt_common
 
 # todo: separate qt model
-class active_applications_qtmodel(track_qt.matrix_table_model):
+class active_applications_qtmodel(qt_common.matrix_table_model):
 #class active_applications_qtmodel(qt_common.matrix_table_model):
     ''' the data model which holds all application usage data for one
         day. That is:
@@ -46,6 +46,7 @@ class active_applications_qtmodel(track_qt.matrix_table_model):
         # to be persisted
         self._apps = {}     # app identifier => app_info instance
         self._minutes = {}  # i_min          => minute
+        
 
     def clear(self):
         with track_qt.change_emitter(self):
@@ -266,4 +267,6 @@ class active_applications_qtmodel(track_qt.matrix_table_model):
         for i in self._minutes:
             self._minutes[i].rebuild_categories(get_category_from_app)
 
-
+    def flags(self, index):
+            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable |QtCore.Qt.ItemIsDragEnabled
+        

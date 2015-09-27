@@ -18,13 +18,13 @@ class rules_model():
     def _data(self, row, column):  # const
         if column == 0:
             if len(self._matching) >= row+1 and self._matching[row]:
-                return 'X' 
+                return 'X'
         if column == 1:
             return self._rules[row][0]
         if column == 2:
             return self._rules[row][1]
         return None
-    
+
     def __data__(self):  # const
         return self._rules
 
@@ -32,14 +32,14 @@ class rules_model():
         pass
 
     def highlight_string(self, string):
-        with track_qt.change_emitter(self):
-            self._matching = []
-            for i, (r, c) in enumerate(self._rules):
-                if re.search(r, string):
-                    # print("'%s' matches" % r)
-                    self._matching.append(True)
-                else:
-                    self._matching.append(False)
+        # todo: mutex
+        self._matching = []
+        for i, (r, c) in enumerate(self._rules):
+            if re.search(r, string):
+                # print("'%s' matches" % r)
+                self._matching.append(True)
+            else:
+                self._matching.append(False)
 
     def get_first_matching_key(self, app):
         _string = app.generate_identifier()

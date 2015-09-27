@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import zmq
@@ -19,6 +19,7 @@ log = logging.getLogger('track_server')
 def print_info():
     log.info("zeromq version: %s" % zmq.zmq_version())
     log.info("pyzmq version:  %s" % zmq.pyzmq_version())
+    log.info("track version:  %s" % str(track_base.version_info))
 
 
 class request_malformed(Exception):
@@ -26,13 +27,16 @@ class request_malformed(Exception):
 
 
 class track_server:
+    ''' track activities, provide them to a time_tracker instance and
+        run a zmq/json based server which provides the info to external
+        consumers like a UI or a web service
+    '''
 
     def __init__(self):
         self._running = False
         self._system_monitoring_thread = None
-        self._applications = track_base.active_applications()
         self._tracker = track_base.time_tracker()
-    
+
     def _system_monitoring_fn(self):
         while self._running:
             time.sleep(1)
@@ -40,16 +44,14 @@ class track_server:
             _current_app_title = None
             _current_process_exe = None
             try:
-                _idle_current = idle.getIdleSec()
-                _current_app_title = applicationinfo.get_active_window_title()
-                _current_process_exe = applicationinfo.get_active_process_name()
+                self._tracker.update()
                 log.info('sample')
             except applicationinfo.UncriticalException as e:
                 pass
-            
-            print(_idle_current)
-            print(_current_app_title)
-            print(_current_process_exe)
+
+            log.info(self._tracker.get_idle())
+            log.info(self._tracker.get_current_app_title())
+            log.info(self._tracker.get_current_process_name())
 
     def handle_request(self, request):
         if 'type' not in request:
@@ -59,7 +61,7 @@ class track_server:
             self._running = False
             return {'type': 'ok'}
         elif request['type'] == 'info':
-            return {'type': 'info', 'apps': self._applications.__data__()}
+            return {'type': 'info', 'apps': self._tracker.get_applications_model().__data__()}
         elif request['type'] == 'rules':
             return {'type': 'info', 'rules': self._tracker.get_rules_model().__data__()}
         else:
@@ -83,7 +85,7 @@ class track_server:
             target=self._system_monitoring_fn)
         self._system_monitoring_thread.daemon = True
         self._system_monitoring_thread.start()
-        
+
         while self._running:
             log.info('listening..')
             try:
@@ -95,9 +97,9 @@ class track_server:
             except KeyboardInterrupt:
                 log.info("got keyboard interrupt - exit")
                 break
-            
+
             log.debug(request)
-            
+
             try:
                 reply = self.handle_request(request)
             except request_malformed as ex:
@@ -107,10 +109,10 @@ class track_server:
                 reply = {'type': 'error', 'what': str(ex)}
 
             rep_socket.send_json(reply)
-        
+
         if self._system_monitoring_thread:
             self._system_monitoring_thread.join()
-            
+
         log.info('close..')
         rep_socket.close()
 

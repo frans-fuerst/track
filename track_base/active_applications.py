@@ -14,7 +14,7 @@ class active_applications:
 
         where
 
-        application:  (i_secs, i_cat, s_title, s_process)        
+        application:  (i_secs, i_cat, s_title, s_process)
 
 
         model_list:
@@ -29,7 +29,7 @@ class active_applications:
         self._index_min = None
         self._index_max = None
         self._sorted_keys = []
-        
+
         # to be persisted
         self._apps = {}     # app identifier => app_info instance
         self._minutes = {}  # i_min          => minute
@@ -53,7 +53,7 @@ class active_applications:
         elif column == 2:
             return self._apps[self._sorted_keys[row]]._category
         return 0
-        '''    
+        '''
 
     def __eq__(self, other):
         ''' comparing is only needed for tests
@@ -69,21 +69,21 @@ class active_applications:
     def __data__(self):  # const
         """ we have to create an indexed list here because the minutes
             dict has to store references to app_info.
-            intermediate: _indexed: {app_id => (i_index, app_info)} 
+            intermediate: _indexed: {app_id => (i_index, app_info)}
             result:    app:     [app_info]
                        minutes: {i_minute: (i_category, [(app_info, i_count)])}
-            
+
             """
         _indexed = {a: i for i, a in enumerate(self._apps.values())}
-        _apps = [d[1] for d in sorted([(e[1], e[0].__data__()) 
+        _apps = [d[1] for d in sorted([(e[1], e[0].__data__())
                                        for e in _indexed.items()])]
         # print(_apps)
-        _minutes = {i: (m._category, [(_indexed[a], c) 
+        _minutes = {i: (m._category, [(_indexed[a], c)
                                       for a, c in m._apps.items()])
                     for i, m in self._minutes.items()}
-        
+
         #print(_minutes)
-                
+
         return { 'apps': _apps,
                  'minutes': _minutes}
 
@@ -101,10 +101,10 @@ class active_applications:
                         _indexed[a]: c for a, c in m[1]
                     }
                 )
-            ) 
+            )
             for i, m in _m.items()
         }
-        
+
         # x = {i:len({a:0 for a in i}) for i in l}
         _apps = {a.generate_identifier(): a for a in _indexed}
 
@@ -119,9 +119,9 @@ class active_applications:
         else:
             self._index_min = None
             self._index_max = None
-            
+
         # print(_minutes)
-    
+
     def begin_index(self):  # const
         return self._index_min if self._index_min else 0
 
@@ -147,13 +147,11 @@ class active_applications:
                 self._minutes[minute_index] = track_common.minute()
                 if not self._index_min or self._index_min > minute_index:
                     self._index_min = minute_index
-                    
+
                 if not self._index_max or self._index_max < minute_index:
                     self._index_max = minute_index
 
             self._minutes[minute_index].add(_app)
-
-            self._sort()
 
             # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
 
@@ -206,7 +204,7 @@ class active_applications:
             _activity = self._minutes[minute].get_main_app()
         else:
             _activity = 'idle'
-        
+
         _cs = self.get_chunk_size(minute)
         # print(mins_to_str(_cs[1]-_cs[0]) + " / " + str(_cs))
         return (_cs, _activity)

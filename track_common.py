@@ -81,7 +81,7 @@ class app_info():
         return x
     
     def __str__(self):
-        return "%s - [%d %d]" % (self._wndtitle, self._category, self._count)
+        return "%s - [%s %d]" % (self._wndtitle, self._category, self._count)
     
     def load(self, data):
         try:
@@ -100,6 +100,9 @@ class app_info():
         
     def set_new_category(self, new_category):
         self._category=new_category
+
+    def get_count(self):
+        return self._count
 
 class minute():
     """ a minute holds a category and a list of apps

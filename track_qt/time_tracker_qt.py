@@ -93,6 +93,7 @@ class time_tracker_qt():
                 self._current_process_exe = "Process not found"
                 
             self._rules.highlight_string(self._current_app_title)
+            self._rules.update_categories_time(self.get_time_per_categories())
 
             if self._idle_current > 10:
                 self._user_is_active = False
@@ -147,6 +148,18 @@ class time_tracker_qt():
             r += str(m._category) == "0"
         return r
 
+    def get_time_per_categories(self):
+        ##TODO: cache this, so you don't do so many operations per second.
+        ##This is pretty inneficient
+        time_dict={}
+        for app_name in self._applications._apps:
+            app = self._applications._apps[app_name]
+            category=str(app._category)
+            if(category in time_dict):
+                time_dict[category] += app.get_count()
+            else:
+                time_dict[category] = app.get_count()
+        return time_dict
     def get_time_idle(self):
         return self.get_time_total() - len(self._applications._minutes)
 

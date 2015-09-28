@@ -47,10 +47,8 @@ class track_server:
                 self._tracker.update()
             except applicationinfo.UncriticalException as e:
                 pass
-
-            log.info(self._tracker.get_idle())
-            log.info(self._tracker.get_current_app_title())
-            log.info(self._tracker.get_current_process_name())
+            
+            log.info(self._tracker.get_current_data())
 
     def handle_request(self, request):
         if 'type' not in request:
@@ -67,7 +65,7 @@ class track_server:
             return {'type': 'info', 'apps': self._tracker.get_applications_model().__data__()}
 
         elif request['type'] == 'current':
-            return {'type': 'info', 'apps': self._tracker.get_applications_model().__data__()}
+            return {'type': 'info', 'current': self._tracker.get_current_data()}
         
         elif request['type'] == 'rules':
             return {'type': 'info', 'rules': self._tracker.get_rules_model().__data__()}

@@ -4,22 +4,21 @@
 #from PyQt4 import QtCore #, Qt, uic, QtGui
 
 import re
-import qt_common
+#import qt_common
 import track_common
 
-
-import track_qt
+from qt_common import matrix_table_model
 
 import json
 from PyQt4 import QtCore
 from PyQt4.QtCore import pyqtSignal
 
-class rules_model_qt(qt_common.matrix_table_model):
+class rules_model_qt(matrix_table_model):
     _filename = "regex_rules"
     modified_rules= pyqtSignal()
 
     def __init__(self, parent, *args):
-        track_qt.matrix_table_model.__init__(self, parent, *args)
+        matrix_table_model.__init__(self, parent, *args)
         self.header = ['M', 'regex', 'category', 'time']
         self.load_from_disk();
         self._matching = []
@@ -62,7 +61,7 @@ class rules_model_qt(qt_common.matrix_table_model):
         pass
 
     def highlight_string(self, string):
-        with track_qt.change_emitter(self):
+        with change_emitter(self):
             self._matching = []
             for i, (r, c) in enumerate(self._rules):
                 if re.search(r, string):

@@ -130,37 +130,35 @@ class time_tracker():
     def is_private(self, minute):
         return self._applications.is_private(minute)
 
-    def get_time_total(self):
-        return self._current_minute - self._applications.begin_index() + 1
+    #def get_time_total(self):
+        #return self._current_minute - self._applications.begin_index() + 1
 
     def get_time_active(self):
         return len(self._applications._minutes)
 
-    def get_time_work(self):
-        r = 0
-        for i, m in self._applications._minutes.items():
-            r += 1 if str(m._category) != "0" else 0
-        return r
-
-    def get_time_private(self):
-        r = 0
-        for i, m in self._applications._minutes.items():
-            r += str(m._category) == "0"
-        return r
-
     def get_time_idle(self):
         return self.get_time_total() - len(self._applications._minutes)
+
+    def get_time_in_category(self, category):
+        r = 0
+        for i, m in self._applications._minutes.items():
+            r += 1 if m._category == category else 0
+        return r
 
     def get_max_minute(self):
         return self._tracker.end_index()
 
-    def get_current_data():
+    def get_current_data(self):
         return {'minute': self._current_minute,
+                'time_total': 
+                    self._current_minute - self._applications.begin_index() + 1,
+
                 'user_idle': self._idle_current,
                 'user_active': self._user_is_active,
+                
                 'app_title': self._current_app_title,
                 'process_name': self._current_process_exe,}
-    
+    '''
     def get_current_minute(self):
         return self._current_minute
 
@@ -175,7 +173,8 @@ class time_tracker():
 
     def user_is_active(self):
         return self._user_is_active
-
+    '''
+    
     # def update_categories(self):
     #    self._applications.update_all_categories(self._rules.get_first_matching_key)
 

@@ -10,13 +10,15 @@ from PyQt4.QtCore import pyqtSlot
 
 #from desktop_usage_info import idle
 #from desktop_usage_info import applicationinfo
-import track_common
-import track_qt
-import qt_common
+#import track_common
+#import track_qt
+#import qt_common
+
+from qt_common import matrix_table_model
+from qt_common import change_emitter
 
 # todo: separate qt model
-class active_applications_qtmodel(qt_common.matrix_table_model):
-#class active_applications_qtmodel(qt_common.matrix_table_model):
+class active_applications_qtmodel(matrix_table_model):
     ''' the data model which holds all application usage data for one
         day. That is:
 
@@ -37,7 +39,7 @@ class active_applications_qtmodel(qt_common.matrix_table_model):
     '''
 
     def __init__(self, parent, *args):
-        track_qt.matrix_table_model.__init__(self, parent, *args)
+        matrix_table_model.__init__(self, parent, *args)
         self.header = ['application title', 'time', 'category']
         self._index_min = None
         self._index_max = None
@@ -49,7 +51,7 @@ class active_applications_qtmodel(qt_common.matrix_table_model):
         
 
     def clear(self):
-        with track_qt.change_emitter(self):
+        with change_emitter(self):
             self._index_min = None
             self._index_max = None
             self._apps = {}     # app identifier => app_info instance
@@ -139,7 +141,7 @@ class active_applications_qtmodel(qt_common.matrix_table_model):
         
         # x = {i:len({a:0 for a in i}) for i in l}
         _apps = {a.generate_identifier(): a for a in _indexed}
-        with track_qt.change_emitter(self):
+        with change_emitter(self):
 
             self._apps = _apps
             self._minutes = _minutes
@@ -162,7 +164,7 @@ class active_applications_qtmodel(qt_common.matrix_table_model):
         return self._index_max if self._index_max else 0
 
     def update(self, minute_index, app):
-        with track_qt.change_emitter(self):
+        with change_emitter(self):
         
             _app_id = app.generate_identifier()
 

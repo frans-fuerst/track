@@ -1,9 +1,10 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-import timegraph
 import signal
 import sys
+
+import track_qt
 
 from PyQt4 import QtGui, QtCore, Qt, uic
 
@@ -11,7 +12,7 @@ class test_ui(QtGui.QMainWindow):
 
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
-        tg = timegraph.timegraph(self)
+        tg = track_qt.timegraph(self)
         self.show()
         q = QtCore.QTimer()
         q.singleShot(1000, self.quit)

@@ -691,7 +691,7 @@
   <customwidget>
    <class>timegraph</class>
    <extends>QFrame</extends>
-   <header>timegraph.h</header>
+   <header>track_qt.timegraph</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

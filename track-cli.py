@@ -33,10 +33,19 @@ def main():
         return
     elif args == ['quit']:
         request = {'type': 'quit'}
+        
+    elif args == ['version']:
+        request = {'type': 'version'}
+
     elif args == ['info']:
         request = {'type': 'info'}
+        
+    elif args == ['current']:
+        request = {'type': 'current'}
+        
     elif args == ['rules']:
         request = {'type': 'rules'}
+        
     else:
         raise Exception('command not handled: %s' % args)
     

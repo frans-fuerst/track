@@ -154,6 +154,13 @@ class time_tracker():
     def get_max_minute(self):
         return self._tracker.end_index()
 
+    def get_current_data():
+        return {'minute': self._current_minute,
+                'user_idle': self._idle_current,
+                'user_active': self._user_is_active,
+                'app_title': self._current_app_title,
+                'process_name': self._current_process_exe,}
+    
     def get_current_minute(self):
         return self._current_minute
 

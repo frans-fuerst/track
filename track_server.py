@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 import zmq
@@ -45,7 +45,6 @@ class track_server:
             _current_process_exe = None
             try:
                 self._tracker.update()
-                log.info('sample')
             except applicationinfo.UncriticalException as e:
                 pass
 
@@ -60,6 +59,8 @@ class track_server:
         elif request['type'] == 'quit':
             self._running = False
             return {'type': 'ok'}
+        elif request['type'] == 'version':
+            return {'version': str(track_base.version_info)}
         elif request['type'] == 'info':
             return {'type': 'info', 'apps': self._tracker.get_applications_model().__data__()}
         elif request['type'] == 'rules':

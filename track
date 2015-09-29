@@ -41,7 +41,6 @@ class track_ui(QtGui.QMainWindow):
         self.tbl_active_applications.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
         self.tbl_active_applications.setDragEnabled(True)
         self.tbl_active_applications.setDropIndicatorShown(True)
-        #self.tbl_active_applications.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 
 
         self.tbl_category_rules.setModel(self._tracker.get_rules_model())
@@ -51,11 +50,9 @@ class track_ui(QtGui.QMainWindow):
         self.tbl_category_rules.setColumnWidth(3, self.tbl_category_rules.width() * 0.10)
 
         self.tbl_category_rules.setDragEnabled(True)
-        #self.tbl_category_rules.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
         self.tbl_category_rules.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
         self.tbl_category_rules.setDropIndicatorShown(True)
         self.tbl_category_rules.viewport().setAcceptDrops(True)
-#       self.tbl_category_rules.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.tbl_category_rules.setDragDropOverwriteMode(False)
         
         self.show()
@@ -78,6 +75,41 @@ class track_ui(QtGui.QMainWindow):
 
         _idle_timer.start(1000)
 
+        self.initialize_tray_icon()
+        #Tray Icon
+        #Based on http://stackoverflow.com/questions/758256/pyqt4-minimize-to-tray
+    def initialize_tray_icon(self):
+        style = self.style()
+
+        # Set the window and tray icon to something
+        icon = style.standardIcon(QtGui.QStyle.SP_MediaSeekForward)
+        self.tray_icon = QtGui.QSystemTrayIcon()
+        self.tray_icon.setIcon(QtGui.QIcon(icon))
+        self.setWindowIcon(QtGui.QIcon(icon))
+
+        # Restore the window when the tray icon is double clicked.
+        self.tray_icon.activated.connect(self.restore_window)
+
+    def event(self, event):
+        if (event.type() == QtCore.QEvent.WindowStateChange and 
+                self.isMinimized()):
+            # The window is already minimized at this point.  AFAIK,
+            # there is no hook stop a minimize event. Instead,
+            # removing the Qt.Tool flag should remove the window
+            # from the taskbar.
+            self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.Tool)
+            self.tray_icon.show()
+            return True
+        else:
+            return super(track_ui, self).event(event)
+
+
+    def restore_window(self, reason):
+        if reason == QtGui.QSystemTrayIcon.DoubleClick:
+            self.tray_icon.hide()
+            # self.showNormal will restore the window even if it was
+            # minimized.
+            self.showNormal()
     def pb_save_clicked(self):
         print("save")
         self._tracker.save('track-manualsave.json')

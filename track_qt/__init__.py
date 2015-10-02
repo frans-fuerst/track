@@ -1,3 +1,6 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+
 from active_applications_qtmodel import active_applications_qtmodel
 from time_tracker_qt import time_tracker_qt
 from rules_model_qt import rules_model_qt

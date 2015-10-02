@@ -1,7 +1,10 @@
-import track_common
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 
 from active_applications_qtmodel import active_applications_qtmodel
 from rules_model_qt import rules_model_qt
+
+import track_base
 
 from PyQt4.QtCore import pyqtSlot
 
@@ -23,7 +26,7 @@ class time_tracker_qt():
         self._current_data = None
         self._initialized = False
 
-        self._active_day = track_common.today_int()
+        self._active_day = track_base.today_int()
 
         self._applications = active_applications_qtmodel(parent)
         self._rules = rules_model_qt(parent)
@@ -52,12 +55,19 @@ class time_tracker_qt():
 
     def update(self):
         log.info('update')
-        self._req_socket.send_json({'type': 'current'})
         
+        self._req_socket.send_json({'type': 'current'})
         received_data = self._req_socket.recv_json()
         if not 'current' in received_data:
             raise
         self._current_data = received_data['current']
+        
+        self._req_socket.send_json({'type': 'current'})
+        received_data = self._req_socket.recv_json()
+        if not 'current' in received_data:
+            raise
+        self._current_data = received_data['current']
+        
         self._initialized = True
     
     def initialized(self):
@@ -118,7 +128,7 @@ class time_tracker_qt():
         return self.get_time_total() - len(self._applications._minutes)
 
     def get_max_minute(self):
-        return self._tracker.end_index()
+        return self._applications.end_index()
 
     def get_current_minute(self):
         return self._current_data['minute']

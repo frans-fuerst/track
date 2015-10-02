@@ -1,13 +1,11 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-#from PyQt4 import QtCore #, Qt, uic, QtGui
-
 import re
-#import qt_common
-import track_common
 
 from qt_common import matrix_table_model
+from qt_common import change_emitter
+import track_base
 
 import json
 from PyQt4 import QtCore
@@ -51,7 +49,7 @@ class rules_model_qt(matrix_table_model):
         if column == 2:
             return self._rules[row][1]
         if column == 3: #time column
-            return track_common.secs_to_dur(self.get_time_category(self._rules[row]))
+            return track_base.secs_to_dur(self.get_time_category(self._rules[row]))
         return None
     
     def __data__(self):  # const

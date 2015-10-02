@@ -11,7 +11,6 @@ import threading
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
 
-import track_common
 import track_base
 
 log = logging.getLogger('track_server')
@@ -66,6 +65,9 @@ class track_server:
 
         elif request['type'] == 'current':
             return {'type': 'info', 'current': self._tracker.get_current_data()}
+
+        elif request['type'] == 'info':
+            return {'type': 'info', 'apps': self._tracker.get_applications_model().__data__()}
         
         elif request['type'] == 'rules':
             return {'type': 'info', 'rules': self._tracker.get_rules_model().__data__()}

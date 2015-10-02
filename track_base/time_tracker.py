@@ -7,7 +7,9 @@ import logging
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
 
-import track_base
+#import track_base
+from active_applications import active_applications
+from rules_model import rules_model
 import track_common
 
 class time_tracker():
@@ -26,8 +28,8 @@ class time_tracker():
         
 
         # -- persist
-        self._applications = track_base.active_applications()
-        self._rules = track_base.rules_model()
+        self._applications = active_applications()
+        self._rules = rules_model()
 
         #self._rules.modified_rules.connect(self.update_categories)
 
@@ -59,7 +61,7 @@ class time_tracker():
             json.dump(_app_data, _file,
                       sort_keys=True) #, indent=4, separators=(',', ': '))
             
-        _test_model = track_base.active_applications(None)
+        _test_model = active_applications()
         _test_model.from_dict(_app_data)
         assert self._applications == _test_model
 
@@ -130,8 +132,8 @@ class time_tracker():
     def is_private(self, minute):
         return self._applications.is_private(minute)
 
-    #def get_time_total(self):
-        #return self._current_minute - self._applications.begin_index() + 1
+    def get_time_total(self):
+        return self._current_minute - self._applications.begin_index() + 1
 
     def get_time_active(self):
         return len(self._applications._minutes)
@@ -146,7 +148,7 @@ class time_tracker():
         return r
 
     def get_max_minute(self):
-        return self._tracker.end_index()
+        return self._applications.end_index()
 
     def get_current_data(self):
         return {'minute': self._current_minute,

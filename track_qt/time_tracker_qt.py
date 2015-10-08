@@ -23,6 +23,8 @@ class time_tracker_qt():
     """
     def __init__(self, parent):
         self._req_socket = None
+        self._req_poller = None
+        
         self._current_data = None
         self._initialized = False
 
@@ -35,13 +37,25 @@ class time_tracker_qt():
     def __eq__(self, other):
         return False
 
+    def _request(self, msg):
+        self._req_socket.send_json(msg)
+        _timeout = 50
+        while True:
+            if self._req_poller.poll(_timeout) == []:
+                _timeout = 2000
+                log.warn('server timeout. did you even start one?')
+                continue
+            break
+        return self._req_socket.recv_json()
+
     def connect(self):
         self._req_socket = zmq.Context().socket(zmq.REQ)
+        self._req_poller = zmq.Poller()
+        self._req_poller.register(self._req_socket, zmq.POLLIN)
 
         self._req_socket.connect('tcp://127.0.0.1:3456')
 
-        self._req_socket.send_json({'type': 'version'})
-        log.info('server version: %s', self._req_socket.recv_json())
+        log.info('server version: %s', self._request({'type': 'version'}))
 
     def clear(self):
         # must not be overwritten - we need the instance
@@ -56,14 +70,12 @@ class time_tracker_qt():
     def update(self):
         log.info('update')
         
-        self._req_socket.send_json({'type': 'current'})
-        received_data = self._req_socket.recv_json()
+        received_data = self._request({'type': 'current'})
         if not 'current' in received_data:
             raise
         self._current_data = received_data['current']
         
-        self._req_socket.send_json({'type': 'current'})
-        received_data = self._req_socket.recv_json()
+        received_data = self._request({'type': 'current'})
         if not 'current' in received_data:
             raise
         self._current_data = received_data['current']

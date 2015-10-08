@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import re
-import json
 
 class rules_model():
     def __init__(self):

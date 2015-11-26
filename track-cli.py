@@ -37,8 +37,8 @@ def main():
     elif args == ['version']:
         request = {'type': 'version'}
 
-    elif args == ['info']:
-        request = {'type': 'info'}
+    elif args == ['apps']:
+        request = {'type': 'apps'}
         
     elif args == ['current']:
         request = {'type': 'current'}

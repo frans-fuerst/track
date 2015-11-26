@@ -60,15 +60,12 @@ class track_server:
         elif request['type'] == 'version':
             return {'version': str(track_base.version_info)}
         
-        elif request['type'] == 'info':
+        elif request['type'] == 'apps':
             return {'type': 'info', 'apps': self._tracker.get_applications_model().__data__()}
 
         elif request['type'] == 'current':
             return {'type': 'info', 'current': self._tracker.get_current_data()}
 
-        elif request['type'] == 'info':
-            return {'type': 'info', 'apps': self._tracker.get_applications_model().__data__()}
-        
         elif request['type'] == 'rules':
             return {'type': 'info', 'rules': self._tracker.get_rules_model().__data__()}
         

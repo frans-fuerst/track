@@ -7,7 +7,6 @@ import logging
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
 
-#import track_base
 from active_applications import active_applications
 from rules_model import rules_model
 import track_common

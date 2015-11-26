@@ -75,10 +75,10 @@ class time_tracker_qt():
             raise
         self._current_data = received_data['current']
         
-        received_data = self._request({'type': 'current'})
-        if not 'current' in received_data:
+        received_data = self._request({'type': 'apps'})
+        if not 'apps' in received_data:
             raise
-        self._current_data = received_data['current']
+        self._applications.from_dict(received_data['apps'])
         
         self._initialized = True
     

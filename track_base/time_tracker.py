@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
-import logging 
+import logging
 
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
@@ -11,7 +11,7 @@ from active_applications import active_applications
 from rules_model import rules_model
 import track_common
 
-class time_tracker():
+class time_tracker:
     """ * retrieves system data
         * holds the application data object as
           well as some meta information
@@ -24,7 +24,7 @@ class time_tracker():
         self._current_process_exe = ""
         self._user_is_active = True
         self._active_day = track_common.today_int()
-        
+
 
         # -- persist
         self._applications = active_applications()
@@ -53,13 +53,13 @@ class time_tracker():
         self._applications.from_dict(_struct)
 
     def save(self, filename=None):
-        _file_name = filename if filename else "track-%s.json" % track_common.today_str() 
+        _file_name = filename if filename else "track-%s.json" % track_common.today_str()
         # print(_file_name)
         _app_data = self._applications.__data__()
         with open(_file_name, 'w') as _file:
             json.dump(_app_data, _file,
                       sort_keys=True) #, indent=4, separators=(',', ': '))
-            
+
         _test_model = active_applications()
         _test_model.from_dict(_app_data)
         assert self._applications == _test_model
@@ -91,16 +91,16 @@ class time_tracker():
             self._current_app_title = applicationinfo.get_active_window_title()
             try:
                 self._current_process_exe = applicationinfo.get_active_process_name()
-            except applicationinfo.UncriticalException as e: #necessary to run in i3
+            except applicationinfo.WindowInformationError as e: #necessary to run in i3
                 self._current_process_exe = "Process not found"
-                
+
             self._rules.highlight_string(self._current_app_title)
 
             if self._idle_current > 10:
                 self._user_is_active = False
                 return
 
-            _app = track_common.app_info(self._current_app_title, 
+            _app = track_common.app_info(self._current_app_title,
                             self._current_process_exe)
             _app._category = self._rules.get_first_matching_key(_app)
 
@@ -108,7 +108,7 @@ class time_tracker():
                         self._current_minute,
                         _app)
 
-        except applicationinfo.UncriticalException as e:
+        except applicationinfo.WindowInformationError as e:
             pass
 
     def info(self, minute):
@@ -116,7 +116,7 @@ class time_tracker():
 
     def begin_index(self):
         return self._applications.begin_index()
-    
+
     def start_time(self):
         _s = self._applications.begin_index()
         return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
@@ -151,12 +151,12 @@ class time_tracker():
 
     def get_current_data(self):
         return {'minute': self._current_minute,
-                'time_total': 
+                'time_total':
                     self._current_minute - self._applications.begin_index() + 1,
 
                 'user_idle': self._idle_current,
                 'user_active': self._user_is_active,
-                
+
                 'app_title': self._current_app_title,
                 'process_name': self._current_process_exe,}
     '''
@@ -175,7 +175,7 @@ class time_tracker():
     def user_is_active(self):
         return self._user_is_active
     '''
-    
+
     # def update_categories(self):
     #    self._applications.update_all_categories(self._rules.get_first_matching_key)
 

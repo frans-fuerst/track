@@ -15,7 +15,7 @@ import logging
 log = logging.getLogger('time_tracker_qt')
 
 
-class time_tracker_qt():
+class time_tracker_qt:
     """ * retrieves system data
         * holds the application data object as
           well as some meta information
@@ -24,7 +24,7 @@ class time_tracker_qt():
     def __init__(self, parent):
         self._req_socket = None
         self._req_poller = None
-        
+
         self._current_data = None
         self._initialized = False
 
@@ -69,19 +69,19 @@ class time_tracker_qt():
 
     def update(self):
         log.info('update')
-        
+
         received_data = self._request({'type': 'current'})
         if not 'current' in received_data:
             raise
         self._current_data = received_data['current']
-        
+
         received_data = self._request({'type': 'apps'})
         if not 'apps' in received_data:
             raise
         self._applications.from_dict(received_data['apps'])
-        
+
         self._initialized = True
-    
+
     def initialized(self):
         return self._initialized
 

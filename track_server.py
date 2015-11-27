@@ -44,9 +44,9 @@ class track_server:
             _current_process_exe = None
             try:
                 self._tracker.update()
-            except applicationinfo.UncriticalException as e:
+            except applicationinfo.WindowInformationError:
                 pass
-            
+
             log.info(self._tracker.get_current_data())
 
     def handle_request(self, request):
@@ -56,10 +56,10 @@ class track_server:
         elif request['type'] == 'quit':
             self._running = False
             return {'type': 'ok'}
-        
+
         elif request['type'] == 'version':
             return {'version': str(track_base.version_info)}
-        
+
         elif request['type'] == 'apps':
             return {'type': 'info', 'apps': self._tracker.get_applications_model().__data__()}
 
@@ -68,7 +68,7 @@ class track_server:
 
         elif request['type'] == 'rules':
             return {'type': 'info', 'rules': self._tracker.get_rules_model().__data__()}
-        
+
         else:
             raise request_malformed(
                 'command "%s" not known' % request['type'])

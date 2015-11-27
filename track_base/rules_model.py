@@ -3,7 +3,7 @@
 
 import re
 
-class rules_model():
+class rules_model:
     def __init__(self):
         self._matching = []
         self._rules = []
@@ -55,7 +55,7 @@ class rules_model():
                 is_valid = True
             except re.error:
                 is_valid = False
-            
+
             if is_valid:
                 self._rules[index.row()][index.column()-1] = str(value.toString())
             else:

@@ -7,7 +7,8 @@ import logging
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
 
-import track_base
+from active_applications import active_applications
+from rules_model import rules_model
 import track_common
 
 class time_tracker():
@@ -26,8 +27,8 @@ class time_tracker():
         
 
         # -- persist
-        self._applications = track_base.active_applications()
-        self._rules = track_base.rules_model()
+        self._applications = active_applications()
+        self._rules = rules_model()
 
         #self._rules.modified_rules.connect(self.update_categories)
 
@@ -59,7 +60,7 @@ class time_tracker():
             json.dump(_app_data, _file,
                       sort_keys=True) #, indent=4, separators=(',', ': '))
             
-        _test_model = track_base.active_applications(None)
+        _test_model = active_applications()
         _test_model.from_dict(_app_data)
         assert self._applications == _test_model
 
@@ -136,24 +137,29 @@ class time_tracker():
     def get_time_active(self):
         return len(self._applications._minutes)
 
-    def get_time_work(self):
-        r = 0
-        for i, m in self._applications._minutes.items():
-            r += 1 if str(m._category) != "0" else 0
-        return r
-
-    def get_time_private(self):
-        r = 0
-        for i, m in self._applications._minutes.items():
-            r += str(m._category) == "0"
-        return r
-
     def get_time_idle(self):
         return self.get_time_total() - len(self._applications._minutes)
 
-    def get_max_minute(self):
-        return self._tracker.end_index()
+    def get_time_in_category(self, category):
+        r = 0
+        for i, m in self._applications._minutes.items():
+            r += 1 if m._category == category else 0
+        return r
 
+    def get_max_minute(self):
+        return self._applications.end_index()
+
+    def get_current_data(self):
+        return {'minute': self._current_minute,
+                'time_total': 
+                    self._current_minute - self._applications.begin_index() + 1,
+
+                'user_idle': self._idle_current,
+                'user_active': self._user_is_active,
+                
+                'app_title': self._current_app_title,
+                'process_name': self._current_process_exe,}
+    '''
     def get_current_minute(self):
         return self._current_minute
 
@@ -168,7 +174,8 @@ class time_tracker():
 
     def user_is_active(self):
         return self._user_is_active
-
+    '''
+    
     # def update_categories(self):
     #    self._applications.update_all_categories(self._rules.get_first_matching_key)
 

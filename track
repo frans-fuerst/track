@@ -17,8 +17,8 @@ except:
     sys.exit(-1)
 
 
+import track_base
 import track_qt
-import track_common
 
 class track_ui(QtGui.QMainWindow):
 
@@ -42,7 +42,6 @@ class track_ui(QtGui.QMainWindow):
         self.tbl_active_applications.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
         self.tbl_active_applications.setDragEnabled(True)
         self.tbl_active_applications.setDropIndicatorShown(True)
-        #self.tbl_active_applications.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 
 
         self.tbl_category_rules.setModel(self._tracker.get_rules_model())
@@ -52,11 +51,9 @@ class track_ui(QtGui.QMainWindow):
         self.tbl_category_rules.setColumnWidth(3, self.tbl_category_rules.width() * 0.10)
 
         self.tbl_category_rules.setDragEnabled(True)
-        #self.tbl_category_rules.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
         self.tbl_category_rules.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
         self.tbl_category_rules.setDropIndicatorShown(True)
         self.tbl_category_rules.viewport().setAcceptDrops(True)
-#       self.tbl_category_rules.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.tbl_category_rules.setDragDropOverwriteMode(False)
 
         self.show()
@@ -76,6 +73,40 @@ class track_ui(QtGui.QMainWindow):
         self.pb_regex.clicked.connect(self.pb_regex_clicked)
 
         _idle_timer.start(1000)
+
+        self.initialize_tray_icon()
+
+    def initialize_tray_icon(self):
+        style = self.style()
+
+        # Set the window and tray icon to something
+        icon = style.standardIcon(QtGui.QStyle.SP_MediaSeekForward)
+        self.tray_icon = QtGui.QSystemTrayIcon()
+        self.tray_icon.setIcon(QtGui.QIcon(icon))
+        self.setWindowIcon(QtGui.QIcon(icon))
+
+        # Restore the window when the tray icon is double clicked.
+        self.tray_icon.activated.connect(self.restore_window)
+
+    def event(self, event):
+        if (event.type() == QtCore.QEvent.WindowStateChange and 
+                self.isMinimized()):
+            # The window is already minimized at this point.  AFAIK,
+            # there is no hook stop a minimize event. Instead,
+            # removing the Qt.Tool flag should remove the window
+            # from the taskbar.
+            self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.Tool)
+            self.tray_icon.show()
+            return True
+        else:
+            return super(track_ui, self).event(event)
+
+    def restore_window(self, reason):
+        if reason == QtGui.QSystemTrayIcon.DoubleClick:
+            self.tray_icon.hide()
+            # self.showNormal will restore the window even if it was
+            # minimized.
+            self.showNormal()
 
     def pb_regex_clicked(self):
         self._tracker.new_regex_rule()
@@ -101,11 +132,11 @@ class track_ui(QtGui.QMainWindow):
             self.lbl_times.setText(
                 "T: %s  A: %s (%.1f)  W: %s (%.1f)  "
                 "P: %s (%.1f)  I: %s (%.1f)" %
-                (track_common.mins_to_dur(_time_total),
-                 track_common.mins_to_dur(_time_active), _time_active / float(_time_total),
-                 track_common.mins_to_dur(_time_work), _time_work / float(_time_total),
-                 track_common.mins_to_dur(_time_private), _time_private / float(_time_total),
-                 track_common.mins_to_dur(_time_idle), _time_idle / float(_time_total)))
+                (track_base.mins_to_dur(_time_total),
+                 track_base.mins_to_dur(_time_active), _time_active / float(_time_total),
+                 track_base.mins_to_dur(_time_work), _time_work / float(_time_total),
+                 track_base.mins_to_dur(_time_private), _time_private / float(_time_total),
+                 track_base.mins_to_dur(_time_idle), _time_idle / float(_time_total)))
 
 
             self.lbl_start_time.setText("%s - %s" % (
@@ -145,8 +176,10 @@ def sigint_handler(s, window):
 
 
 if __name__ == '__main__':
-    print(sys.executable)
     logging.basicConfig(level=logging.INFO)
+    
+    log.info(sys.executable)
+
     app = QtGui.QApplication(sys.argv)
     ex = track_ui()
     for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):

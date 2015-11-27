@@ -5,7 +5,6 @@ import os
 import json
 import re
 import track_base
-import track_common
 
 def test_active_applications():
     aa = track_base.active_applications()
@@ -43,14 +42,14 @@ def test_import():
 
             print("f: %23s, count: %3d, begin: %s (%4d), end: %s (%4d), lunch: %7s, dur: %7s" % (
                 _file, a.count(), 
-                track_common.mins_to_date(_begin), _begin, 
-                track_common.mins_to_date(_end), _end, 
-                track_common.mins_to_dur(_lunch_dur),
-                track_common.mins_to_dur(_dur)))
+                track_base.mins_to_date(_begin), _begin, 
+                track_base.mins_to_date(_end), _end, 
+                track_base.mins_to_dur(_lunch_dur),
+                track_base.mins_to_dur(_dur)))
             # print(re.search('track-.*.json', _file) is not None)
 
     if _count > 0:
-        print(track_common.mins_to_dur(_total_dur / _count))
+        print(track_base.mins_to_dur(_total_dur / _count))
 
 if __name__ == '__main__':
     test_active_applications()

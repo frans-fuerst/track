@@ -3,7 +3,6 @@
 
 from PyQt4 import QtCore #, Qt, uic, QtGui
 
-
 class change_emitter:
     def __init__(self, emitter):
         self._emitter = emitter

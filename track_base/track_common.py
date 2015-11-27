@@ -3,7 +3,7 @@
 
 from datetime import datetime
 import time
-
+from collections import namedtuple
 
 def mins_to_date(mins):
     _result = ""

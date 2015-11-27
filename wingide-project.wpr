@@ -4,4 +4,31 @@
 # Wing IDE project file                                          #
 ##################################################################
 [project attributes]
+proj.directory-list = [{'dirloc': loc('desktop_usage_info'),
+                        'excludes': [u'backend_windows'],
+                        'filter': '*',
+                        'include_hidden': False,
+                        'recursive': True,
+                        'watch_for_changes': True}]
+proj.file-list = [loc('test_active_applications.py'),
+                  loc('test_applicationinfo.py'),
+                  loc('test_rules_model.py'),
+                  loc('test_server.py'),
+                  loc('test_timegraph.py'),
+                  loc('test_time_tracker.py'),
+                  loc('test_track_qt_common.py'),
+                  loc('track'),
+                  loc('track-cli.py'),
+                  loc('track_base/active_applications.py'),
+                  loc('track_base/rules_model.py'),
+                  loc('track_base/time_tracker.py'),
+                  loc('track_base/track_common.py'),
+                  loc('track_base/__init__.py'),
+                  loc('track_qt/active_applications_qtmodel.py'),
+                  loc('track_qt/qt_common.py'),
+                  loc('track_qt/rules_model_qt.py'),
+                  loc('track_qt/timegraph.py'),
+                  loc('track_qt/time_tracker_qt.py'),
+                  loc('track_qt/__init__.py'),
+                  loc('track_server.py')]
 proj.file-type = 'shared'

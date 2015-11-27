@@ -8,9 +8,14 @@ import re
 import wnck
 import psutil
 
+from desktop_usage_info import ToolError
+from desktop_usage_info import WindowInformationError
 
-class UncriticalException(Exception):
-    pass
+'''
+xprop -id $(xprop -root | awk '/_NET_ACTIVE_WINDOW\(WINDOW\)/{print $NF}') | awk '/_NET_WM_PID\(CARDINAL\)/{print $NF}'
+xprop -id $(xprop -root _NET_ACTIVE_WINDOW | cut -f5 -d' ')
+'''
+
 
 # http://thp.io/2007/09/x11-idle-time-and-focused-window-in.html
 
@@ -23,8 +28,45 @@ def get_stdout(command):
                 stderr=subprocess.PIPE,)
     _stdout, _stderr =_p.communicate()
     if _p.returncode is not 0:
-        raise Exception('command "%s" did not return properly' % ' '.join(command))
+        raise MissingTool('command "%s" did not return properly' % ' '.join(command))
     return _stdout.split('\n')
+
+
+def get_active_window_information():
+    try:
+        _xprop = get_stdout(['xprop', '-root', '_NET_ACTIVE_WINDOW'])
+    except:
+        raise ToolError('Could not run "xprop". Is this an X-Session?')
+
+    _id_w = None
+    for line in _xprop:
+        m = re.search('^_NET_ACTIVE_WINDOW.* ([\w]+)$', line)
+        if m is not None:
+            _window_id = m.group(1)
+
+    if _window_id is None:
+        raise ToolError('"xprop" did not give us _NET_ACTIVE_WINDOW.')
+
+    try:
+        _id_w = get_stdout(['xprop', '-id', _window_id, 'WM_NAME', '_NET_WM_NAME', '_NET_WM_PID'])
+    except:
+        raise ToolError('Could not run "xprop" in order to get WM_NAME, _NET_WM_NAME and_NET_WM_PID')
+
+    _result = {}
+
+    for line in _id_w:
+        _match = re.match(".*WM_NAME\(\w+\) = (?P<name>.+)$", line)
+        if _match is not None:
+            _entry = _match.group("name").decode().strip('"').strip()
+            if _entry != "":
+                _result['TITLE'] = _entry
+        _match = re.match(".*_NET_WM_PID\(\w+\) = (?P<name>.+)$", line)
+        if _match is not None:
+            _entry = _match.group("name").decode().strip('"').strip()
+            if _entry != "":
+                _result['PID'] = _entry
+
+    return _result
 
 def get_active_window_title():
 
@@ -40,11 +82,9 @@ def get_active_window_title():
                 break
 
         if _id_w is not None:
-
             for line in _id_w:
                 match = re.match(".*WM_NAME\(\w+\) = (?P<name>.+)$", line)
                 if match != None:
-
                     _result = match.group("name").decode().strip('"')
                     if _result.strip() == "":
                         pass
@@ -77,5 +117,5 @@ def get_active_process_name():
             return "error in get_active_process_name(%s)" % str(pid)
     except (psutil.NoSuchProcess, AttributeError) as e:
         # print e
-        raise UncriticalException()
+        raise WindowInformationError()
 

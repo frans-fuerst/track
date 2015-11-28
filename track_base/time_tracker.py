@@ -88,10 +88,12 @@ class time_tracker:
             self._user_is_active = True
 
             self._idle_current = idle.getIdleSec()
-            self._current_app_title = applicationinfo.get_active_window_title()
-            try:
-                self._current_process_exe = applicationinfo.get_active_process_name()
-            except applicationinfo.WindowInformationError as e: #necessary to run in i3
+            _app_info = applicationinfo.get_active_window_information()
+
+            self._current_app_title = _app_info["TITLE"]
+            if "COMMAND" in _app_info:
+                self._current_process_exe = _app_info["COMMAND"]
+            else:
                 self._current_process_exe = "Process not found"
 
             self._rules.highlight_string(self._current_app_title)

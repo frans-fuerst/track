@@ -19,7 +19,7 @@ xprop -id $(xprop -root _NET_ACTIVE_WINDOW | cut -f5 -d' ')
 
 # http://thp.io/2007/09/x11-idle-time-and-focused-window-in.html
 
-def get_stdout(command):
+def _get_stdout(command):
     """ run a command and return stdout
     """
     _p = subprocess.Popen(
@@ -34,7 +34,7 @@ def get_stdout(command):
 
 def get_active_window_information():
     try:
-        _xprop = get_stdout(['xprop', '-root', '_NET_ACTIVE_WINDOW'])
+        _xprop = _get_stdout(['xprop', '-root', '_NET_ACTIVE_WINDOW'])
     except:
         raise ToolError('Could not run "xprop". Is this an X-Session?')
 
@@ -48,7 +48,7 @@ def get_active_window_information():
         raise ToolError('"xprop" did not give us _NET_ACTIVE_WINDOW.')
 
     try:
-        _id_w = get_stdout(['xprop', '-id', _window_id, 'WM_NAME', '_NET_WM_NAME', '_NET_WM_PID'])
+        _id_w = _get_stdout(['xprop', '-id', _window_id, 'WM_NAME', '_NET_WM_NAME', '_NET_WM_PID'])
     except:
         raise ToolError('Could not run "xprop" in order to get WM_NAME, _NET_WM_NAME and_NET_WM_PID')
 
@@ -64,21 +64,29 @@ def get_active_window_information():
         if _match is not None:
             _entry = _match.group("name").decode().strip('"').strip()
             if _entry != "":
-                _result['PID'] = _entry
+                _result['PID'] = int(_entry)
+
+    if 'PID' in _result:
+        process = psutil.Process(_result['PID'])
+        try:
+            #  # in psutil 2+ cmdline is a getter
+            _result['COMMAND'] = ' '.join(process.cmdline())
+        except TypeError:
+            _result['COMMAND'] = ' '.join(process.cmdline)
 
     return _result
 
-def get_active_window_title():
-
+def _get_active_window_title():
+    ''' deprecated '''
     try:
-        _xprop = get_stdout(['xprop', '-root', '_NET_ACTIVE_WINDOW'])
+        _xprop = _get_stdout(['xprop', '-root', '_NET_ACTIVE_WINDOW'])
         _id_w = None
         for line in _xprop:
             m = re.search('^_NET_ACTIVE_WINDOW.* ([\w]+)$', line)
             if m is not None:
                 id_ = m.group(1)
-                _id_w = get_stdout(['xprop', '-id', id_, 'WM_NAME', '_NET_WM_NAME'])
-                # _id_w = get_stdout(['xprop', '-id', id_])
+                _id_w = _get_stdout(['xprop', '-id', id_, 'WM_NAME', '_NET_WM_NAME'])
+                # _id_w = _get_stdout(['xprop', '-id', id_])
                 break
 
         if _id_w is not None:
@@ -94,7 +102,8 @@ def get_active_window_title():
     return "Active window not found"
 
 
-def get_active_process_name():
+def _get_active_process_name():
+    ''' deprecated '''
     try:
         # http://askubuntu.com/questions/152191
         screen = wnck.screen_get_default()

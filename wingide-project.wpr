@@ -30,6 +30,7 @@ proj.file-list = [loc('desktop_usage_info/__init__.py'),
                   loc('test_timegraph.py'),
                   loc('test_time_tracker.py'),
                   loc('test_track_qt_common.py'),
+                  loc('track'),
                   loc('track-cli.py'),
                   loc('track_server.py')]
 proj.file-type = 'shared'

@@ -28,7 +28,11 @@ def _get_stdout(command):
                 stderr=subprocess.PIPE,)
     _stdout, _stderr =_p.communicate()
     if _p.returncode is not 0:
-        raise MissingTool('command "%s" did not return properly' % ' '.join(command))
+        raise WindowInformationError(
+            'command "%s" did not return properly' % ' '.join(command)
+            + "\n"
+            + "output was: \n"
+            + _stdout)
     return _stdout.split('\n')
 
 
@@ -49,8 +53,15 @@ def get_active_window_information():
 
     try:
         _id_w = _get_stdout(['xprop', '-id', _window_id, 'WM_NAME', '_NET_WM_NAME', '_NET_WM_PID'])
-    except:
-        raise ToolError('Could not run "xprop" in order to get WM_NAME, _NET_WM_NAME and_NET_WM_PID')
+    except WindowInformationError as ex:
+        print(ex)
+        raise WindowInformationError(
+            '"xprop" (ran order to get WM_NAME, _NET_WM_NAME and_NET_WM_PID) "'
+            '"returned with error')
+    except Exception as ex:
+        print(ex)
+        raise ToolError(
+            'Could not run "xprop" in order to get WM_NAME, _NET_WM_NAME and_NET_WM_PID')
 
     _result = {}
 

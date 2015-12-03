@@ -14,6 +14,8 @@ import logging
 
 log = logging.getLogger('time_tracker_qt')
 
+class server_timeout(Exception):
+    pass
 
 class time_tracker_qt:
     """ * retrieves system data
@@ -24,6 +26,7 @@ class time_tracker_qt:
     def __init__(self, parent):
         self._req_socket = None
         self._req_poller = None
+        self._receiving = False
 
         self._current_data = None
         self._initialized = False
@@ -34,28 +37,50 @@ class time_tracker_qt:
         self._rules = rules_model_qt(parent)
         self._rules.modified_rules.connect(self.update_categories)
 
+        self._req_poller = zmq.Poller()
+        self._zmq_context = zmq.Context()
+
     def __eq__(self, other):
         return False
 
-    def _request(self, msg):
+    def _req_send(self, msg):
+        if self._receiving:
+            raise Exception('wrong send/recv state!')
+        self._receiving = True
         self._req_socket.send_json(msg)
-        _timeout = 50
+    
+    def _req_recv(self, timeout=50, raise_on_timeout=False):
+        if not self._receiving:
+            raise Exception('wrong send/recv state!')
+        self._receiving = False
+        _timeout = timeout
         while True:
             if self._req_poller.poll(_timeout) == []:
-                _timeout = 2000
+                if raise_on_timeout:
+                    raise server_timeout("timeout on recv()")
                 log.warn('server timeout. did you even start one?')
+                _timeout = 2000
                 continue
             break
         return self._req_socket.recv_json()
-
+        
+    def _request(self, msg):
+        self._req_send(msg)
+        return self._req_recv()
+    
     def connect(self):
-        self._req_socket = zmq.Context().socket(zmq.REQ)
-        self._req_poller = zmq.Poller()
+        if self._req_socket:
+            self._req_poller.unregister(self._req_socket)
+            self._req_socket.close()
+            
+        self._req_socket = self._zmq_context.socket(zmq.REQ)
         self._req_poller.register(self._req_socket, zmq.POLLIN)
-
         self._req_socket.connect('tcp://127.0.0.1:3456')
-
-        log.info('server version: %s', self._request({'type': 'version'}))
+        
+    def check_version(self):
+        self._req_send({'type': 'version'})
+        log.info('server version: %s', self._req_recv(
+            timeout=1000, raise_on_timeout=True))
 
     def clear(self):
         # must not be overwritten - we need the instance
@@ -68,7 +93,7 @@ class time_tracker_qt:
         return self._rules
 
     def update(self):
-        log.info('update')
+        log.debug('update')
 
         received_data = self._request({'type': 'current'})
         if not 'current' in received_data:

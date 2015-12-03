@@ -3,6 +3,7 @@
 
 import zmq
 import logging
+import logging.handlers
 import signal
 import time
 import sys
@@ -92,7 +93,7 @@ class track_server:
         self._system_monitoring_thread.start()
 
         while self._running:
-            log.info('listening..')
+            log.debug('listening..')
             try:
                 request = rep_socket.recv_json()
             except zmq.ZMQError:
@@ -127,7 +128,9 @@ def main():
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-
+    handler = logging.handlers.SysLogHandler('/dev/log')
+    log.addHandler(handler)
+    
     for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
         signal.signal(s, lambda signal, frame: sys.exit)
 

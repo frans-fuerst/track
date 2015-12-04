@@ -112,7 +112,9 @@ class time_tracker:
 
         except applicationinfo.WindowInformationError as e:
             pass
-
+        except applicationinfo.ToolError as ex:
+            logging.error(ex)
+            
     def info(self, minute):
         return self._applications.info(minute)
 

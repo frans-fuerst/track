@@ -20,6 +20,12 @@ except:
 import track_base
 import track_qt
 
+def start_server_process():
+    import subprocess
+    logging.info('start track server daemon')
+    server_file = os.path.join(os.path.dirname(__file__), 'track_server.py')
+    subprocess.Popen([sys.executable, server_file])
+
 class track_ui(QtGui.QMainWindow):
 
     def __init__(self):
@@ -27,8 +33,15 @@ class track_ui(QtGui.QMainWindow):
         super(track_ui, self).__init__()
 
         self._tracker = track_qt.time_tracker_qt(self)
+        
         self._tracker.connect()
-
+        try:
+            self._tracker.check_version()
+        except track_qt.server_timeout:
+            start_server_process()
+            self._tracker.connect()
+            self._tracker.check_version()
+            
         self.directory = os.path.dirname(os.path.realpath(__file__))
 
         self.initUI()

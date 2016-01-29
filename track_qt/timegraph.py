@@ -42,7 +42,6 @@ class timegraph(QtGui.QFrame):
         self.setToolTip(_info_str)
 
     def drawPoints(self, qp):
-        x = self._tracker.begin_index()
         _start_index = self._tracker.begin_index() - 50
         for i in range(self.width() - 2):
             _index = _start_index + i

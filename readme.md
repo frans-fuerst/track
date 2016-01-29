@@ -26,11 +26,43 @@ This is an early screenshot to give an idea of how Track works:
 * if you want to waste your time with another self profiling tool
 
 
-The current *project state* is very early (see the [schedule](progress.md)). Very 
-basic features are still missing so it might be wise to come back in a week or 
-so. 
+The current *project state* is (still! damn!) very early (see the 
+[schedule](progress.md)). 
+
+Very basic features are still missing so it might be wise to come back in a 
+week or so. 
 However it's totally save to use the tool and it's providing some interesting 
 information already.
+
+
+### categories and rules
+
+In order to get an idea how much of the day you spend for work and how much 
+for private stuff (or how much you spend on project A or project B) track allows
+you to define special *rules* which assign each running program to a category.
+
+Right now categories are still just numbers. In the future I plan to allow
+arbitrary categories (or category trees), e.g.:
+
+* work
+    - project A
+    - project A
+* private stuff
+** test
+* procrastinating
+
+The technical approach is very simple: you define standard Python *regex* rules
+which are matched against the *title* of the active window.
+
+For example - in a very simple world - it might be enough to define that browsing
+the internet using Firefox is private stuff (category 1) and everything else
+is work (category 0). In this case you would just define one rule:
+
+    regex=".*-Mozilla Firefox.*" -> category=1
+
+This way every program whose title does not match `.*-Mozilla Firefox.*` would
+be assigned to the default category 0 and all *Firefox* browser windows would 
+result in category 1 (which you might be *private* in your eyes).
 
 
 ### requirements
@@ -45,6 +77,4 @@ information already.
 ### how to run
 
 Just clone the repository and run `track.py`.
-
-
 

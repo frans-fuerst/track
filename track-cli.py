@@ -24,7 +24,7 @@ def handle_result(result):
     if 'type' in result and result['type'] == 'error':
         raise Exception('server replied with error: "%s"' % result['what'])
     print(result)
-    
+
 def main():
     args = sys.argv[1:]
 
@@ -33,22 +33,26 @@ def main():
         return
     elif args == ['quit']:
         request = {'type': 'quit'}
-        
+
     elif args == ['version']:
         request = {'type': 'version'}
 
     elif args == ['apps']:
         request = {'type': 'apps'}
-        
+
     elif args == ['current']:
         request = {'type': 'current'}
-        
+
     elif args == ['rules']:
         request = {'type': 'rules'}
-        
+
+    elif args == ['help']:
+        print(['quit', 'version', 'apps', 'current', 'rules'])
+        sys.exit()
+
     else:
         raise Exception('command not handled: %s' % args)
-    
+
     try:
         result = send_request(request)
         handle_result(result)

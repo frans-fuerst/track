@@ -3,6 +3,7 @@
 
 from datetime import datetime
 import time
+import logging
 from collections import namedtuple
 
 def mins_to_date(mins):
@@ -55,13 +56,13 @@ def minutes_since_midnight():
     return int(seconds_since_midnight() / 60)
 
 class app_info():
-    
+
     def __init__(self, windowtitle="", cmdline=""):
         self._wndtitle = windowtitle
         self._cmdline = cmdline
         self._category = 0
         self._count = 0
-        
+
     def __eq__(self, other):
         if not self._wndtitle == other._wndtitle:
             return False
@@ -72,17 +73,17 @@ class app_info():
         if not self._count == other._count:
             return False
         return True
-    
+
     def generate_identifier(self):
         return self._wndtitle
 
     def __hash__(self):
         x = hash((self._wndtitle, self._cmdline))
         return x
-    
+
     def __str__(self):
         return "%s - [%s %d]" % (self._wndtitle, self._category, self._count)
-    
+
     def load(self, data):
         try:
             self._wndtitle, self._category, self._count, self._cmdline = data
@@ -91,13 +92,13 @@ class app_info():
                   str(data)))
             raise Exception('could not load app_info data')
         return self
-    
+
     def __data__(self):  # const
         return (self._wndtitle, self._category, self._count, self._cmdline)
 
     def get_category(self):
         return self._category
-        
+
     def set_new_category(self, new_category):
         self._category=new_category
 
@@ -124,18 +125,18 @@ class minute():
                 print("o: %s - %d" % (a, c))
             return False
         return True
-    
+
     def dump(self):
         print("category %d" % self._category)
-            
+
     def init(self, data):
         self._category, self._apps = data
         return self
-    
+
     def _rebuild(self):
         if len(self._apps) == 0:
             return 0  # todo: need undefined
-        
+
         _categories = {} # category -> sum
         for a, c in self._apps.items():
             try:
@@ -166,3 +167,15 @@ class minute():
         for a, c in self._apps.items():
             a.set_new_category(get_category(a))
         self._rebuild()
+
+def setup_logging(level=logging.INFO):
+    logging.basicConfig(
+        format="%(asctime)s %(name)15s %(levelname)s:  %(message)s",
+        datefmt="%y%m%d-%H%M%S",
+        level=level)
+    logging.addLevelName(logging.CRITICAL, "CC")
+    logging.addLevelName(logging.ERROR,    "EE")
+    logging.addLevelName(logging.WARNING,  "WW")
+    logging.addLevelName(logging.INFO,     "II")
+    logging.addLevelName(logging.DEBUG,    "DD")
+    logging.addLevelName(logging.NOTSET,   "NA")

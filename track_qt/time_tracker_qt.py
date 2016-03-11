@@ -48,7 +48,7 @@ class time_tracker_qt:
             raise Exception('wrong send/recv state!')
         self._receiving = True
         self._req_socket.send_json(msg)
-    
+
     def _req_recv(self, timeout=50, raise_on_timeout=False):
         if not self._receiving:
             raise Exception('wrong send/recv state!')
@@ -63,20 +63,20 @@ class time_tracker_qt:
                 continue
             break
         return self._req_socket.recv_json()
-        
+
     def _request(self, msg):
         self._req_send(msg)
         return self._req_recv()
-    
-    def connect(self):
+
+    def connect(self, endpoint):
         if self._req_socket:
             self._req_poller.unregister(self._req_socket)
             self._req_socket.close()
-            
+
         self._req_socket = self._zmq_context.socket(zmq.REQ)
         self._req_poller.register(self._req_socket, zmq.POLLIN)
-        self._req_socket.connect('tcp://127.0.0.1:3456')
-        
+        self._req_socket.connect(endpoint)
+
     def check_version(self):
         self._req_send({'type': 'version'})
         log.info('server version: %s', self._req_recv(

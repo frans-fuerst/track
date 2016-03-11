@@ -127,10 +127,11 @@ def main():
     track_server().run()
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    handler = logging.handlers.SysLogHandler('/dev/log')
+    track_base.setup_logging(logging.INFO)
+    log.setLevel(logging.INFO)
+    handler = logging.handlers.SysLogHandler(address = '/dev/log')
     log.addHandler(handler)
-    
+
     for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
         signal.signal(s, lambda signal, frame: sys.exit)
 

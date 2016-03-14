@@ -48,7 +48,7 @@ class track_server:
             except applicationinfo.WindowInformationError:
                 pass
 
-            log.info(self._tracker.get_current_data())
+            log.debug(self._tracker.get_current_data())
 
     def handle_request(self, request):
         if 'type' not in request:
@@ -130,6 +130,9 @@ if __name__ == '__main__':
     track_base.setup_logging(logging.INFO)
     log.setLevel(logging.INFO)
     handler = logging.handlers.SysLogHandler(address = '/dev/log')
+    handler.setFormatter(logging.Formatter(
+        fmt="%(asctime)s %(name)15s %(levelname)s:  %(message)s",
+        datefmt="%y%m%d-%H%M%S"))
     log.addHandler(handler)
 
     for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):

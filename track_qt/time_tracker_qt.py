@@ -78,9 +78,10 @@ class time_tracker_qt:
         self._req_socket.connect(endpoint)
 
     def check_version(self):
-        self._req_send({'type': 'version'})
-        log.info('server version: %s', self._req_recv(
-            timeout=1000, raise_on_timeout=True))
+        with track_base.frame_grabber():
+            self._req_send({'type': 'version'})
+            log.info('server version: %s', self._req_recv(
+                timeout=1000, raise_on_timeout=True))
 
     def clear(self):
         # must not be overwritten - we need the instance
@@ -93,19 +94,19 @@ class time_tracker_qt:
         return self._rules
 
     def update(self):
-        log.debug('update')
+        with track_base.frame_grabber():
 
-        received_data = self._request({'type': 'current'})
-        if not 'current' in received_data:
-            raise
-        self._current_data = received_data['current']
+            received_data = self._request({'type': 'current'})
+            if not 'current' in received_data:
+                raise
+            self._current_data = received_data['current']
 
-        received_data = self._request({'type': 'apps'})
-        if not 'apps' in received_data:
-            raise
-        self._applications.from_dict(received_data['apps'])
+            received_data = self._request({'type': 'apps'})
+            if not 'apps' in received_data:
+                raise
+            self._applications.from_dict(received_data['apps'])
 
-        self._initialized = True
+            self._initialized = True
 
     def initialized(self):
         return self._initialized

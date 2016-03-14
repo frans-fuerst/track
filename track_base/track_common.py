@@ -5,6 +5,7 @@ from datetime import datetime
 import time
 import logging
 from collections import namedtuple
+import traceback
 
 def mins_to_date(mins):
     _result = ""
@@ -179,3 +180,24 @@ def setup_logging(level=logging.INFO):
     logging.addLevelName(logging.INFO,     "II")
     logging.addLevelName(logging.DEBUG,    "DD")
     logging.addLevelName(logging.NOTSET,   "NA")
+
+import threading
+class frame_grabber:
+    stacks = {}
+    def __init__(self, extra=None):
+        self.n = traceback.extract_stack()[-2][2]
+        self.e = extra
+        t = threading.current_thread()
+        if not t in frame_grabber.stacks:
+            frame_grabber.stacks[t] = (len(frame_grabber.stacks) * 10, [])
+        self.s = frame_grabber.stacks[t]
+
+    def __enter__(self):
+        self.s[1].append(self.n)
+        print('>> %d %d enter %s %s' % (self.s[0], len(self.s[1]), self.n, "(%s)" % self.e if self.e else ""))
+        return self
+
+    def __exit__(self, *args):
+        print('<< %d %d leave %s' % (self.s[0], len(self.s[1]), self.n))
+        self.s[1].pop()
+        return

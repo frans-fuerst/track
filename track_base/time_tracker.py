@@ -3,6 +3,7 @@
 
 import json
 import logging
+log = logging.getLogger('base.time_tracker')
 
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
@@ -10,6 +11,8 @@ from desktop_usage_info import applicationinfo
 from active_applications import active_applications
 from rules_model import rules_model
 import track_common
+import track_base
+
 
 class time_tracker:
     """ * retrieves system data
@@ -47,7 +50,7 @@ class time_tracker:
                 _struct = json.load(_file)
         except IOError:
             if filename is not None:
-                logging.warn('file "%s" does not exist' % filename)
+                log.warn('file "%s" does not exist' % filename)
             return
 
         self._applications.from_dict(_struct)
@@ -71,50 +74,51 @@ class time_tracker:
         return self._rules
 
     def update(self):
-        try:
-            _today = track_common.today_int()
-            self._current_minute = track_common.minutes_since_midnight()
+        with track_base.frame_grabber(log):
+            try:
+                _today = track_common.today_int()
+                self._current_minute = track_common.minutes_since_midnight()
 
-            if self._active_day < _today:
-                print("current minute is %d - it's midnight" % self._current_minute)
-                #midnight!
-                self.save('track-log-%d.json' % self._active_day)
-                self.clear()
+                if self._active_day < _today:
+                    print("current minute is %d - it's midnight" % self._current_minute)
+                    #midnight!
+                    self.save('track-log-%d.json' % self._active_day)
+                    self.clear()
 
-            self._active_day = _today
+                self._active_day = _today
 
-            self._current_minute = track_common.minutes_since_midnight()
+                self._current_minute = track_common.minutes_since_midnight()
 
-            self._user_is_active = True
+                self._user_is_active = True
 
-            self._idle_current = idle.getIdleSec()
-            _app_info = applicationinfo.get_active_window_information()
+                self._idle_current = idle.getIdleSec()
+                _app_info = applicationinfo.get_active_window_information()
 
-            self._current_app_title = _app_info["TITLE"]
-            if "COMMAND" in _app_info:
-                self._current_process_exe = _app_info["COMMAND"]
-            else:
-                self._current_process_exe = "Process not found"
+                self._current_app_title = _app_info["TITLE"]
+                if "COMMAND" in _app_info:
+                    self._current_process_exe = _app_info["COMMAND"]
+                else:
+                    self._current_process_exe = "Process not found"
 
-            self._rules.highlight_string(self._current_app_title)
+                self._rules.highlight_string(self._current_app_title)
 
-            if self._idle_current > 10:
-                self._user_is_active = False
-                return
+                if self._idle_current > 10:
+                    self._user_is_active = False
+                    return
 
-            _app = track_common.app_info(self._current_app_title,
-                            self._current_process_exe)
-            _app._category = self._rules.get_first_matching_key(_app)
+                _app = track_common.app_info(self._current_app_title,
+                                self._current_process_exe)
+                _app._category = self._rules.get_first_matching_key(_app)
 
-            _app = self._applications.update(
-                        self._current_minute,
-                        _app)
+                _app = self._applications.update(
+                            self._current_minute,
+                            _app)
 
-        except applicationinfo.WindowInformationError as e:
-            pass
-        except applicationinfo.ToolError as ex:
-            logging.error(ex)
-            
+            except applicationinfo.WindowInformationError as e:
+                pass
+            except applicationinfo.ToolError as ex:
+                log.error(ex)
+
     def info(self, minute):
         return self._applications.info(minute)
 

@@ -171,7 +171,7 @@ class minute():
 
 def setup_logging(level=logging.INFO):
     logging.basicConfig(
-        format="%(asctime)s %(name)15s %(levelname)s:  %(message)s",
+        format="%(asctime)s %(name)17s %(levelname)s:  %(message)s",
         datefmt="%y%m%d-%H%M%S",
         level=level)
     logging.addLevelName(logging.CRITICAL, "CC")
@@ -184,20 +184,23 @@ def setup_logging(level=logging.INFO):
 import threading
 class frame_grabber:
     stacks = {}
-    def __init__(self, extra=None):
+    def __init__(self, logger, extra=None):
         self.n = traceback.extract_stack()[-2][2]
         self.e = extra
+        self.l = logger
         t = threading.current_thread()
         if not t in frame_grabber.stacks:
             frame_grabber.stacks[t] = (len(frame_grabber.stacks) * 10, [])
         self.s = frame_grabber.stacks[t]
+        self.prefix = "T%d %s" % (self.s[0], " " * 4 * len(self.s[1]))
+        self.postfix = "%s() %s" % (self.n, "(%s)" % self.e if self.e else "")
 
     def __enter__(self):
         self.s[1].append(self.n)
-        print('>> %d %d enter %s %s' % (self.s[0], len(self.s[1]), self.n, "(%s)" % self.e if self.e else ""))
+        self.l.debug('>> %s enter %s', self.prefix, self.postfix)
         return self
 
     def __exit__(self, *args):
-        print('<< %d %d leave %s' % (self.s[0], len(self.s[1]), self.n))
+        self.l.debug('<< %s leave %s', self.prefix, self.postfix)
         self.s[1].pop()
         return

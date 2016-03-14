@@ -78,7 +78,7 @@ class time_tracker_qt:
         self._req_socket.connect(endpoint)
 
     def check_version(self):
-        with track_base.frame_grabber():
+        with track_base.frame_grabber(log):
             self._req_send({'type': 'version'})
             log.info('server version: %s', self._req_recv(
                 timeout=1000, raise_on_timeout=True))
@@ -94,7 +94,7 @@ class time_tracker_qt:
         return self._rules
 
     def update(self):
-        with track_base.frame_grabber():
+        with track_base.frame_grabber(log):
 
             received_data = self._request({'type': 'current'})
             if not 'current' in received_data:

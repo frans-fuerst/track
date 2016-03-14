@@ -117,7 +117,7 @@ class track_ui(QtGui.QMainWindow):
         _type = event.type()
         _event_str = "'%s' (%d)" % (
             i_to_e[_type] if _type in i_to_e else "unknown", _type)
-        with track_base.frame_grabber(_event_str):
+        with track_base.frame_grabber(log, _event_str):
             if _type == QtCore.QEvent.WindowActivate and not self._connected:
                 # we abuse this event as some sort of WindowShow event
                 if self._connect():
@@ -139,14 +139,15 @@ class track_ui(QtGui.QMainWindow):
                 self.tray_icon.show()
                 return True
             else:
-                log.debug("unhandled event '%s' (%d)",
-                         i_to_e[_type] if _type in i_to_e else "unknown",
-                         _type)
+                # log.debug("unhandled event '%s' (%d)",
+                #         i_to_e[_type] if _type in i_to_e else "unknown",
+                #         _type)
+                pass
 
             return super(track_ui, self).event(event)
 
     def restore_window(self, reason):
-        with track_base.frame_grabber():
+        with track_base.frame_grabber(log):
 
             if reason == QtGui.QSystemTrayIcon.DoubleClick:
                 self.tray_icon.hide()
@@ -158,7 +159,7 @@ class track_ui(QtGui.QMainWindow):
         self._tracker.new_regex_rule()
 
     def update_idle(self):
-        with track_base.frame_grabber():
+        with track_base.frame_grabber(log):
             self._tracker.update()
             _idle = self._tracker.get_idle()
             _app = self._tracker.get_current_app_title()
@@ -208,7 +209,7 @@ class track_ui(QtGui.QMainWindow):
 
 
 def sigint_handler(s, window):
-    with frame_grabber():
+    with track_base.frame_grabber(log):
         sig_name = "unknown"
         if s == signal.SIGABRT:
             sig_name = "SIGABRT"
@@ -224,7 +225,7 @@ def sigint_handler(s, window):
 
 
 def main():
-    track_base.setup_logging(logging.INFO)
+    track_base.setup_logging(logging.DEBUG)
 
     log.info("Python info: %s, %s",
         '.'.join((str(e) for e in sys.version_info)),

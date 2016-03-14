@@ -5,7 +5,6 @@ import logging
 import subprocess
 import re
 
-import wnck
 import psutil
 
 from desktop_usage_info import ToolError
@@ -68,9 +67,11 @@ def get_active_window_information():
     for line in _id_w:
         _match = re.match(".*WM_NAME\(\w+\) = (?P<name>.+)$", line)
         if _match is not None:
-            _entry = _match.group("name").decode().strip('"').strip()
+            _entry = _match.group("name").decode('utf-8', errors='replace').strip('"').strip()
             if _entry != "":
                 _result['TITLE'] = _entry
+            else:
+                pass
         _match = re.match(".*_NET_WM_PID\(\w+\) = (?P<name>.+)$", line)
         if _match is not None:
             _entry = _match.group("name").decode().strip('"').strip()
@@ -114,6 +115,7 @@ def _get_active_window_title():
 
 
 def _get_active_process_name():
+    import wnck
     ''' deprecated '''
     try:
         # http://askubuntu.com/questions/152191

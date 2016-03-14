@@ -47,6 +47,8 @@ class track_server:
                 self._tracker.update()
             except applicationinfo.WindowInformationError:
                 pass
+            except Exception as ex:
+                log.error("Unhandled Exception: ", ex)
 
             log.debug(self._tracker.get_current_data())
 
@@ -127,7 +129,7 @@ def main():
     track_server().run()
 
 if __name__ == '__main__':
-    track_base.setup_logging(logging.INFO)
+    track_base.setup_logging(logging.DEBUG)
     log.setLevel(logging.INFO)
     handler = logging.handlers.SysLogHandler(address = '/dev/log')
     handler.setFormatter(logging.Formatter(

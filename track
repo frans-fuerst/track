@@ -225,7 +225,10 @@ def sigint_handler(s, window):
 
 
 def main():
-    track_base.setup_logging(logging.DEBUG)
+    _level = logging.INFO
+    if '-v' in sys.argv:
+        _level = logging.DEBUG
+    track_base.setup_logging(_level)
 
     log.info("Python info: %s, %s",
         '.'.join((str(e) for e in sys.version_info)),

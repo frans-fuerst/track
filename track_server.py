@@ -129,8 +129,12 @@ def main():
     track_server().run()
 
 if __name__ == '__main__':
-    track_base.setup_logging(logging.DEBUG)
-    log.setLevel(logging.INFO)
+    _level = logging.INFO
+    if '-v' in sys.argv:
+        _level = logging.DEBUG
+    track_base.setup_logging(_level)
+    log.setLevel(_level)
+
     handler = logging.handlers.SysLogHandler(address = '/dev/log')
     handler.setFormatter(logging.Formatter(
         fmt="%(asctime)s %(name)15s %(levelname)s:  %(message)s",

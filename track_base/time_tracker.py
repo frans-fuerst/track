@@ -50,7 +50,7 @@ class time_tracker:
                 _struct = json.load(_file)
         except IOError:
             if filename is not None:
-                log.warn('file "%s" does not exist' % filename)
+                log.warning('file "%s" does not exist', filename)
             return
 
         self._applications.from_dict(_struct)
@@ -114,7 +114,7 @@ class time_tracker:
                             self._current_minute,
                             _app)
 
-            except applicationinfo.WindowInformationError as e:
+            except applicationinfo.WindowInformationError:
                 pass
             except applicationinfo.ToolError as ex:
                 log.error(ex)
@@ -167,22 +167,21 @@ class time_tracker:
 
                 'app_title': self._current_app_title,
                 'process_name': self._current_process_exe,}
-    '''
-    def get_current_minute(self):
-        return self._current_minute
 
-    def get_idle(self):
-        return self._idle_current
+    #def get_current_minute(self):
+        #return self._current_minute
 
-    def get_current_app_title(self):
-        return self._current_app_title
+    #def get_idle(self):
+        #return self._idle_current
 
-    def get_current_process_name(self):
-        return self._current_process_exe
+    #def get_current_app_title(self):
+        #return self._current_app_title
 
-    def user_is_active(self):
-        return self._user_is_active
-    '''
+    #def get_current_process_name(self):
+        #return self._current_process_exe
+
+    #def user_is_active(self):
+        #return self._user_is_active
 
     # def update_categories(self):
     #    self._applications.update_all_categories(self._rules.get_first_matching_key)

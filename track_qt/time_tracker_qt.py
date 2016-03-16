@@ -9,7 +9,6 @@ import track_base
 from PyQt4.QtCore import pyqtSlot
 
 import zmq
-import json
 import logging
 
 log = logging.getLogger('time_tracker_qt')
@@ -58,7 +57,7 @@ class time_tracker_qt:
             if self._req_poller.poll(_timeout) == []:
                 if raise_on_timeout:
                     raise server_timeout("timeout on recv()")
-                log.warn('server timeout. did you even start one?')
+                log.warning('server timeout. did you even start one?')
                 _timeout = 2000
                 continue
             break

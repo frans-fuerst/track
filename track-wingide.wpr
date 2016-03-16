@@ -34,3 +34,6 @@ proj.file-list = [loc('desktop_usage_info/__init__.py'),
                   loc('track-cli.py'),
                   loc('track_server.py')]
 proj.file-type = 'shared'
+proj.launch-config = {loc('track_server.py'): ('project',
+        (u'-v',
+         ''))}

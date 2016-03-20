@@ -140,13 +140,10 @@ class minute():
 
         _categories = {} # category -> sum
         for a, c in self._apps.items():
-            try:
-                if a._category not in _categories:
-                    _categories[a._category] = c
-                else:
-                    _categories[a._category] += c
-            except:
-                pass
+            if a._category not in _categories:
+                _categories[a._category] = c
+            else:
+                _categories[a._category] += c
 
         self._category = _categories.keys()[
                                 _categories.values().index(

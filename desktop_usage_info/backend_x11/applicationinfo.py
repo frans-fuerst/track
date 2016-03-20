@@ -68,10 +68,11 @@ def get_active_window_information():
         _match = re.match(".*WM_NAME\(\w+\) = (?P<name>.+)$", line)
         if _match is not None:
             _entry = _match.group("name").decode('utf-8', errors='replace').strip('"').strip()
-            if _entry != "":
-                _result['TITLE'] = _entry
-            else:
-                pass
+            if _entry == "":
+                print("could not read title from '%s'" % line)
+                raise WindowInformationError('could not read app title')
+            _result['TITLE'] = _entry
+
         _match = re.match(".*_NET_WM_PID\(\w+\) = (?P<name>.+)$", line)
         if _match is not None:
             _entry = _match.group("name").decode().strip('"').strip()

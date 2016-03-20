@@ -46,6 +46,9 @@ def main():
     elif args == ['rules']:
         request = {'type': 'rules'}
 
+    elif args == ['save']:
+        request = {'type': 'save'}
+
     elif args == ['help']:
         print(['quit', 'version', 'apps', 'current', 'rules'])
         sys.exit()

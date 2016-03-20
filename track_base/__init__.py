@@ -12,10 +12,13 @@ from track_base.track_common import app_info
 from track_base.track_common import setup_logging
 from track_base.track_common import frame_grabber
 
+from track_base.track_common import path_exists_error
+from track_base.track_common import file_not_found_error
+from track_base.track_common import read_permission_error
+from track_base.track_common import fopen
+
 from collections import namedtuple
-
 version_info = namedtuple('version_info', ['major', 'minor', 'micro', 'patch'])
-
 version_info = version_info(major=2016, minor=3, micro=11, patch=0)
 
 

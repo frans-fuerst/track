@@ -204,3 +204,23 @@ class frame_grabber:
         self.l.debug('<< %s leave %s', self.prefix, self.postfix)
         self.s[1].pop()
         return
+
+
+class path_exists_error(Exception):
+    pass
+
+class file_not_found_error(Exception):
+    pass
+
+class read_permission_error(Exception):
+    pass
+
+def fopen(filename, mode='r', buffering=1):
+    try:
+        return open(filename, mode, buffering)
+    except IOError as ex:
+        if ex.errno == 2:
+            raise file_not_found_error()
+        elif ex.errno == 13:
+            raise read_permission_error()
+        raise

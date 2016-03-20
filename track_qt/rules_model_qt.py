@@ -3,8 +3,8 @@
 
 import re
 
-from qt_common import matrix_table_model
-from qt_common import change_emitter
+from track_qt.qt_common import matrix_table_model
+from track_qt.qt_common import change_emitter
 import track_base
 
 import json
@@ -12,19 +12,18 @@ from PyQt4 import QtCore
 from PyQt4.QtCore import pyqtSignal
 
 class rules_model_qt(matrix_table_model):
-    _filename = "regex_rules"
-    modified_rules= pyqtSignal()
+    modified_rules = pyqtSignal()
 
     def __init__(self, parent, *args):
         matrix_table_model.__init__(self, parent, *args)
-        self.header = ['M', 'regex', 'category', 'time']
-        self.load_from_disk();
+        self.header = ('M', 'regex', 'category', 'time')
         self._matching = []
         self._time = {}
+        self._rules = []
         self.setSupportedDragActions(QtCore.Qt.MoveAction)
 
     def update_categories_time(self, new_time):
-        self._time=new_time
+        self._time = new_time
 
     def get_time_category(self, rule):
         category = rule[1]
@@ -32,18 +31,20 @@ class rules_model_qt(matrix_table_model):
             return self._time[category]
         else:
             return 0
+
     def columnCount(self, parent):  # const
         return 4
 
     def supportedDropActions(self):
-         return QtCore.Qt.MoveAction|QtCore.Qt.CopyAction
+        return QtCore.Qt.MoveAction|QtCore.Qt.CopyAction
+
     def rowCount(self, parent):
         return len(self._rules)
 
     def _data(self, row, column):  # const
         if column == 0:
             if len(self._matching) >= row+1 and self._matching[row]:
-                return 'X' 
+                return 'X'
         if column == 1:
             return self._rules[row][0]
         if column == 2:
@@ -51,7 +52,7 @@ class rules_model_qt(matrix_table_model):
         if column == 3: #time column
             return track_base.secs_to_dur(self.get_time_category(self._rules[row]))
         return None
-    
+
     def __data__(self):  # const
         return ""
 
@@ -94,32 +95,19 @@ class rules_model_qt(matrix_table_model):
 
     def flags(self, index):
         if (self.isEditable(index)):
-            return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable |QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsDropEnabled
+            return (QtCore.Qt.ItemIsEditable |
+                    QtCore.Qt.ItemIsEnabled |
+                    QtCore.Qt.ItemIsSelectable |
+                    QtCore.Qt.ItemIsDragEnabled |
+                    QtCore.Qt.ItemIsDropEnabled)
         else:
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable| QtCore.Qt.ItemIsDropEnabled
+            return (QtCore.Qt.ItemIsEnabled |
+                    QtCore.Qt.ItemIsSelectable|
+                    QtCore.Qt.ItemIsDropEnabled)
 
     def add_rule(self):
         self._rules.insert(0, ["new rule", 0])
 
     def isEditable(self,index):
-        if (index.column()>0):
-            return True
-        else:
-            return False
+        return index.column() > 0
 
-    def load_from_disk(self):
-        _file_name = self._filename
-        try:
-            with open(_file_name) as _file:
-                _struct = json.load(_file)
-        except:
-            _struct=[[".* - Mozilla Firefox.*", 1],
-                       [".*gedit.*", 0]]
-        self._rules = _struct;
-
-    def save_to_disk(self):
-        _file_name = self._filename
-        with open(_file_name, 'w') as _file:
-            json.dump(self._rules, _file,
-                      sort_keys=False) #, indent=4, separators=(',', ': '))
-            

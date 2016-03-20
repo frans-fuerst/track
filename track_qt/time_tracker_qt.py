@@ -1,8 +1,8 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-from active_applications_qtmodel import active_applications_qtmodel
-from rules_model_qt import rules_model_qt
+from track_qt.active_applications_qtmodel import active_applications_qtmodel
+from track_qt.rules_model_qt import rules_model_qt
 
 import track_base
 

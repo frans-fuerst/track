@@ -4,8 +4,8 @@
 from PyQt4 import QtCore #, Qt, uic, QtGui
 from PyQt4.QtCore import pyqtSlot
 
-from qt_common import matrix_table_model
-from qt_common import change_emitter
+from track_qt.qt_common import matrix_table_model
+from track_qt.qt_common import change_emitter
 
 import track_base
 

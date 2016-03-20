@@ -2,11 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import re
+import json
+from track_base import track_common
 
 class rules_model:
     def __init__(self):
         self._matching = []
         self._rules = []
+        self._filename = "regex_rules"
 
     def columnCount(self, parent):  # const
         return 3
@@ -64,3 +67,19 @@ class rules_model:
 
     def add_rule(self):
         self._rules.insert(0, ["new rule", 0])
+
+    def load(self):
+        try:
+            with track_common.fopen(self._filename) as _file:
+                _struct = json.load(_file)
+
+        except track_common.file_not_found_error:
+            _struct = [(".* - Mozilla Firefox.*", 1),
+                       (".*gedit.*", 0)]
+        self._rules = _struct
+
+    def save(self):
+        with open(self._filename, 'w') as _file:
+            json.dump(self._rules, _file,
+                      sort_keys=False) #, indent=4, separators=(',', ': '))
+

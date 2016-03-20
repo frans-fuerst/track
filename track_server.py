@@ -48,7 +48,7 @@ class track_server:
             except applicationinfo.WindowInformationError:
                 pass
             except Exception as ex:
-                log.error("Unhandled Exception: ", ex)
+                log.error("Unhandled Exception: %s", ex)
 
             log.debug(self._tracker.get_current_data())
 
@@ -71,6 +71,10 @@ class track_server:
 
         elif request['type'] == 'rules':
             return {'type': 'info', 'rules': self._tracker.get_rules_model().__data__()}
+
+        elif request['type'] == 'save':
+            self._tracker.save()
+            return {'type': 'ok'}
 
         else:
             raise request_malformed(

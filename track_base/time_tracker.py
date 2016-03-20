@@ -8,9 +8,9 @@ log = logging.getLogger('base.time_tracker')
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
 
-from active_applications import active_applications
-from rules_model import rules_model
-import track_common
+from track_base.active_applications import active_applications
+from track_base.rules_model import rules_model
+from track_base import track_common
 import track_base
 
 
@@ -54,6 +54,7 @@ class time_tracker:
             return
 
         self._applications.from_dict(_struct)
+        self._rules.load()
 
     def save(self, filename=None):
         _file_name = filename if filename else "track-%s.json" % track_common.today_str()
@@ -66,6 +67,7 @@ class time_tracker:
         _test_model = active_applications()
         _test_model.from_dict(_app_data)
         assert self._applications == _test_model
+        self._rules.save()
 
     def get_applications_model(self):
         return self._applications

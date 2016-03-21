@@ -229,7 +229,7 @@ class active_applications_qtmodel(matrix_table_model):
 
     def info(self, minute):
         if self.is_active(minute):
-            _activity = str(self._minutes[minute].get_main_app())
+            _activity = self._minutes[minute].get_main_app()
         else:
             _activity = 'idle'
 

@@ -126,11 +126,11 @@ class time_tracker_qt:
 
     def start_time(self):
         _s = self._applications.begin_index()
-        return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
+        return("%0.2d:%0.2d" % (int(_s / 60), _s % 60))
 
     def now(self):
         _s = self._current_data['minute']
-        return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
+        return("%0.2d:%0.2d" % (int(_s / 60), _s % 60))
 
     def is_active(self, minute):
         return self._applications.is_active(minute)

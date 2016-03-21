@@ -139,7 +139,7 @@ if __name__ == '__main__':
     track_base.setup_logging(_level)
     log.setLevel(_level)
 
-    handler = logging.handlers.SysLogHandler(address = '/dev/log')
+    handler = logging.handlers.SysLogHandler(address='/dev/log')
     handler.setFormatter(logging.Formatter(
         fmt="%(asctime)s %(name)15s %(levelname)s:  %(message)s",
         datefmt="%y%m%d-%H%M%S"))

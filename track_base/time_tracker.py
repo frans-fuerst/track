@@ -47,13 +47,11 @@ class time_tracker:
         # print(_file_name)
         try:
             with open(_file_name) as _file:
-                _struct = json.load(_file)
+                self._applications.from_dict(json.load(_file))
         except IOError:
             if filename is not None:
                 log.warning('file "%s" does not exist', filename)
-            return
 
-        self._applications.from_dict(_struct)
         self._rules.load()
 
     def save(self, filename=None):

@@ -57,7 +57,8 @@ class rules_model_qt(matrix_table_model):
         return ""
 
     def from_dict(self, data):
-        pass
+        with change_emitter(self):
+            self._rules = data['rules']
 
     def highlight_string(self, string):
         with change_emitter(self):
@@ -77,8 +78,8 @@ class rules_model_qt(matrix_table_model):
         return 0
 
     #Makes it editable:
-    def setData(self, index, value,  role):
-        if value!="":
+    def setData(self, index, value, role):
+        if value != "":
             regex_str=str(value.toString())
             try:
                 re.compile(regex_str)

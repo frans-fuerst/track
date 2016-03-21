@@ -90,7 +90,7 @@ class track_server:
         except zmq.ZMQError as e:
             log.error(e)
             return
-
+        self._tracker.load()
         self._running = True
 
         self._system_monitoring_thread = threading.Thread(

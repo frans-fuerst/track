@@ -48,7 +48,7 @@ class time_tracker_qt:
         self._receiving = True
         self._req_socket.send_json(msg)
 
-    def _req_recv(self, timeout=50, raise_on_timeout=False):
+    def _req_recv(self, timeout, raise_on_timeout):
         if not self._receiving:
             raise Exception('wrong send/recv state!')
         self._receiving = False
@@ -63,9 +63,9 @@ class time_tracker_qt:
             break
         return self._req_socket.recv_json()
 
-    def _request(self, msg):
+    def _request(self, msg, timeout=50, raise_on_timeout=False):
         self._req_send(msg)
-        return self._req_recv()
+        return self._req_recv(timeout, raise_on_timeout)
 
     def connect(self, endpoint):
         if self._req_socket:
@@ -75,12 +75,20 @@ class time_tracker_qt:
         self._req_socket = self._zmq_context.socket(zmq.REQ)
         self._req_poller.register(self._req_socket, zmq.POLLIN)
         self._req_socket.connect(endpoint)
+        self._check_version()
+        self._fetch_rules()
 
-    def check_version(self):
+    def _check_version(self):
         with track_base.frame_grabber(log):
-            self._req_send({'type': 'version'})
-            log.info('server version: %s', self._req_recv(
-                timeout=1000, raise_on_timeout=True))
+            log.info('server version: %s', self._request(
+                {'type': 'version'}, timeout=1000, raise_on_timeout=True))
+
+    def _fetch_rules(self):
+        with track_base.frame_grabber(log):
+            _received_data = self._request({'type': 'rules'})
+            self._rules.from_dict(_received_data)
+            if not 'rules' in _received_data:
+                raise
 
     def clear(self):
         # must not be overwritten - we need the instance

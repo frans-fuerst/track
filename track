@@ -100,7 +100,6 @@ class track_ui(QtGui.QMainWindow):
             try:
                 log.info('connect to track server..')
                 self._tracker.connect('tcp://127.0.0.1:3456')
-                self._tracker.check_version()
                 log.info('connected!')
                 self._connected = True
                 return True

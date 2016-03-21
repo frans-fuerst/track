@@ -9,7 +9,6 @@ import time
 import sys
 import threading
 
-from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
 
 import track_base
@@ -17,9 +16,13 @@ import track_base
 log = logging.getLogger('track_server')
 
 def print_info():
-    log.info("zeromq version: %s" % zmq.zmq_version())
-    log.info("pyzmq version:  %s" % zmq.pyzmq_version())
-    log.info("track version:  %s" % str(track_base.version_info))
+    log.info("Python version: %s, %s",
+             '.'.join((str(e) for e in sys.version_info)),
+             sys.executable)
+
+    log.info("zeromq version: %s", zmq.zmq_version())
+    log.info("pyzmq version:  %s", zmq.pyzmq_version())
+    log.info("track version:  %s", str(track_base.version_info))
 
 
 class request_malformed(Exception):
@@ -48,9 +51,6 @@ class track_server:
         while self._running:
             time.sleep(1)
             self._save_tracker_data(interval=120)
-            _idle_current = None
-            _current_app_title = None
-            _current_process_exe = None
             try:
                 self._tracker.update()
             except applicationinfo.WindowInformationError:

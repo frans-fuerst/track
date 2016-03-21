@@ -119,43 +119,43 @@ class time_tracker:
             except applicationinfo.ToolError as ex:
                 log.error(ex)
 
-    def info(self, minute):
-        return self._applications.info(minute)
+    #def info(self, minute):
+        #return self._applications.info(minute)
 
-    def begin_index(self):
-        return self._applications.begin_index()
+    #def begin_index(self):
+        #return self._applications.begin_index()
 
-    def start_time(self):
-        _s = self._applications.begin_index()
-        return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
+    #def start_time(self):
+        #_s = self._applications.begin_index()
+        #return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
 
-    def now(self):
-        _s = self._current_minute
-        return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
+    #def now(self):
+        #_s = self._current_minute
+        #return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
 
-    def is_active(self, minute):
-        return self._applications.is_active(minute)
+    #def is_active(self, minute):
+        #return self._applications.is_active(minute)
 
-    def is_private(self, minute):
-        return self._applications.is_private(minute)
+    #def is_private(self, minute):
+        #return self._applications.is_private(minute)
 
-    def get_time_total(self):
-        return self._current_minute - self._applications.begin_index() + 1
+    #def get_time_total(self):
+        #return self._current_minute - self._applications.begin_index() + 1
 
-    def get_time_active(self):
-        return len(self._applications._minutes)
+    #def get_time_active(self):
+        #return len(self._applications._minutes)
 
-    def get_time_idle(self):
-        return self.get_time_total() - len(self._applications._minutes)
+    #def get_time_idle(self):
+        #return self.get_time_total() - len(self._applications._minutes)
 
-    def get_time_in_category(self, category):
-        r = 0
-        for i, m in self._applications._minutes.items():
-            r += 1 if m._category == category else 0
-        return r
+    #def get_time_in_category(self, category):
+        #r = 0
+        #for i, m in self._applications._minutes.items():
+            #r += 1 if m._category == category else 0
+        #return r
 
-    def get_max_minute(self):
-        return self._applications.end_index()
+    #def get_max_minute(self):
+        #return self._applications.end_index()
 
     def get_current_data(self):
         return {'minute': self._current_minute,
@@ -167,24 +167,3 @@ class time_tracker:
 
                 'app_title': self._current_app_title,
                 'process_name': self._current_process_exe,}
-
-    #def get_current_minute(self):
-        #return self._current_minute
-
-    #def get_idle(self):
-        #return self._idle_current
-
-    #def get_current_app_title(self):
-        #return self._current_app_title
-
-    #def get_current_process_name(self):
-        #return self._current_process_exe
-
-    #def user_is_active(self):
-        #return self._user_is_active
-
-    # def update_categories(self):
-    #    self._applications.update_all_categories(self._rules.get_first_matching_key)
-
-    #def new_regex_rule(self):
-    #    self._rules.add_rule()

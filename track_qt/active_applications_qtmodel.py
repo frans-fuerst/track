@@ -36,6 +36,8 @@ class active_applications_qtmodel(matrix_table_model):
         self.header = ['application title', 'time', 'category']
         self._index_min = None
         self._index_max = None
+        self._sort_col = 1
+        self._sort_reverse = True
         self._sorted_keys = []
 
         # to be persisted

@@ -204,7 +204,8 @@ class track_ui(QtGui.QMainWindow):
         self.cleanup()
 
     def cleanup(self):
-        return
+        if self._tracker.initialized():
+            self._tracker.save()
 
 
 def sigint_handler(s, window):

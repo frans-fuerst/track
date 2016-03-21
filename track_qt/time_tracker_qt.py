@@ -29,6 +29,7 @@ class time_tracker_qt:
 
         self._current_data = None
         self._initialized = False
+        self._connected = False
 
         self._active_day = track_base.today_int()
 
@@ -64,6 +65,8 @@ class time_tracker_qt:
         return self._req_socket.recv_json()
 
     def _request(self, msg, timeout=50, raise_on_timeout=False):
+        if not self._connected:
+            raise track_base.not_connected()
         self._req_send(msg)
         return self._req_recv(timeout, raise_on_timeout)
 
@@ -76,12 +79,14 @@ class time_tracker_qt:
         self._req_poller.register(self._req_socket, zmq.POLLIN)
         self._req_socket.connect(endpoint)
         self._check_version()
+        self._connected = True
         self._fetch_rules()
 
     def _check_version(self):
         with track_base.frame_grabber(log):
-            log.info('server version: %s', self._request(
-                {'type': 'version'}, timeout=1000, raise_on_timeout=True))
+            self._req_send({'type': 'version'})
+            _version = self._req_recv(timeout=1000, raise_on_timeout=True)
+            log.info('server version: %s', _version)
 
     def _fetch_rules(self):
         with track_base.frame_grabber(log):
@@ -89,6 +94,10 @@ class time_tracker_qt:
             self._rules.from_dict(_received_data)
             if not 'rules' in _received_data:
                 raise
+
+    def save(self):
+        with track_base.frame_grabber(log):
+            _received_data = self._request({'type': 'save'})
 
     def clear(self):
         # must not be overwritten - we need the instance

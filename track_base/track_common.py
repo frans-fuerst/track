@@ -7,6 +7,26 @@ import logging
 from collections import namedtuple
 import traceback
 
+
+class track_error(Exception):
+    pass
+
+class path_exists_error(track_error):
+    pass
+
+class file_not_found_error(track_error):
+    pass
+
+class read_permission_error(track_error):
+    pass
+
+class not_connected(track_error):
+    pass
+
+class protocol_error(track_error):
+    pass
+
+
 def mins_to_date(mins):
     _result = ""
     _minutes = mins
@@ -202,15 +222,6 @@ class frame_grabber:
         self.s[1].pop()
         return
 
-
-class path_exists_error(Exception):
-    pass
-
-class file_not_found_error(Exception):
-    pass
-
-class read_permission_error(Exception):
-    pass
 
 def fopen(filename, mode='r', buffering=1):
     try:

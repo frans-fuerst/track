@@ -36,10 +36,18 @@ class track_server:
         self._running = False
         self._system_monitoring_thread = None
         self._tracker = track_base.time_tracker()
+        self._last_save_time = 0
+
+    def _save_tracker_data(self, interval=60, force=False):
+        if time.time() - self._last_save_time > interval or force:
+            log.info('save data..')
+            self._tracker.save()
+            self._last_save_time = time.time()
 
     def _system_monitoring_fn(self):
         while self._running:
             time.sleep(1)
+            self._save_tracker_data(interval=120)
             _idle_current = None
             _current_app_title = None
             _current_process_exe = None
@@ -73,7 +81,7 @@ class track_server:
             return {'type': 'info', 'rules': self._tracker.get_rules_model().__data__()}
 
         elif request['type'] == 'save':
-            self._tracker.save()
+            self._save_tracker_data(force=True)
             return {'type': 'ok'}
 
         else:

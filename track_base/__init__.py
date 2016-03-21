@@ -12,9 +12,13 @@ from track_base.track_common import app_info
 from track_base.track_common import setup_logging
 from track_base.track_common import frame_grabber
 
+from track_base.track_common import track_error
 from track_base.track_common import path_exists_error
 from track_base.track_common import file_not_found_error
 from track_base.track_common import read_permission_error
+from track_base.track_common import not_connected
+from track_base.track_common import protocol_error
+
 from track_base.track_common import fopen
 
 from collections import namedtuple

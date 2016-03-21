@@ -17,19 +17,25 @@
 - [ ] markers for tagging activities
 
 #### version 1.0
-- [ ] autosave
 - [ ] highlight current app
 - [ ] bold titles
 - [ ] find a better name (suggestions?) (time, time machine, eta, invest)
 - [ ] generate distribution script for Linux
 - [ ] generate distribution script for Windows
-- [ ] support to Python 3 (needs ckwnd for python3)
-- [ ] support regex rules for work/private
 - [ ] preprocess title
-- [x] allow detailed per minute information when hovering over time bar
-- [x] support Windows
+
 
 ### release notes
+
+#### 2016.03.21
+- [x] split up client/server (server can run on startup)
+- [x] run UI in system tray
+- [x] allow regex editing
+- [x] autosave
+- [x] support to Python 3 (needs ckwnd for python3)
+- [x] support regex rules for work/private
+- [x] allow detailed per minute information when hovering over time bar
+- [x] support Windows
 
 #### 2015.03.30
 - [x] start/end of working day is defined by usage rather than run time

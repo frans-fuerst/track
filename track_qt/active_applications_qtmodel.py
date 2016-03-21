@@ -4,13 +4,11 @@
 from PyQt4 import QtCore #, Qt, uic, QtGui
 from PyQt4.QtCore import pyqtSlot
 
-from track_qt.qt_common import matrix_table_model
-from track_qt.qt_common import change_emitter
-
+import track_qt
 import track_base
 
 # todo: separate qt model
-class active_applications_qtmodel(matrix_table_model):
+class active_applications_qtmodel(track_qt.matrix_table_model):
     ''' the data model which holds all application usage data for one
         day. That is:
 
@@ -31,7 +29,7 @@ class active_applications_qtmodel(matrix_table_model):
     '''
 
     def __init__(self, parent, *args):
-        matrix_table_model.__init__(self, parent, *args)
+        track_qt.matrix_table_model.__init__(self, parent, *args)
         self.header = ['application title', 'time', 'category']
         self._index_min = None
         self._index_max = None
@@ -43,7 +41,7 @@ class active_applications_qtmodel(matrix_table_model):
 
 
     def clear(self):
-        with change_emitter(self):
+        with track_qt.change_emitter(self):
             self._index_min = None
             self._index_max = None
             self._apps = {}     # app identifier => app_info instance
@@ -133,7 +131,7 @@ class active_applications_qtmodel(matrix_table_model):
 
         # x = {i:len({a:0 for a in i}) for i in l}
         _apps = {a.generate_identifier(): a for a in _indexed}
-        with change_emitter(self):
+        with track_qt.change_emitter(self):
 
             self._apps = _apps
             self._minutes = _minutes
@@ -261,5 +259,7 @@ class active_applications_qtmodel(matrix_table_model):
             self._minutes[i].rebuild_categories(get_category_from_app)
 
     def flags(self, index):
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable |QtCore.Qt.ItemIsDragEnabled
+        return (QtCore.Qt.ItemIsEnabled |
+                QtCore.Qt.ItemIsSelectable |
+                QtCore.Qt.ItemIsDragEnabled)
 

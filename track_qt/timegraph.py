@@ -3,7 +3,7 @@
 
 import track_base
 
-from PyQt4 import QtGui, QtCore, Qt, uic
+from PyQt4 import QtGui, QtCore, Qt
 
 class timegraph(QtGui.QFrame):
 

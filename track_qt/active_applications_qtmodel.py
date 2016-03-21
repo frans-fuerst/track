@@ -7,8 +7,11 @@ from PyQt4.QtCore import pyqtSlot
 import track_qt
 import track_base
 
+from track_qt.qt_common import matrix_table_model
+
+
 # todo: separate qt model
-class active_applications_qtmodel(track_qt.matrix_table_model):
+class active_applications_qtmodel(matrix_table_model):
     ''' the data model which holds all application usage data for one
         day. That is:
 

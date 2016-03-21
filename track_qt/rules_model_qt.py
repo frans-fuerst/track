@@ -7,7 +7,6 @@ from track_qt.qt_common import matrix_table_model
 from track_qt.qt_common import change_emitter
 import track_base
 
-import json
 from PyQt4 import QtCore
 from PyQt4.QtCore import pyqtSignal
 

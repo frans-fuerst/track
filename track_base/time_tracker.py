@@ -91,7 +91,7 @@ class time_tracker:
 
                 self._user_is_active = True
 
-                self._idle_current = idle.getIdleSec()
+                self._idle_current = int(idle.getIdleSec())
                 _app_info = applicationinfo.get_active_window_information()
 
                 self._current_app_title = _app_info["TITLE"]

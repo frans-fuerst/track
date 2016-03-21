@@ -185,9 +185,9 @@ class track_ui(QtGui.QMainWindow):
                      track_base.mins_to_dur(_time_private), _time_private / float(_time_total),
                      track_base.mins_to_dur(_time_idle), _time_idle / float(_time_total)))
 
-
                 self.lbl_start_time.setText("%s - %s" % (
                      self._tracker.start_time(), self._tracker.now()))
+
             except Exception as e:
                 logging.error(e)
 

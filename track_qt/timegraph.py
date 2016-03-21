@@ -44,7 +44,7 @@ class timegraph(QtGui.QFrame):
 
     def drawPoints(self, qp):
         if not self._tracker.initialized(): return
-        
+
         # just for debugging
         x = self._tracker.begin_index()
 

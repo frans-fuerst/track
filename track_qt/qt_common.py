@@ -1,8 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-from PyQt4 import QtCore #, Qt, uic, QtGui
-
+from PyQt4 import QtCore
 
 class change_emitter:
     def __init__(self, emitter):

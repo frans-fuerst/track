@@ -4,19 +4,11 @@
 from PyQt4 import QtCore #, Qt, uic, QtGui
 from PyQt4.QtCore import pyqtSlot
 
-#import json
-#import operator
-#import re
-
-#from desktop_usage_info import idle
-#from desktop_usage_info import applicationinfo
-import track_common
 import track_qt
-import qt_common
+import track_base
 
 # todo: separate qt model
-class active_applications_qtmodel(qt_common.matrix_table_model):
-#class active_applications_qtmodel(qt_common.matrix_table_model):
+class active_applications_qtmodel(track_qt.matrix_table_model):
     ''' the data model which holds all application usage data for one
         day. That is:
 
@@ -65,7 +57,7 @@ class active_applications_qtmodel(qt_common.matrix_table_model):
         if column == 0:
             return self._apps[self._sorted_keys[row]]._wndtitle
         elif column == 1:
-            return track_common.secs_to_dur(self._apps[self._sorted_keys[row]]._count)
+            return track_base.secs_to_dur(self._apps[self._sorted_keys[row]]._count)
         elif column == 2:
             return self._apps[self._sorted_keys[row]]._category
         return 0
@@ -123,10 +115,10 @@ class active_applications_qtmodel(qt_common.matrix_table_model):
         assert 'apps' in data
         assert 'minutes' in data
         _a = data['apps']
-        _indexed = [track_common.app_info().load(d) for d in _a]
+        _indexed = [track_base.app_info().load(d) for d in _a]
         _m = data['minutes']
         _minutes = {
-            int(i) : track_common.minute().init(
+            int(i) : track_base.minute().init(
                 (
                     m[0],
                     {
@@ -163,7 +155,6 @@ class active_applications_qtmodel(qt_common.matrix_table_model):
 
     def update(self, minute_index, app):
         with track_qt.change_emitter(self):
-
             _app_id = app.generate_identifier()
 
             if _app_id not in self._apps:
@@ -177,7 +168,7 @@ class active_applications_qtmodel(qt_common.matrix_table_model):
             _app._count += 1
 
             if minute_index not in self._minutes:
-                self._minutes[minute_index] = track_common.minute()
+                self._minutes[minute_index] = track_base.minute()
                 if not self._index_min or self._index_min > minute_index:
                     self._index_min = minute_index
 
@@ -236,7 +227,7 @@ class active_applications_qtmodel(qt_common.matrix_table_model):
 
     def info(self, minute):
         if self.is_active(minute):
-            _activity = str(self._minutes[minute].get_main_app())
+            _activity = self._minutes[minute].get_main_app()
         else:
             _activity = 'idle'
 
@@ -268,5 +259,7 @@ class active_applications_qtmodel(qt_common.matrix_table_model):
             self._minutes[i].rebuild_categories(get_category_from_app)
 
     def flags(self, index):
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable |QtCore.Qt.ItemIsDragEnabled
+        return (QtCore.Qt.ItemIsEnabled |
+                QtCore.Qt.ItemIsSelectable |
+                QtCore.Qt.ItemIsDragEnabled)
 

@@ -3,11 +3,13 @@
 
 import re
 import json
+from track_base import track_common
 
-class rules_model():
+class rules_model:
     def __init__(self):
         self._matching = []
         self._rules = []
+        self._filename = "regex_rules"
 
     def columnCount(self, parent):  # const
         return 3
@@ -34,7 +36,7 @@ class rules_model():
     def highlight_string(self, string):
         # todo: mutex
         self._matching = []
-        for i, (r, c) in enumerate(self._rules):
+        for r, c in self._rules:
             if re.search(r, string):
                 # print("'%s' matches" % r)
                 self._matching.append(True)
@@ -48,21 +50,36 @@ class rules_model():
                 return c
         return 0
 
-    def setData(self, index, value,  role):
-        if value!="":
-            regex_str=str(value.toString())
+    def setData(self, index, value, role):
+        if value != "":
+            regex_str = str(value.toString())
             try:
                 re.compile(regex_str)
                 is_valid = True
             except re.error:
                 is_valid = False
-            if(is_valid):
+
+            if is_valid:
                 self._rules[index.row()][index.column()-1] = str(value.toString())
-                self.modified_rules.emit()
-                self.save_to_disk()
             else:
                 self._rules[index.row()][index.column()-1] = "invalid regex"
         return True
 
     def add_rule(self):
         self._rules.insert(0, ["new rule", 0])
+
+    def load(self):
+        try:
+            with track_common.fopen(self._filename) as _file:
+                _struct = json.load(_file)
+
+        except track_common.file_not_found_error:
+            _struct = [(".* - Mozilla Firefox.*", 1),
+                       (".*gedit.*", 0)]
+        self._rules = _struct
+
+    def save(self):
+        with open(self._filename, 'w') as _file:
+            json.dump(self._rules, _file,
+                      sort_keys=False) #, indent=4, separators=(',', ': '))
+

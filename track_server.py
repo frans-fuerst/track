@@ -1,8 +1,9 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 import zmq
 import logging
+import logging.handlers
 import signal
 import time
 import sys
@@ -11,7 +12,6 @@ import threading
 from desktop_usage_info import idle
 from desktop_usage_info import applicationinfo
 
-import track_common
 import track_base
 
 log = logging.getLogger('track_server')
@@ -36,22 +36,29 @@ class track_server:
         self._running = False
         self._system_monitoring_thread = None
         self._tracker = track_base.time_tracker()
+        self._last_save_time = 0
+
+    def _save_tracker_data(self, interval=60, force=False):
+        if time.time() - self._last_save_time > interval or force:
+            log.info('save data..')
+            self._tracker.save()
+            self._last_save_time = time.time()
 
     def _system_monitoring_fn(self):
         while self._running:
             time.sleep(1)
+            self._save_tracker_data(interval=120)
             _idle_current = None
             _current_app_title = None
             _current_process_exe = None
             try:
                 self._tracker.update()
-                log.info('sample')
-            except applicationinfo.UncriticalException as e:
+            except applicationinfo.WindowInformationError:
                 pass
+            except Exception as ex:
+                log.error("Unhandled Exception: %s", ex)
 
-            log.info(self._tracker.get_idle())
-            log.info(self._tracker.get_current_app_title())
-            log.info(self._tracker.get_current_process_name())
+            log.debug(self._tracker.get_current_data())
 
     def handle_request(self, request):
         if 'type' not in request:
@@ -60,10 +67,23 @@ class track_server:
         elif request['type'] == 'quit':
             self._running = False
             return {'type': 'ok'}
-        elif request['type'] == 'info':
+
+        elif request['type'] == 'version':
+            return {'version': str(track_base.version_info)}
+
+        elif request['type'] == 'apps':
             return {'type': 'info', 'apps': self._tracker.get_applications_model().__data__()}
+
+        elif request['type'] == 'current':
+            return {'type': 'info', 'current': self._tracker.get_current_data()}
+
         elif request['type'] == 'rules':
             return {'type': 'info', 'rules': self._tracker.get_rules_model().__data__()}
+
+        elif request['type'] == 'save':
+            self._save_tracker_data(force=True)
+            return {'type': 'ok'}
+
         else:
             raise request_malformed(
                 'command "%s" not known' % request['type'])
@@ -78,7 +98,7 @@ class track_server:
         except zmq.ZMQError as e:
             log.error(e)
             return
-
+        self._tracker.load()
         self._running = True
 
         self._system_monitoring_thread = threading.Thread(
@@ -87,7 +107,7 @@ class track_server:
         self._system_monitoring_thread.start()
 
         while self._running:
-            log.info('listening..')
+            log.debug('listening..')
             try:
                 request = rep_socket.recv_json()
             except zmq.ZMQError:
@@ -121,7 +141,17 @@ def main():
     track_server().run()
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    _level = logging.INFO
+    if '-v' in sys.argv:
+        _level = logging.DEBUG
+    track_base.setup_logging(_level)
+    log.setLevel(_level)
+
+    handler = logging.handlers.SysLogHandler(address='/dev/log')
+    handler.setFormatter(logging.Formatter(
+        fmt="%(asctime)s %(name)15s %(levelname)s:  %(message)s",
+        datefmt="%y%m%d-%H%M%S"))
+    log.addHandler(handler)
 
     for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
         signal.signal(s, lambda signal, frame: sys.exit)

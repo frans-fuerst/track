@@ -1,66 +1,107 @@
-from desktop_usage_info import idle
-from desktop_usage_info import applicationinfo
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 
-import track_common
+from track_qt.active_applications_qtmodel import active_applications_qtmodel
+from track_qt.rules_model_qt import rules_model_qt
 
-from active_applications_qtmodel import active_applications_qtmodel
-from rules_model_qt import rules_model_qt
+import track_base
 
 from PyQt4.QtCore import pyqtSlot
-import json
-import logging 
 
-class time_tracker_qt():
+import zmq
+import logging
+
+log = logging.getLogger('time_tracker_qt')
+
+class server_timeout(Exception):
+    pass
+
+class time_tracker_qt:
     """ * retrieves system data
         * holds the application data object as
           well as some meta information
         * provides persistence
     """
     def __init__(self, parent):
-        self._idle_current = 0
-        self._current_minute = 0  # does not need to be highest minute index
-        self._current_app_title = ""
-        self._current_process_exe = ""
-        self._user_is_active = True
-        self._active_day = track_common.today_int()
+        self._req_socket = None
+        self._req_poller = None
+        self._receiving = False
 
-        # -- persist
+        self._current_data = None
+        self._initialized = False
+        self._connected = False
+
+        self._active_day = track_base.today_int()
+
         self._applications = active_applications_qtmodel(parent)
         self._rules = rules_model_qt(parent)
-
         self._rules.modified_rules.connect(self.update_categories)
+
+        self._req_poller = zmq.Poller()
+        self._zmq_context = zmq.Context()
 
     def __eq__(self, other):
         return False
 
+    def _req_send(self, msg):
+        if self._receiving:
+            raise Exception('wrong send/recv state!')
+        self._receiving = True
+        self._req_socket.send_json(msg)
+
+    def _req_recv(self, timeout, raise_on_timeout):
+        if not self._receiving:
+            raise Exception('wrong send/recv state!')
+        self._receiving = False
+        _timeout = timeout
+        while True:
+            if self._req_poller.poll(_timeout) == []:
+                if raise_on_timeout:
+                    raise server_timeout("timeout on recv()")
+                log.warning('server timeout. did you even start one?')
+                _timeout = 2000
+                continue
+            break
+        return self._req_socket.recv_json()
+
+    def _request(self, msg, timeout=50, raise_on_timeout=False):
+        if not self._connected:
+            raise track_base.not_connected()
+        self._req_send(msg)
+        return self._req_recv(timeout, raise_on_timeout)
+
+    def connect(self, endpoint):
+        if self._req_socket:
+            self._req_poller.unregister(self._req_socket)
+            self._req_socket.close()
+
+        self._req_socket = self._zmq_context.socket(zmq.REQ)
+        self._req_poller.register(self._req_socket, zmq.POLLIN)
+        self._req_socket.connect(endpoint)
+        self._check_version()
+        self._connected = True
+        self._fetch_rules()
+
+    def _check_version(self):
+        with track_base.frame_grabber(log):
+            self._req_send({'type': 'version'})
+            _version = self._req_recv(timeout=1000, raise_on_timeout=True)
+            log.info('server version: %s', _version)
+
+    def _fetch_rules(self):
+        with track_base.frame_grabber(log):
+            _received_data = self._request({'type': 'rules'})
+            self._rules.from_dict(_received_data)
+            if not 'rules' in _received_data:
+                raise
+
+    def save(self):
+        with track_base.frame_grabber(log):
+            _received_data = self._request({'type': 'save'})
+
     def clear(self):
         # must not be overwritten - we need the instance
         self._applications.clear()
-
-    def load(self, filename=None):
-        _file_name = filename if filename else "track-%s.json" % track_common.today_str()
-        # print(_file_name)
-        try:
-            with open(_file_name) as _file:
-                _struct = json.load(_file)
-        except IOError:
-            if filename is not None:
-                logging.warn('file "%s" does not exist' % filename)
-            return
-
-        self._applications.from_dict(_struct)
-
-    def save(self, filename=None):
-        _file_name = filename if filename else "track-%s.json" % track_common.today_str() 
-        # print(_file_name)
-        _app_data = self._applications.__data__()
-        with open(_file_name, 'w') as _file:
-            json.dump(_app_data, _file,
-                      sort_keys=True) #, indent=4, separators=(',', ': '))
-            
-        _test_model = active_applications_qtmodel(None)
-        _test_model.from_dict(_app_data)
-        assert self._applications == _test_model
 
     def get_applications_model(self):
         return self._applications
@@ -69,60 +110,36 @@ class time_tracker_qt():
         return self._rules
 
     def update(self):
-        try:
-            _today = track_common.today_int()
-            self._current_minute = track_common.minutes_since_midnight()
+        with track_base.frame_grabber(log):
 
-            if self._active_day < _today:
-                print("current minute is %d - it's midnight" % self._current_minute)
-                #midnight!
-                self.save('track-log-%d.json' % self._active_day)
-                self.clear()
+            received_data = self._request({'type': 'current'})
+            if not 'current' in received_data:
+                raise
+            self._current_data = received_data['current']
 
-            self._active_day = _today
+            received_data = self._request({'type': 'apps'})
+            if not 'apps' in received_data:
+                raise
+            self._applications.from_dict(received_data['apps'])
 
-            self._current_minute = track_common.minutes_since_midnight()
+            self._initialized = True
 
-            self._user_is_active = True
-
-            self._idle_current = idle.getIdleSec()
-            self._current_app_title = applicationinfo.get_active_window_title()
-            try:
-                self._current_process_exe = applicationinfo.get_active_process_name()
-            except applicationinfo.UncriticalException as e: #necessary to run in i3
-                self._current_process_exe = "Process not found"
-                
-            self._rules.highlight_string(self._current_app_title)
-            self._rules.update_categories_time(self.get_time_per_categories())
-
-            if self._idle_current > 10:
-                self._user_is_active = False
-                return
-
-            _app = track_common.app_info(self._current_app_title, 
-                            self._current_process_exe)
-            _app._category = self._rules.get_first_matching_key(_app)
-
-            _app = self._applications.update(
-                        self._current_minute,
-                        _app)
-
-        except applicationinfo.UncriticalException as e:
-            pass
+    def initialized(self):
+        return self._initialized
 
     def info(self, minute):
         return self._applications.info(minute)
 
     def begin_index(self):
         return self._applications.begin_index()
-    
+
     def start_time(self):
         _s = self._applications.begin_index()
-        return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
+        return("%0.2d:%0.2d" % (int(_s / 60), _s % 60))
 
     def now(self):
-        _s = self._current_minute
-        return("%0.2d:%0.2d" % (int(_s/60), _s % 60))
+        _s = self._current_data['minute']
+        return("%0.2d:%0.2d" % (int(_s / 60), _s % 60))
 
     def is_active(self, minute):
         return self._applications.is_active(minute)
@@ -131,7 +148,7 @@ class time_tracker_qt():
         return self._applications.is_private(minute)
 
     def get_time_total(self):
-        return self._current_minute - self._applications.begin_index() + 1
+        return self._current_data['time_total']
 
     def get_time_active(self):
         return len(self._applications._minutes)
@@ -160,26 +177,27 @@ class time_tracker_qt():
             else:
                 time_dict[category] = app.get_count()
         return time_dict
+
     def get_time_idle(self):
         return self.get_time_total() - len(self._applications._minutes)
 
     def get_max_minute(self):
-        return self._tracker.end_index()
+        return self._applications.end_index()
 
     def get_current_minute(self):
-        return self._current_minute
+        return self._current_data['minute']
 
     def get_idle(self):
-        return self._idle_current
+        return self._current_data['user_idle']
 
     def get_current_app_title(self):
-        return self._current_app_title
+        return self._current_data['app_title']
 
     def get_current_process_name(self):
-        return self._current_process_exe
+        return self._current_data['process_name']
 
     def user_is_active(self):
-        return self._user_is_active
+        return self._current_data['user_active']
 
     @pyqtSlot()
     def update_categories(self):

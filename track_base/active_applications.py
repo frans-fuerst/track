@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-import track_common
+from track_base import track_common
 
 
 class active_applications:
@@ -36,10 +36,10 @@ class active_applications:
 
     def clear(self):
         # todo: mutex
-            self._index_min = None
-            self._index_max = None
-            self._apps = {}     # app identifier => app_info instance
-            self._minutes = {}  # i_min          => minute
+        self._index_min = None
+        self._index_max = None
+        self._apps = {}     # app identifier => app_info instance
+        self._minutes = {}  # i_min          => minute
 
     def count(self):
         return len(self._sorted_keys)
@@ -130,30 +130,30 @@ class active_applications:
 
     def update(self, minute_index, app):
         # todo: mutex
-            _app_id = app.generate_identifier()
+        _app_id = app.generate_identifier()
 
-            if _app_id not in self._apps:
-                self._apps[_app_id] = app
+        if _app_id not in self._apps:
+            self._apps[_app_id] = app
 
-#                if "Firefox" in _app_id:
-#                    app._category = 1
-#                else:
-#                    app._category = 0
-            # print([a._category for a in self._apps.values()])
-            _app = self._apps[_app_id]
-            _app._count += 1
+        #if "Firefox" in _app_id:
+            #app._category = 1
+        #else:
+            #app._category = 0
+        # print([a._category for a in self._apps.values()])
+        _app = self._apps[_app_id]
+        _app._count += 1
 
-            if minute_index not in self._minutes:
-                self._minutes[minute_index] = track_common.minute()
-                if not self._index_min or self._index_min > minute_index:
-                    self._index_min = minute_index
+        if minute_index not in self._minutes:
+            self._minutes[minute_index] = track_common.minute()
+            if not self._index_min or self._index_min > minute_index:
+                self._index_min = minute_index
 
-                if not self._index_max or self._index_max < minute_index:
-                    self._index_max = minute_index
+            if not self._index_max or self._index_max < minute_index:
+                self._index_max = minute_index
 
-            self._minutes[minute_index].add(_app)
+        self._minutes[minute_index].add(_app)
 
-            # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
+        # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
 
     def get_chunk_size(self, minute):
         _begin = minute

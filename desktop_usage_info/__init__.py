@@ -1,5 +1,12 @@
 import os
 
+
+class WindowInformationError(Exception):
+    pass
+
+class ToolError(Exception):
+    pass
+
 if os.name == 'posix':
     import desktop_usage_info.backend_x11.idle
     import desktop_usage_info.backend_x11.applicationinfo

@@ -1,8 +1,9 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-from PyQt4 import QtGui, QtCore, Qt, uic
-import track_common
+import track_base
+
+from PyQt4 import QtGui, QtCore, Qt
 
 class timegraph(QtGui.QFrame):
 
@@ -34,14 +35,19 @@ class timegraph(QtGui.QFrame):
         _cs, _activity = self._tracker.info(_index)
 
         _info_str =  "%s: %s (%s)" % (
-                        track_common.mins_to_dur(_index), _activity,
-                           track_common.mins_to_dur(_cs[1]-_cs[0]))
+            track_base.mins_to_dur(_index), _activity,
+            track_base.mins_to_dur(_cs[1]-_cs[0]))
         # print("time: %d/%s" % (
         #     (e.x(), _info)))
         self.select(_cs[0], _cs[1])
         self.setToolTip(_info_str)
 
     def drawPoints(self, qp):
+        if not self._tracker.initialized(): return
+
+        # just for debugging
+        x = self._tracker.begin_index()
+
         _start_index = self._tracker.begin_index() - 50
         for i in range(self.width() - 2):
             _index = _start_index + i

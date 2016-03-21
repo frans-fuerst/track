@@ -3,6 +3,28 @@
 
 from datetime import datetime
 import time
+import logging
+from collections import namedtuple
+import traceback
+
+
+class track_error(Exception):
+    pass
+
+class path_exists_error(track_error):
+    pass
+
+class file_not_found_error(track_error):
+    pass
+
+class read_permission_error(track_error):
+    pass
+
+class not_connected(track_error):
+    pass
+
+class protocol_error(track_error):
+    pass
 
 
 def mins_to_date(mins):
@@ -55,13 +77,13 @@ def minutes_since_midnight():
     return int(seconds_since_midnight() / 60)
 
 class app_info():
-    
+
     def __init__(self, windowtitle="", cmdline=""):
         self._wndtitle = windowtitle
         self._cmdline = cmdline
         self._category = 0
         self._count = 0
-        
+
     def __eq__(self, other):
         if not self._wndtitle == other._wndtitle:
             return False
@@ -72,17 +94,17 @@ class app_info():
         if not self._count == other._count:
             return False
         return True
-    
+
     def generate_identifier(self):
         return self._wndtitle
 
     def __hash__(self):
         x = hash((self._wndtitle, self._cmdline))
         return x
-    
+
     def __str__(self):
         return "%s - [%s %d]" % (self._wndtitle, self._category, self._count)
-    
+
     def load(self, data):
         try:
             self._wndtitle, self._category, self._count, self._cmdline = data
@@ -91,13 +113,13 @@ class app_info():
                   str(data)))
             raise Exception('could not load app_info data')
         return self
-    
+
     def __data__(self):  # const
         return (self._wndtitle, self._category, self._count, self._cmdline)
 
     def get_category(self):
         return self._category
-        
+
     def set_new_category(self, new_category):
         self._category=new_category
 
@@ -124,27 +146,24 @@ class minute():
                 print("o: %s - %d" % (a, c))
             return False
         return True
-    
+
     def dump(self):
         print("category %d" % self._category)
-            
+
     def init(self, data):
         self._category, self._apps = data
         return self
-    
+
     def _rebuild(self):
         if len(self._apps) == 0:
             return 0  # todo: need undefined
-        
+
         _categories = {} # category -> sum
         for a, c in self._apps.items():
-            try:
-                if a._category not in _categories:
-                    _categories[a._category] = c
-                else:
-                    _categories[a._category] += c
-            except:
-                pass
+            if a._category not in _categories:
+                _categories[a._category] = c
+            else:
+                _categories[a._category] += c
 
         self._category = _categories.keys()[
                                 _categories.values().index(
@@ -166,3 +185,50 @@ class minute():
         for a, c in self._apps.items():
             a.set_new_category(get_category(a))
         self._rebuild()
+
+def setup_logging(level=logging.INFO):
+    logging.basicConfig(
+        format="%(asctime)s %(name)17s %(levelname)s:  %(message)s",
+        datefmt="%y%m%d-%H%M%S",
+        level=level)
+    logging.addLevelName(logging.CRITICAL, "CC")
+    logging.addLevelName(logging.ERROR,    "EE")
+    logging.addLevelName(logging.WARNING,  "WW")
+    logging.addLevelName(logging.INFO,     "II")
+    logging.addLevelName(logging.DEBUG,    "DD")
+    logging.addLevelName(logging.NOTSET,   "NA")
+
+import threading
+class frame_grabber:
+    stacks = {}
+    def __init__(self, logger, extra=None):
+        self.n = traceback.extract_stack()[-2][2]
+        self.e = extra
+        self.l = logger
+        t = threading.current_thread()
+        if not t in frame_grabber.stacks:
+            frame_grabber.stacks[t] = (len(frame_grabber.stacks) * 10, [])
+        self.s = frame_grabber.stacks[t]
+        self.prefix = "T%d %s" % (self.s[0], " " * 4 * len(self.s[1]))
+        self.postfix = "%s() %s" % (self.n, "(%s)" % self.e if self.e else "")
+
+    def __enter__(self):
+        self.s[1].append(self.n)
+        self.l.debug('>> %s enter %s', self.prefix, self.postfix)
+        return self
+
+    def __exit__(self, *args):
+        self.l.debug('<< %s leave %s', self.prefix, self.postfix)
+        self.s[1].pop()
+        return
+
+
+def fopen(filename, mode='r', buffering=1):
+    try:
+        return open(filename, mode, buffering)
+    except IOError as ex:
+        if ex.errno == 2:
+            raise file_not_found_error()
+        elif ex.errno == 13:
+            raise read_permission_error()
+        raise

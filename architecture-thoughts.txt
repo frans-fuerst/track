@@ -1,0 +1,33 @@
+Thoughts on architecture
+========================
+
+----------------------------------------------------------------------------
+information about running processes: keeping original data vs. consolidating equal process samples
+
+Given a fixed set of rules it would be easy to just save some meta information
+about a process
+
+Problem is that setting a new rule would make all preprocessed data 
+inconsistent.
+
+So we have two plausible approaches here:
+- keeping all information (process name, title) and process it on load
+- saving pre-processed data
+
+My current intuition is to save original data and keep a pre-processed 
+mirror which is accessible via API.
+----------------------------------------------------------------------------
+
+----------------------------------------------------------------------------
+whole in one application with API for http/CLI vs. standalone server.
+
+Currently developement is done in favor for a standalone/modularized approach.
+
+Reasons are:
+- better separation of concerns. Maybe s.o. only wants to use the server or
+  event wants to refactor it for a different purpose
+- better maintainability (testability, clearer API)
+- flexibility for different UIs
+- Licensing issues (e.g. pyqt is GPL and track should not)
+----------------------------------------------------------------------------
+

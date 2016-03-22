@@ -98,6 +98,7 @@ class track_server:
         except zmq.ZMQError as e:
             log.error(e)
             return
+        self._tracker.set_persistency_folder('~/.track')
         self._tracker.load()
         self._running = True
 

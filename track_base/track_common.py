@@ -3,6 +3,7 @@
 
 from datetime import datetime
 import time
+import os
 import logging
 from collections import namedtuple
 import traceback
@@ -231,4 +232,12 @@ def fopen(filename, mode='r', buffering=1):
             raise file_not_found_error()
         elif ex.errno == 13:
             raise read_permission_error()
+        raise
+
+def make_dirs(path):
+    try:
+        os.makedirs(os.path.expanduser(path))
+    except OSError as ex:
+        if ex.errno == 17:
+            raise path_exists_error()
         raise

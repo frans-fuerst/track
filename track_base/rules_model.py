@@ -9,7 +9,6 @@ class rules_model:
     def __init__(self):
         self._matching = []
         self._rules = []
-        self._filename = "regex_rules"
 
     def columnCount(self, parent):  # const
         return 3
@@ -68,9 +67,9 @@ class rules_model:
     def add_rule(self):
         self._rules.insert(0, ["new rule", 0])
 
-    def load(self):
+    def load(self, filename):
         try:
-            with track_common.fopen(self._filename) as _file:
+            with track_common.fopen(filename) as _file:
                 _struct = json.load(_file)
 
         except track_common.file_not_found_error:
@@ -78,8 +77,8 @@ class rules_model:
                        (".*gedit.*", 0)]
         self._rules = _struct
 
-    def save(self):
-        with open(self._filename, 'w') as _file:
+    def save(self, filename):
+        with open(filename, 'w') as _file:
             json.dump(self._rules, _file,
                       sort_keys=False) #, indent=4, separators=(',', ': '))
 

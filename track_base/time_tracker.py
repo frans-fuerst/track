@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import os
 import logging
 log = logging.getLogger('base.time_tracker')
 
@@ -27,13 +28,14 @@ class time_tracker:
         self._current_process_exe = ""
         self._user_is_active = True
         self._active_day = track_common.today_int()
-
+        self._storage_dir = 'track-storage'
 
         # -- persist
         self._applications = active_applications()
         self._rules = rules_model()
 
-        #self._rules.modified_rules.connect(self.update_categories)
+    def set_persistency_folder(self, path):
+        self._storage_dir = os.path.expanduser(path)
 
     def __eq__(self, other):
         return False
@@ -46,26 +48,28 @@ class time_tracker:
         _file_name = filename if filename else "track-%s.json" % track_common.today_str()
         # print(_file_name)
         try:
-            with open(_file_name) as _file:
+            with open(os.path.join(self._storage_dir, _file_name)) as _file:
                 self._applications.from_dict(json.load(_file))
         except IOError:
             if filename is not None:
                 log.warning('file "%s" does not exist', filename)
 
-        self._rules.load()
+        self._rules.load(os.path.join(self._storage_dir, 'category_rules'))
 
     def save(self, filename=None):
         _file_name = filename if filename else "track-%s.json" % track_common.today_str()
         # print(_file_name)
         _app_data = self._applications.__data__()
-        with open(_file_name, 'w') as _file:
+        track_base.make_dirs(self._storage_dir)
+        with open(os.path.join(self._storage_dir, _file_name), 'w') as _file:
             json.dump(_app_data, _file,
                       sort_keys=True) #, indent=4, separators=(',', ': '))
 
         _test_model = active_applications()
         _test_model.from_dict(_app_data)
         assert self._applications == _test_model
-        self._rules.save()
+
+        self._rules.save(os.path.join(self._storage_dir, 'category_rules'))
 
     def get_applications_model(self):
         return self._applications

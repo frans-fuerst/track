@@ -20,6 +20,7 @@ from track_base.track_common import not_connected
 from track_base.track_common import protocol_error
 
 from track_base.track_common import fopen
+from track_base.track_common import make_dirs
 
 from collections import namedtuple
 version_info = namedtuple('version_info', ['major', 'minor', 'micro', 'patch'])

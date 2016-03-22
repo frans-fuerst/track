@@ -60,7 +60,10 @@ class time_tracker:
         _file_name = filename if filename else "track-%s.json" % track_common.today_str()
         # print(_file_name)
         _app_data = self._applications.__data__()
-        track_base.make_dirs(self._storage_dir)
+        try:
+            track_base.make_dirs(self._storage_dir)
+        except track_base.path_exists_error:
+            pass
         with open(os.path.join(self._storage_dir, _file_name), 'w') as _file:
             json.dump(_app_data, _file,
                       sort_keys=True) #, indent=4, separators=(',', ': '))

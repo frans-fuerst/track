@@ -25,14 +25,16 @@ def _get_stdout(command):
                 args=command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,)
-    _stdout, _stderr =_p.communicate()
+    _stdout, _stderr = _p.communicate()
+    _stdout = _stdout.decode('utf-8', errors='replace').split('\n')
+    _stderr = _stderr.decode('utf-8', errors='replace').split('\n')
     if _p.returncode is not 0:
         raise WindowInformationError(
             'command "%s" did not return properly' % ' '.join(command)
             + "\n"
             + "output was: \n"
             + _stdout)
-    return _stdout.split('\n')
+    return _stdout
 
 
 def get_active_window_information():
@@ -67,7 +69,7 @@ def get_active_window_information():
     for line in _id_w:
         _match = re.match(".*WM_NAME\(\w+\) = (?P<name>.+)$", line)
         if _match is not None:
-            _entry = _match.group("name").decode('utf-8', errors='replace').strip('"').strip()
+            _entry = _match.group("name").strip('"').strip()
             if _entry == "":
                 print("could not read title from '%s'" % line)
                 raise WindowInformationError('could not read app title')
@@ -75,7 +77,7 @@ def get_active_window_information():
 
         _match = re.match(".*_NET_WM_PID\(\w+\) = (?P<name>.+)$", line)
         if _match is not None:
-            _entry = _match.group("name").decode().strip('"').strip()
+            _entry = _match.group("name").strip('"').strip()
             if _entry != "":
                 _result['PID'] = int(_entry)
 
@@ -106,7 +108,7 @@ def _get_active_window_title():
             for line in _id_w:
                 match = re.match(".*WM_NAME\(\w+\) = (?P<name>.+)$", line)
                 if match != None:
-                    _result = match.group("name").decode().strip('"')
+                    _result = match.group("name").strip('"')
                     if _result.strip() == "":
                         pass
                     return _result

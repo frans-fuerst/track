@@ -33,7 +33,8 @@ def _get_stdout(command):
             'command "%s" did not return properly' % ' '.join(command)
             + "\n"
             + "output was: \n"
-            + _stdout)
+            + '\n'.join(_stdout)
+            + '\n'.join(_stderr))
     return _stdout
 
 
@@ -55,12 +56,12 @@ def get_active_window_information():
     try:
         _id_w = _get_stdout(['xprop', '-id', _window_id, 'WM_NAME', '_NET_WM_NAME', '_NET_WM_PID'])
     except WindowInformationError as ex:
-        print(ex)
+        print(repr(ex))
         raise WindowInformationError(
             '"xprop" (ran order to get WM_NAME, _NET_WM_NAME and_NET_WM_PID) "'
             '"returned with error')
-    except Exception as ex:
-        print(ex)
+    except Exception  as ex:
+        print(repr(ex))
         raise ToolError(
             'Could not run "xprop" in order to get WM_NAME, _NET_WM_NAME and_NET_WM_PID')
 

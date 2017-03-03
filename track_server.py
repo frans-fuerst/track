@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import zmq
@@ -8,8 +8,9 @@ import signal
 import time
 import sys
 import threading
+import os
 
-from desktop_usage_info import applicationinfo
+import desktop_usage_info 
 
 import track_base
 
@@ -53,10 +54,12 @@ class track_server:
             self._save_tracker_data(interval=120)
             try:
                 self._tracker.update()
-            except applicationinfo.WindowInformationError:
+            except desktop_usage_info.WindowInformationError:
                 pass
             except Exception as ex:
                 log.error("Unhandled Exception: %s", ex)
+                import traceback
+                traceback.print_exc()                
 
             log.debug(self._tracker.get_current_data())
 
@@ -148,11 +151,12 @@ if __name__ == '__main__':
     track_base.setup_logging(_level)
     log.setLevel(_level)
 
-    handler = logging.handlers.SysLogHandler(address='/dev/log')
-    handler.setFormatter(logging.Formatter(
-        fmt="%(asctime)s %(name)15s %(levelname)s:  %(message)s",
-        datefmt="%y%m%d-%H%M%S"))
-    log.addHandler(handler)
+    if os.name == 'posix':
+        handler = logging.handlers.SysLogHandler(address='/dev/log')
+        handler.setFormatter(logging.Formatter(
+            fmt="%(asctime)s %(name)15s %(levelname)s:  %(message)s",
+            datefmt="%y%m%d-%H%M%S"))
+        log.addHandler(handler)
 
     for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
         signal.signal(s, lambda signal, frame: sys.exit)

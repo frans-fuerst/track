@@ -1,19 +1,17 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-import os
 
 from win32gui import GetWindowText, GetForegroundWindow
 
-def _get_active_window_title():
+def _get_active_window_title() -> str:
     return GetWindowText(GetForegroundWindow())
 
-def _get_active_process_name():
+def _get_active_process_name() -> str:
     return ""
 
-def _get_active_window_information():
+def get_active_window_information() -> dict:
     return {
-        "TITLE": get_active_window_title(),
+        "TITLE": _get_active_window_title(),
         # "PID": ???
         # "COMMAND": ???
     }
@@ -23,7 +21,6 @@ if __name__ == '__main__':
     import sys
     print(sys.version)
     while True:
-        print(get_idle_duration())
-        print(get_window())
+        print(get_active_window_information())
         time.sleep(1)
 

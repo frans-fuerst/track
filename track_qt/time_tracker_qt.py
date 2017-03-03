@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from track_qt.active_applications_qtmodel import active_applications_qtmodel
@@ -6,7 +6,7 @@ from track_qt.rules_model_qt import rules_model_qt
 
 import track_base
 
-from PyQt4.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSlot
 
 import zmq
 import logging
@@ -199,7 +199,7 @@ class time_tracker_qt:
     def user_is_active(self):
         return self._current_data['user_active']
 
-    @pyqtSlot()
+    #@pyqtSlot()
     def update_categories(self):
         self._applications.update_all_categories(self._rules.get_first_matching_key)
 

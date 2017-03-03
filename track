@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
@@ -9,9 +9,9 @@ import os.path
 log = logging.getLogger('track_ui')
 
 try:
-    from PyQt4 import QtGui, QtCore, uic
+    from PyQt5 import QtWidgets, QtGui, QtCore, uic
 except ImportError:
-    print("you have to have PyQt4 for your version of Python (%s) installed"
+    print("you have to have PyQt5 for your version of Python (%s) installed"
           % ".".join(str(x) for x in sys.version_info))
 
     sys.exit(-1)
@@ -28,7 +28,7 @@ def start_server_process():
     server_file = os.path.join(os.path.dirname(__file__), 'track_server.py')
     subprocess.Popen([sys.executable, server_file])
 
-class track_ui(QtGui.QMainWindow):
+class track_ui(QtWidgets.QMainWindow):
 
     def __init__(self):
         # initialize the Qt-MainWindow
@@ -49,7 +49,7 @@ class track_ui(QtGui.QMainWindow):
         self.tbl_active_applications.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
         self.tbl_active_applications.setColumnWidth(0, self.tbl_active_applications.width() * 0.75)
         self.tbl_active_applications.setColumnWidth(1, self.tbl_active_applications.width() * 0.1)
-        self.tbl_active_applications.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
+        self.tbl_active_applications.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.tbl_active_applications.setDragEnabled(True)
         self.tbl_active_applications.setDropIndicatorShown(True)
 
@@ -61,7 +61,7 @@ class track_ui(QtGui.QMainWindow):
         self.tbl_category_rules.setColumnWidth(3, self.tbl_category_rules.width() * 0.10)
 
         self.tbl_category_rules.setDragEnabled(True)
-        self.tbl_category_rules.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
+        self.tbl_category_rules.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.tbl_category_rules.setDropIndicatorShown(True)
         self.tbl_category_rules.viewport().setAcceptDrops(True)
         self.tbl_category_rules.setDragDropOverwriteMode(False)
@@ -86,8 +86,8 @@ class track_ui(QtGui.QMainWindow):
         style = self.style()
 
         # Set the window and tray icon to something
-        icon = style.standardIcon(QtGui.QStyle.SP_MediaSeekForward)
-        self.tray_icon = QtGui.QSystemTrayIcon()
+        icon = style.standardIcon(QtWidgets.QStyle.SP_MediaSeekForward)
+        self.tray_icon = QtWidgets.QSystemTrayIcon()
         self.tray_icon.setIcon(QtGui.QIcon(icon))
         self.setWindowIcon(QtGui.QIcon(icon))
 
@@ -122,13 +122,13 @@ class track_ui(QtGui.QMainWindow):
                 if self._connect():
                     self._update_timer.start(1000)
                 else:
-                    QtGui.QMessageBox.information(
+                    QtWidgets.QMessageBox.information(
                         self, "track service unreachable",
                         "Cannot reach the local track service even after starting "
                         "a new instance.\nPlease restart track on command "
                         "line to get some more info and file a bug!\n\nBye!",
-                        buttons=QtGui.QMessageBox.Ok)
-                    QtGui.QApplication.quit()
+                        buttons=QtWidgets.QMessageBox.Ok)
+                    QtWidgets.QApplication.quit()
             elif _type == QtCore.QEvent.WindowStateChange and self.isMinimized():
                 # The window is already minimized at this point.  AFAIK,
                 # there is no hook stop a minimize event. Instead,
@@ -234,7 +234,7 @@ def main():
         '.'.join((str(e) for e in sys.version_info)),
         sys.executable)
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     ex = track_ui()
     ex.show()
 

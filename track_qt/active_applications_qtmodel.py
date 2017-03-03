@@ -1,8 +1,8 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-from PyQt4 import QtCore #, Qt, uic, QtGui
-from PyQt4.QtCore import pyqtSlot
+from PyQt5 import QtCore #, Qt, uic, QtGui
+from PyQt5.QtCore import pyqtSlot
 
 import track_qt
 import track_base

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import logging
@@ -10,10 +10,8 @@ import psutil
 from desktop_usage_info import ToolError
 from desktop_usage_info import WindowInformationError
 
-'''
-xprop -id $(xprop -root | awk '/_NET_ACTIVE_WINDOW\(WINDOW\)/{print $NF}') | awk '/_NET_WM_PID\(CARDINAL\)/{print $NF}'
-xprop -id $(xprop -root _NET_ACTIVE_WINDOW | cut -f5 -d' ')
-'''
+# xprop -id $(xprop -root | awk '/_NET_ACTIVE_WINDOW\(WINDOW\)/{print $NF}') | awk '/_NET_WM_PID\(CARDINAL\)/{print $NF}'
+# xprop -id $(xprop -root _NET_ACTIVE_WINDOW | cut -f5 -d' ')
 
 
 # http://thp.io/2007/09/x11-idle-time-and-focused-window-in.html
@@ -114,7 +112,7 @@ def _get_active_window_title():
                         pass
                     return _result
     except Exception as e:
-        logging.warn("got exception: %s" % str(e))
+        logging.warning("got exception: %s", str(e))
     return "Active window not found"
 
 

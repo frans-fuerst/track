@@ -3,9 +3,9 @@
 
 import track_base
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtWidgets, QtGui, QtCore
 
-class timegraph(QtGui.QFrame):
+class timegraph(QtWidgets.QFrame):
 
     def __init__(self, parent):
         self._tracker = None

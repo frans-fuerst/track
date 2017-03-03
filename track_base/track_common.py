@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from datetime import datetime
@@ -7,6 +7,7 @@ import os
 import logging
 from collections import namedtuple
 import traceback
+import operator
 
 
 class track_error(Exception):
@@ -165,11 +166,8 @@ class minute():
                 _categories[a._category] = c
             else:
                 _categories[a._category] += c
-
-        self._category = _categories.keys()[
-                                _categories.values().index(
-                                    max(_categories.values()))]
-        # print(self._category)
+                
+        self._category = max(_categories.items(), key=operator.itemgetter(1))[0]
 
     def add(self, app_instance):
         if app_instance not in self._apps:

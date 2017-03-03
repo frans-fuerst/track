@@ -1,10 +1,12 @@
 import os
 
+class TrackServerError(Exception):
+    pass 
 
-class WindowInformationError(Exception):
+class WindowInformationError(TrackServerError):
     pass
 
-class ToolError(Exception):
+class ToolError(TrackServerError):
     pass
 
 if os.name == 'posix':

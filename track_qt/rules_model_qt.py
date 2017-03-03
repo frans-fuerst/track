@@ -7,8 +7,8 @@ from track_qt.qt_common import matrix_table_model
 from track_qt.qt_common import change_emitter
 import track_base
 
-from PyQt4 import QtCore
-from PyQt4.QtCore import pyqtSignal
+from PyQt5 import QtCore
+from PyQt5.QtCore import pyqtSignal
 
 class rules_model_qt(matrix_table_model):
     modified_rules = pyqtSignal()
@@ -19,7 +19,9 @@ class rules_model_qt(matrix_table_model):
         self._matching = []
         self._time = {}
         self._rules = []
-        self.setSupportedDragActions(QtCore.Qt.MoveAction)
+        
+    def supportedDragActions(self):
+        return QtCore.Qt.MoveAction
 
     def update_categories_time(self, new_time):
         self._time = new_time

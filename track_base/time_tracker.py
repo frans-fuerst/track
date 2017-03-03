@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import json
@@ -6,8 +6,7 @@ import os
 import logging
 log = logging.getLogger('base.time_tracker')
 
-from desktop_usage_info import idle
-from desktop_usage_info import applicationinfo
+import desktop_usage_info 
 
 from track_base.active_applications import active_applications
 from track_base.rules_model import rules_model
@@ -98,8 +97,8 @@ class time_tracker:
 
                 self._user_is_active = True
 
-                self._idle_current = int(idle.getIdleSec())
-                _app_info = applicationinfo.get_active_window_information()
+                self._idle_current = int(desktop_usage_info.idle.getIdleSec())
+                _app_info = desktop_usage_info.applicationinfo.get_active_window_information()
 
                 self._current_app_title = _app_info["TITLE"]
                 if "COMMAND" in _app_info:
@@ -121,9 +120,9 @@ class time_tracker:
                             self._current_minute,
                             _app)
 
-            except applicationinfo.WindowInformationError:
+            except desktop_usage_info.WindowInformationError:
                 pass
-            except applicationinfo.ToolError as ex:
+            except desktop_usage_info.ToolError as ex:
                 log.error(ex)
 
     #def info(self, minute):

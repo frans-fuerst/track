@@ -166,7 +166,7 @@ class minute():
                 _categories[a._category] = c
             else:
                 _categories[a._category] += c
-                
+
         self._category = max(_categories.items(), key=operator.itemgetter(1))[0]
 
     def add(self, app_instance):

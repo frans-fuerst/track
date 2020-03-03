@@ -149,7 +149,7 @@ class track_ui(QtWidgets.QMainWindow):
     def restore_window(self, reason):
         with track_base.frame_grabber(log()):
 
-            if reason == QtGui.QSystemTrayIcon.DoubleClick:
+            if reason == QtWidgets.QSystemTrayIcon.DoubleClick:
                 self.tray_icon.hide()
                 # self.showNormal will restore the window even if it was
                 # minimized.
@@ -222,7 +222,7 @@ def sigint_handler(s, window):
             sig_name = "SIGTERM"
         log().info("got signal %s (%s)", sig_name, str(s))
         window.cleanup()
-        QtGui.QApplication.quit()
+        QtWidgets.QApplication.quit()
 
 
 def parse_arguments(argv: List[str]) -> argparse.Namespace:

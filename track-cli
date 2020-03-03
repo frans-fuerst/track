@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+# -*- encoding: utf-8 -*-
+# pylint: disable=expression-not-assigned
+
+"""Extension free executable stub for track-cli
+"""
+from contextlib import suppress
+from track_cli import main
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt, BrokenPipeError):
+        raise SystemExit(main())

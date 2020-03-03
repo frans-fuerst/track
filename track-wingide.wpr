@@ -18,7 +18,7 @@ proj.directory-list = [{'dirloc': loc('track_base'),
                         'watch_for_changes': True},
                        {'dirloc': loc('.'),
                         'excludes': (),
-                        'filter': u'*.py',
+                        'filter': u'*',
                         'include_hidden': False,
                         'recursive': True,
                         'watch_for_changes': True}]

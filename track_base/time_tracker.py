@@ -6,7 +6,7 @@ import os
 import logging
 log = logging.getLogger('base.time_tracker')
 
-import desktop_usage_info 
+import desktop_usage_info
 
 from track_base.active_applications import active_applications
 from track_base.rules_model import rules_model
@@ -63,6 +63,7 @@ class time_tracker:
             track_base.make_dirs(self._storage_dir)
         except track_base.path_exists_error:
             pass
+
         with open(os.path.join(self._storage_dir, _file_name), 'w') as _file:
             json.dump(_app_data, _file,
                       sort_keys=True) #, indent=4, separators=(',', ': '))

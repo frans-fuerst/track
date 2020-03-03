@@ -31,7 +31,6 @@ def start_server_process():
 
 
 class track_ui(QtWidgets.QMainWindow):
-
     def __init__(self):
         super().__init__()
         self._connected = False
@@ -53,7 +52,6 @@ class track_ui(QtWidgets.QMainWindow):
         self.tbl_active_applications.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.tbl_active_applications.setDragEnabled(True)
         self.tbl_active_applications.setDropIndicatorShown(True)
-
 
         self.tbl_category_rules.setModel(self._tracker.get_rules_model())
         self.tbl_category_rules.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)

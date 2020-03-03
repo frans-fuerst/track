@@ -24,7 +24,7 @@ class active_applications:
 
     '''
 
-    def __init__(self):
+    def __init__(self, json_data=None):
         self.header = ['application title', 'time', 'category']
         self._index_min = None
         self._index_max = None
@@ -33,6 +33,9 @@ class active_applications:
         # to be persisted
         self._apps = {}     # app identifier => app_info instance
         self._minutes = {}  # i_min          => minute
+
+        if not json_data is None:
+            self.from_dict(json_data)
 
     def clear(self):
         # todo: mutex

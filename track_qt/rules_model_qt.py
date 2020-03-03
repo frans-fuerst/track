@@ -81,16 +81,17 @@ class rules_model_qt(matrix_table_model):
     #Makes it editable:
     def setData(self, index, value, role):
         if value != "":
-            regex_str=str(value.toString())
+            regex_str=str(value)
             try:
                 re.compile(regex_str)
                 is_valid = True
             except re.error:
                 is_valid = False
             if(is_valid):
-                self._rules[index.row()][index.column()-1] = str(value.toString())
+                self._rules[index.row()][index.column()-1] = regex_str
                 self.modified_rules.emit()
-                self.save_to_disk()
+                # TODO: save rule changes to disk
+                # self.save_to_disk()
             else:
                 self._rules[index.row()][index.column()-1] = "invalid regex"
         return True

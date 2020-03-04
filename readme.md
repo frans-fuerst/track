@@ -76,5 +76,5 @@ result in category 1 (which you might be *private* in your eyes).
 
 ### how to run
 
-Just clone the repository and run `track.py`.
+Just clone the repository and run `python track`.
 

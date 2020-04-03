@@ -78,13 +78,18 @@ class ActiveApplications:
         return {"apps": _apps, "minutes": _minutes}
 
     def from_dict(self, data):
+        def convert(minutes):
+            # todo: just translate local files
+            if all(len(data) == 2 and isinstance(data[0], int)
+                   for index, data in minutes.items()):
+                return {key: value[1] for key, value in minutes.items()}
+            return minutes
+
         assert 'apps' in data
         assert 'minutes' in data
         _a = data['apps']
         _indexed = [track_common.AppInfo().load(d) for d in _a]
-        _m = data['minutes']
-        if _m and len(next(iter(_m.items()))[1]) == 2:
-            _m = {key: value[1] for key, value in _m.items()}
+        _m = convert(data['minutes'])
         _minutes = {int(i): track_common.Minute({_indexed[a]: c for a, c in m})
                     for i, m in _m.items()}
 

@@ -82,14 +82,17 @@ def fn_info(args) -> None:
             if not '-log-' in f and not "rules" in f and f.endswith(".json")
         ):
             data = convert(json.load(open(os.path.join(log_dir, file))))
+            if "20200503" in file:
+                print(file)
             apps = track_base.ActiveApplications(data["tracker_data"])
+            daily_note = data.get("daily_note") or ""
             print("%s: %s - %s = %s => %s (note: %r)" % (
                 file,
                 to_time(apps.begin_index()),
                 to_time(apps.end_index()),
                 to_time(apps.end_index() - apps.begin_index()),
                 to_time(apps.end_index() - apps.begin_index() - 60),
-                data.get("daily_note", "").split("\n")[0]))
+                daily_note.split("\n")[0]))
             #print("".join(("X" if minute in apps._minutes else " ")
             #        for minute in range(apps.begin_index(), apps.end_index() + 1)))
 

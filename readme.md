@@ -48,8 +48,9 @@ In order to get an idea how much of the day you spend for work and how much
 for private stuff (or how much you spend on project A or project B) track allows
 you to define special *rules* which assign each running program to a category.
 
-Right now categories are still just numbers. In the future I plan to allow
-arbitrary categories (or category trees), e.g.:
+Right now categories are just numbers (2 for work, 3 for private stuff, 4 for break,
+0 for idle and 1 for unassigned programs). In the future I plan to allow arbitrary
+categories (or category trees), e.g.:
 
 * work
   - project A
@@ -121,3 +122,17 @@ To list starting / endings times of recorded days run `track-cli list`
 * Bug: Gnome Icon not working
 * Categories limited to 0-4
 * Categories as ints
+
+
+## Tests
+
+Here is how I currently "test" track. It's actually more try and look for crashes :)
+
+* Delete `~/.track/`, Try to start `track`
+* Open all spoilers
+* Delete all rules by pressing delete
+* add rules
+* edit note
+* restart
+* rules still exist?
+* note still exists?

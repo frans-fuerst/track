@@ -5,7 +5,6 @@
 """
 
 import sys
-import signal
 import argparse
 import os.path
 import json
@@ -14,26 +13,31 @@ from contextlib import suppress
 from typing import Any
 
 try:
-    from PyQt5 import QtWidgets, QtGui, QtCore, uic  # type: ignore
+    from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 except ImportError:
     print("you have to have PyQt5 for your version of Python (%s) installed"
           % ".".join(str(x) for x in sys.version_info))
     sys.exit(-1)
 
-import track_base
-from track_base import mins_to_dur
-from track_base.util import log
-import track_qt
-from track_qt import CategoryColor, ReorderTableView
+from .. import core
+from ..core import common, errors
+from ..core.util import log
+
+from .mainwindow import MainWindow
+from .qreordertableview import ReorderTableView
+from .time_tracker_qt import TimeTrackerClientQt
+from .qt_common import CategoryColor
 
 
 def start_server_process() -> None:
     """Start the track server"""
     log().info('start track server daemon')
-    server_file = os.path.join(os.path.dirname(__file__), 'track-server')
+    server_file = os.path.join(os.path.dirname(__file__), '../../track-server')
     subprocess.Popen([sys.executable, server_file])
 
+
 def category_name(value):
+    """Maps category value to names"""
     return {
         0: "idle",
         1: "unassigned",
@@ -42,7 +46,8 @@ def category_name(value):
         4: "break",
         }.get(value, "?")
 
-class TrackUI(QtWidgets.QMainWindow):
+
+class TrackUI(MainWindow):
     """Track recorder UI"""
     class ApplicationTableDelegate(QtWidgets.QStyledItemDelegate):
         """Delegator which draws a coloured background for a certain column"""
@@ -79,14 +84,11 @@ class TrackUI(QtWidgets.QMainWindow):
         def displayText(self, value: Any, locale: QtCore.QLocale) -> Any:
             """Convert from category to category names"""
             return (category_name(value) if isinstance(value, int) else
-                    "new rule" if value is "" else
+                    "new rule" if value == "" else
                     super().displayText(value, locale))
-
 
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
-        self.windowTitleChanged.connect(self.on_windowTitleChanged)
-        uic.loadUi(os.path.join(os.path.dirname(__file__), 'track.ui'), self)
 
         self.tbl_category_rules = ReorderTableView()
         self.regex_spoiler.setTitle("Category assignment rules (caution: regex)")
@@ -102,21 +104,19 @@ class TrackUI(QtWidgets.QMainWindow):
         self.evaluation_spoiler.addWidget(self.tbl_evaluation)
         self.evaluation_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
 
-        self.txt_log = QtWidgets.QTextEdit()
-        self.txt_log.setReadOnly(True)
-        self.txt_log.setLineWrapMode(0)
-        self.txt_log.setFontFamily("Courier New")
-        self.txt_log.setPlainText("nothing to see here")
+        self.log_view = QtWidgets.QPlainTextEdit()
         self.log_spoiler.setTitle("Log messages")
-        self.log_spoiler.addWidget(self.txt_log)
+        self.log_spoiler.addWidget(self.log_view)
         self.log_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
+
+        self.setup_common_widgets()
 
         self.setWindowIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaSeekForward))
         self.setGeometry(0, 0, 700, 800)
         self.tray_icon = self._initialize_tray_icon()
 
         self._endpoint = "tcp://127.0.0.1:%s" % str(args.port)
-        self._tracker = track_qt.TimeTrackerClientQt(self)
+        self._tracker = TimeTrackerClientQt(self)
 
         self._update_timer = QtCore.QTimer(self)
         self._update_timer.timeout.connect(self.update_idle)
@@ -149,21 +149,6 @@ class TrackUI(QtWidgets.QMainWindow):
             return
         self._tracker.get_rules_model().check_string(current.data())
 
-    def _initialize_tray_icon(self) -> QtWidgets.QSystemTrayIcon:
-        def restore_window(reason: QtWidgets.QSystemTrayIcon.ActivationReason) -> None:
-            if reason == QtWidgets.QSystemTrayIcon.DoubleClick:
-                self.tray_icon.hide()
-                self.showNormal()
-
-        tray_icon = QtWidgets.QSystemTrayIcon(self)
-        tray_icon.setIcon(self.windowIcon())
-        tray_icon.activated.connect(restore_window)
-        return tray_icon
-
-    def on_windowTitleChanged(self, title: str) -> None:
-        QtCore.QCoreApplication.setApplicationName(title)
-        self.setWindowIconText(title)
-
     def on_txt_notes_textChanged(self):
         self._tracker.set_note(self.txt_notes.toPlainText())
 
@@ -193,18 +178,18 @@ class TrackUI(QtWidgets.QMainWindow):
         _time_idle = self._tracker.get_time_idle()
         percentage = 100. / _time_total
         self.lbl_time_active.setText("active: %s (%d%%)" % (
-            mins_to_dur(_time_active), _time_active * percentage))
+            common.mins_to_dur(_time_active), _time_active * percentage))
         self.lbl_time_work.setText("work: %s (%d%%)" % (
-            mins_to_dur(_time_work), _time_work * percentage))
+            common.mins_to_dur(_time_work), _time_work * percentage))
         self.lbl_time_private.setText("private: %s (%d%%)" % (
-            mins_to_dur(_time_private), _time_private * percentage))
+            common.mins_to_dur(_time_private), _time_private * percentage))
         self.lbl_time_idle.setText("idle: %s (%d%%)" % (
-            mins_to_dur(_time_idle), _time_idle * percentage))
+            common.mins_to_dur(_time_idle), _time_idle * percentage))
 
         self.lbl_start_time.setText("%s - %s: %s" % (
             self._tracker.start_time(),
             self._tracker.now(),
-            mins_to_dur(self._tracker.get_time_total())))
+            common.mins_to_dur(self._tracker.get_time_total())))
 
         palette = self.lbl_title.palette()
         palette.setColor(
@@ -234,14 +219,17 @@ class TrackUI(QtWidgets.QMainWindow):
                 _retried = True
                 start_server_process()
 
-    def _render_evaluation_text(self, path):
+    @staticmethod
+    def _render_evaluation_text(path):
         def to_time(value):
             return "%2d:%.2d" % (value // 60, value % 60)
+
         def convert(data):
             return data if "tracker_data" in data else {"tracker_data": data}
+
         def to_string(file):
             data = convert(json.load(open(os.path.join(path, file))))
-            apps = track_base.ActiveApplications(data["tracker_data"])
+            apps = core.ActiveApplications(data["tracker_data"])
             daily_note = data.get("daily_note") or ""
             return("%s: %s - %s = %s => %s (note: %r)" % (
                 file.replace(".json", "").replace("track-", ""),
@@ -255,7 +243,7 @@ class TrackUI(QtWidgets.QMainWindow):
                 "\n".join(to_string(filename) for filename in (
                     f
                     for f in sorted(os.listdir(path), reverse=True)
-                    if not '-log-' in f and not "rules" in f and f.endswith(".json"))))
+                    if not '-log-' in f and "rules" not in f and f.endswith(".json"))))
 
     def keyPressEvent(self, event: QtCore.QEvent) -> bool:
         if event.key() == QtCore.Qt.Key_Delete and self.tbl_category_rules.hasFocus():
@@ -300,28 +288,19 @@ class TrackUI(QtWidgets.QMainWindow):
 
         return super().event(event)  # type: ignore
 
-    def closeEvent(self, _event: QtCore.QEvent) -> None:
+    def closeEvent(self, event: QtCore.QEvent) -> None:
         """Shut down gracefully (i.e. close threads)"""
         self._update_timer.stop()
         if self._tracker.initialized():
-            with suppress(track_base.not_connected, RuntimeError):
+            with suppress(errors.NotConnected, RuntimeError):
                 self._tracker.save()
-
-    def handle_signal(self, sig: int) -> None:
-        """Handle posix signals, i.e. shut down on CTRL-C"""
-        log().info(
-            "got signal %s(%d)",
-            dict((k, v) for v, k in reversed(sorted(signal.__dict__.items()))
-                 if v.startswith('SIG') and not v.startswith('SIG_')).get(sig, "unknown"),
-            sig)
-        if sig == signal.SIGINT:
-            self.close()
+        return super().closeEvent(event)
 
 
 def parse_arguments() -> argparse.Namespace:
     """parse command line arguments and return argument object"""
     parser = argparse.ArgumentParser(description=__doc__)
-    track_base.util.setup_argument_parser(parser)
+    core.common.setup_argument_parser(parser)
     return parser.parse_args()
 
 
@@ -330,29 +309,11 @@ def main() -> int:
     specified on command line
     """
     args = parse_arguments()
-    track_base.util.setup_logging(args)
-    track_base.util.log_system_info()
+    core.util.setup_logging(args)
+    core.util.log_system_info()
     app = QtWidgets.QApplication(sys.argv)
-
-    with suppress(Exception):
-        with open(os.path.join(os.path.dirname(__file__), "track.qss")) as f:
-            app.setStyleSheet(f.read())
 
     window = TrackUI(args)
     window.show()
 
-    for sig in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
-        signal.signal(sig, lambda sign, _frame: window.handle_signal(sign))
-
-    # catch the interpreter every now and then to be able to catch
-    # signals
-    timer = QtCore.QTimer()
-    timer.start(200)
-    timer.timeout.connect(lambda: None)
-
     return app.exec_()
-
-
-if __name__ == "__main__":
-    with suppress(KeyboardInterrupt, BrokenPipeError):
-        raise SystemExit(main())

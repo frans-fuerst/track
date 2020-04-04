@@ -11,10 +11,11 @@ from PyQt5 import QtWidgets  # type: ignore
 
 import zmq  # type: ignore
 
-from track_base.util import log
-from . import track_base
-from . import ActiveApplicationsModel
-from . import RulesModelQt
+from .active_applications_qtmodel import ActiveApplicationsModel
+from .rules_model_qt import RulesModelQt
+from .. import core
+from ..core.util import log
+from ..core import errors
 
 
 class TimeTrackerClientQt:
@@ -33,7 +34,7 @@ class TimeTrackerClientQt:
         self._initialized = False
         self.connected = False
 
-        self._active_day = track_base.today_int()
+        self._active_day = core.today_int()
 
         self._applications = ActiveApplicationsModel(parent)
         self._rules = RulesModelQt(parent=parent)
@@ -68,14 +69,14 @@ class TimeTrackerClientQt:
                  cmd: str,
                  *,
                  data: Optional[Dict[str, Any]] = None,
-                 timeout: str = 50,
+                 timeout: str=50,
                  raise_on_timeout: bool = False) -> Dict[str, Any]:
         def result_or_exception(result):
             if result.get("type") == "error":
                 raise RuntimeError(result["what"])
             return result.get("data")
         if not self.connected:
-            raise RuntimeError("Tried to send request while not connected to server")
+            raise errors.NotConnected("Tried to send request while not connected to server")
         self._req_send({"cmd": cmd, "data": data})
         return result_or_exception(self._req_recv(timeout, raise_on_timeout))
 
@@ -152,11 +153,11 @@ class TimeTrackerClientQt:
 
     def start_time(self):
         _s = self._applications.begin_index()
-        return("%0.2d:%0.2d" % (int(_s / 60), _s % 60))
+        return "%0.2d:%0.2d" % (int(_s / 60), _s % 60)
 
     def now(self):
         _s = self._current_data['minute']
-        return("%0.2d:%0.2d" % (int(_s / 60), _s % 60))
+        return "%0.2d:%0.2d" % (int(_s / 60), _s % 60)
 
     def is_active(self, minute):
         return self._applications.is_active(minute)

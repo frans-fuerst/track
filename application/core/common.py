@@ -7,11 +7,9 @@
 from datetime import datetime
 import time
 import os
-import logging
-from collections import namedtuple, Counter
-import traceback
-import operator
+import argparse
 from enum import IntEnum
+
 
 class Category(IntEnum):
     IDLE = 0
@@ -21,33 +19,15 @@ class Category(IntEnum):
     BREAK = 4
 
 
-class track_error(Exception):
-    pass
-
-class path_exists_error(track_error):
-    pass
-
-class file_not_found_error(track_error):
-    pass
-
-class read_permission_error(track_error):
-    pass
-
-class not_connected(track_error):
-    pass
-
-class protocol_error(track_error):
-    pass
-
-
 def mins_to_date(mins):
     _result = ""
     _minutes = mins
     if _minutes >= 60:
-        _result = "%2d:" %(_minutes / 60)
+        _result = "%2d:" % (_minutes / 60)
         _minutes %= 60
     _result += "%02d" % _minutes
     return _result
+
 
 def secs_to_dur(mins):
     _result = ""
@@ -55,11 +35,11 @@ def secs_to_dur(mins):
     if _minutes >= 60:
         _result = str(int(_minutes / 60))+"m "
         _minutes %= 60
-    _result += str(_minutes ) + "s"
+    _result += str(_minutes) + "s"
     return _result
 
 
-def mins_to_dur(mins:int) -> str:
+def mins_to_dur(mins: int) -> str:
     return "%d:%02d" % (mins / 60, mins % 60) if mins >= 60 else "%dm" % mins
 
 
@@ -78,7 +58,6 @@ def seconds_since_midnight():
 
 
 def minutes_since_midnight():
-    #return int(seconds_since_midnight() / 2)
     return int(seconds_since_midnight() / 60)
 
 
@@ -108,7 +87,7 @@ class AppInfo:
             self._wndtitle, self._category, self._count, self._cmdline = data
         except:
             print('tried to expand %s to (title, category, count, cmdline)' % (
-                  str(data)))
+                str(data)))
             raise Exception('could not load AppInfo data')
         return self
 
@@ -119,7 +98,7 @@ class AppInfo:
         return self._category
 
     def set_new_category(self, new_category):
-        self._category=new_category
+        self._category = new_category
 
     def get_count(self):
         return self._count
@@ -155,14 +134,13 @@ class Minute:
         return max(self._app_counter, key=lambda x: self._app_counter[x])
 
 
-def setup_logging(level=logging.INFO):
-    logging.basicConfig(
-        format="%(asctime)s %(name)17s %(levelname)s:  %(message)s",
-        datefmt="%y%m%d-%H%M%S",
-        level=level)
-    logging.addLevelName(logging.CRITICAL, "CC")
-    logging.addLevelName(logging.ERROR,    "EE")
-    logging.addLevelName(logging.WARNING,  "WW")
-    logging.addLevelName(logging.INFO,     "II")
-    logging.addLevelName(logging.DEBUG,    "DD")
-    logging.addLevelName(logging.NOTSET,   "NA")
+def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
+    """Set some default arguments for track components"""
+    parser.add_argument('--log-level',
+                        '-l',
+                        choices=['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
+                        default='INFO',)
+    parser.add_argument('--data-dir',
+                        '-d',
+                        default=os.path.expanduser('~/.track'),)
+    parser.add_argument('--port', type=int, default=3456, help='IPv4 port to connect to')

@@ -992,13 +992,13 @@
   <customwidget>
    <class>Timegraph</class>
    <extends>QFrame</extends>
-   <header>track_qt.timegraph</header>
+   <header>.timegraph</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>QSpoiler</class>
    <extends>QFrame</extends>
-   <header>track_qt.qspoiler</header>
+   <header>.qspoiler</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from track_base import track_common
+from ..core import common
+
 
 class ActiveApplications:
     ''' the data model which holds all application usage data for one
@@ -31,7 +32,7 @@ class ActiveApplications:
         self._apps = {}     # app identifier => AppInfo instance
         self._minutes = {}  # i_min          => minute
 
-        if not json_data is None:
+        if json_data is not None:
             self.from_dict(json_data)
 
     def clear(self):
@@ -88,9 +89,9 @@ class ActiveApplications:
         assert 'apps' in data
         assert 'minutes' in data
         _a = data['apps']
-        _indexed = [track_common.AppInfo().load(d) for d in _a]
+        _indexed = [common.AppInfo().load(d) for d in _a]
         _m = convert(data['minutes'])
-        _minutes = {int(i): track_common.Minute({_indexed[a]: c for a, c in m})
+        _minutes = {int(i): common.Minute({_indexed[a]: c for a, c in m})
                     for i, m in _m.items()}
 
         _apps = {a.generate_identifier(): a for a in _indexed}
@@ -122,7 +123,7 @@ class ActiveApplications:
         _app._count += 1
 
         if minute_index not in self._minutes:
-            self._minutes[minute_index] = track_common.Minute()
+            self._minutes[minute_index] = common.Minute()
             if not self._index_min or self._index_min > minute_index:
                 self._index_min = minute_index
 

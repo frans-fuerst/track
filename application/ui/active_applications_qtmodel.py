@@ -8,15 +8,13 @@
 from typing import Any, Tuple, Dict
 
 from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSlot
 
-import track_qt
-import track_base
-
-from track_qt.qt_common import matrix_table_model
+from ..core import common
+from .qt_common import change_emitter
+from ..core.util import throw, log
 
 
-class ActiveApplicationsModel(matrix_table_model):
+class ActiveApplicationsModel(QtCore.QAbstractTableModel):
     """Data model which holds all application usage data for one
         day. That is:
 
@@ -36,29 +34,27 @@ class ActiveApplicationsModel(matrix_table_model):
     """
     def __init__(self, parent, *args) -> None:
         super().__init__(parent, *args)
-        self.header = ['Application title', 'Spent', 'Category']
+        self.header = []
         self._index_min = None
         self._index_max = None
-        self._sort_column = 1
-        self._sort_reverse = True
         self._sorted_keys = []
+        self._sort_col = 0
 
         # to be persisted
         self._apps = {}     # app identifier => AppInfo instance
         self._minutes = {}  # i_min          => minute
 
-    def clear(self):
-        with track_qt.change_emitter(self):
-            self._index_min = None
-            self._index_max = None
-            self._apps = {}     # app identifier => AppInfo instance
-            self._minutes = {}  # i_min          => minute
+    def columnCount(self, parent):  # const
+        return 3
 
     def rowCount(self, parent=None):
         return len(self._sorted_keys)
 
-    def columnCount(self, parent):  # const
-        return 3
+    def headerData(self, column, orientation, role):
+        if (orientation == QtCore.Qt.Horizontal and
+                role == QtCore.Qt.DisplayRole):
+            return 'Application title', 'Spent', 'Category'[column]
+        return None
 
     def data(self, index, role):
         if not index.isValid():
@@ -71,52 +67,43 @@ class ActiveApplicationsModel(matrix_table_model):
             return None
         return (
             self._apps[self._sorted_keys[row]]._wndtitle if column == 0 else
-            track_base.secs_to_dur(self._apps[self._sorted_keys[row]]._count) if column == 1 else
+            common.secs_to_dur(self._apps[self._sorted_keys[row]]._count) if column == 1 else
             self._apps[self._sorted_keys[row]]._category if column == 2 else
             throw(IndexError))
+
+    def clear(self):
+        with change_emitter(self):
+            self._index_min = None
+            self._index_max = None
+            self._apps = {}     # app identifier => AppInfo instance
+            self._minutes = {}  # i_min          => minute
 
     def __eq__(self, other):
         return self._apps == other._apps and self._minutes == other._minutes
 
-    def _sort(self):
-        self._sorted_keys = [
-            x[0] for x in sorted(
-                self._apps.items(),
-                key=((lambda x: x[1]._wndtitle) if self._sort_column == 0 else
-                     (lambda x: x[1]._count) if self._sort_column == 1 else
-                     (lambda x: x[1]._category)),
-                reverse=self._sort_reverse)]
-
-    #def __data__(self):  # const
-        #""" we have to create an indexed list here because the minutes
-            #dict has to store references to AppInfo.
-            #intermediate: _indexed: {app_id => (i_index, AppInfo)}
-            #result:    app:     [AppInfo]
-                       #minutes: {i_minute: (i_category, [(AppInfo, i_count)])}
-
-            #"""
-        #_indexed = {a: i for i, a in enumerate(self._apps.values())}
-        #_apps = [d[1] for d in sorted([(e[1], e[0].__data__())
-                                       #for e in _indexed.items()])]
-        #_minutes = {i: (m._category, [(_indexed[a], c)
-                                      #for a, c in m._apps.items()])
-                    #for i, m in self._minutes.items()}
-
-        #return {"apps": _apps, 'minutes': _minutes}
+    def sort(self, column=1, order=QtCore.Qt.AscendingOrder):
+        with change_emitter(self):
+            self._sorted_keys = [
+                x[0] for x in sorted(
+                    self._apps.items(),
+                    key=((lambda x: x[1]._wndtitle) if column == 0 else
+                         (lambda x: x[1]._count) if column == 1 else
+                         (lambda x: x[1]._category)),
+                    reverse=(order != QtCore.Qt.DescendingOrder))]
 
     def from_dict(self, data: Dict[str, Any]) -> None:
         assert 'apps' in data
         assert 'minutes' in data
         _a = data['apps']
-        _indexed = [track_base.AppInfo().load(d) for d in _a]
+        _indexed = [common.AppInfo().load(d) for d in _a]
 
         _m = data['minutes']
-        _minutes = {int(i) : track_base.Minute({_indexed[a]: c for a, c in m})
+        _minutes = {int(i) : common.Minute({_indexed[a]: c for a, c in m})
                     for i, m in _m.items()}
 
         # x = {i:len({a:0 for a in i}) for i in l}
         _apps = {a.generate_identifier(): a for a in _indexed}
-        with track_qt.change_emitter(self):
+        with change_emitter(self):
             self._apps = _apps
             self._minutes = _minutes
 
@@ -127,7 +114,7 @@ class ActiveApplicationsModel(matrix_table_model):
                 self._index_min = None
                 self._index_max = None
 
-            self._sort()
+            self.sort()
 
     def begin_index(self):
         return self._index_min if self._index_min else 0
@@ -136,7 +123,7 @@ class ActiveApplicationsModel(matrix_table_model):
         return self._index_max if self._index_max else 0
 
     def update(self, minute_index, app):
-        with track_qt.change_emitter(self):
+        with change_emitter(self):
             _app_id = app.generate_identifier()
 
             if _app_id not in self._apps:
@@ -146,7 +133,7 @@ class ActiveApplicationsModel(matrix_table_model):
             _app._count += 1
 
             if minute_index not in self._minutes:
-                self._minutes[minute_index] = track_base.Minute()
+                self._minutes[minute_index] = common.Minute()
                 if not self._index_min or self._index_min > minute_index:
                     self._index_min = minute_index
 
@@ -203,15 +190,15 @@ class ActiveApplicationsModel(matrix_table_model):
     def category_at(self, minute):
         return self._minutes[minute].main_category() if minute in self._minutes else 0
 
-    @pyqtSlot()
+    @QtCore.pyqtSlot()
     def update_all_categories(self, get_category_from_app) -> None:
         for i in self._apps:
             self._apps[i].set_new_category(get_category_from_app(self._apps[i]))
         for i in self._minutes:
             self._minutes[i].rebuild_categories(get_category_from_app)
 
-    def flags(self, index):
-        return (QtCore.Qt.ItemIsEnabled |
-                QtCore.Qt.ItemIsSelectable |
-                QtCore.Qt.ItemIsDragEnabled)
-
+    def flags(self, _index):
+        return (
+            QtCore.Qt.ItemIsEnabled |
+            QtCore.Qt.ItemIsSelectable |
+            QtCore.Qt.ItemIsDragEnabled)

@@ -15,9 +15,9 @@ from typing import Dict, Any
 
 import zmq  # type: ignore
 
-import track_base
-from track_base.util import log
-import desktop_usage_info
+from .. import core
+from ..core import util, errors, common, desktop_usage_info
+from ..core.util import log
 
 
 class TrackServer:
@@ -29,7 +29,7 @@ class TrackServer:
         self._system_monitoring_thread = threading.Thread(
             target=self._system_monitoring_fn,
             daemon=True)
-        self._tracker = track_base.TimeTracker()
+        self._tracker = core.TimeTracker()
         self._last_save_time = 0.
 
     def _save_data(self, interval: int = 20, force: bool = False) -> None:
@@ -56,10 +56,10 @@ class TrackServer:
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process a single request"""
         def wrong_command_fn(request: Dict[str, Any]) -> Dict[str, Any]:
-            raise track_base.errors.RequestMalformed("Command %r not known" % request["cmd"])
+            raise errors.RequestMalformed("Command %r not known" % request["cmd"])
 
         def no_command_fn(request: Dict[str, Any]) -> Dict[str, Any]:
-            raise track_base.errors.RequestMalformed('no "cmd" given')
+            raise errors.RequestMalformed('no "cmd" given')
 
         def quit_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
             self._running = False
@@ -67,7 +67,7 @@ class TrackServer:
             return {'type': 'ok'}
 
         def version_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
-            return {"data": {"version": str(track_base.version_info)}}
+            return {"data": {"version": str(core.version_info)}}
 
         def apps_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
             return {"data": {"apps": self._tracker.get_applications_model().__data__()}}
@@ -80,7 +80,7 @@ class TrackServer:
 
         def set_rules_fn(request: Dict[str, Any]) -> Dict[str, Any]:
             if "data" not in request or "rules" not in request["data"]:
-                raise track_base.errors.RequestMalformed('No "rules" provided')
+                raise errors.RequestMalformed('No "rules" provided')
             self._tracker.set_rules(request["data"]["rules"])
             return {'type': 'ok'}
 
@@ -89,20 +89,20 @@ class TrackServer:
 
         def set_note_fn(request: Dict[str, Any]) -> Dict[str, Any]:
             if "data" not in request or "note" not in request["data"]:
-                raise track_base.errors.RequestMalformed('No "note" provided')
+                raise errors.RequestMalformed('No "note" provided')
             self._tracker.set_note(request["data"]["note"])
             return {'type': 'ok'}
 
         def clip_from_fn(request: Dict[str, Any]) -> Dict[str, Any]:
             if "data" not in request or "index" not in request["data"]:
-                raise track_base.errors.RequestMalformed('No "index" provided')
+                raise errors.RequestMalformed('No "index" provided')
             self._tracker.get_applications_model().clip_from(request["data"]["index"])
             # self._save_data(force=True)
             return {'type': 'ok'}
 
         def clip_to_fn(request: Dict[str, Any]) -> Dict[str, Any]:
             if "data" not in request or "index" not in request["data"]:
-                raise track_base.errors.RequestMalformed('No "index" provided')
+                raise errors.RequestMalformed('No "index" provided')
             self._tracker.get_applications_model().clip_to(request["data"]["index"])
             # self._save_data(force=True)
             return {'type': 'ok'}
@@ -153,7 +153,7 @@ class TrackServer:
 
             try:
                 reply = self.handle_request(request)
-            except track_base.errors.RequestMalformed as exc:
+            except errors.RequestMalformed as exc:
                 reply = {'type': 'error',
                          'error_type': 'request_malformed',
                          'what': str(exc)}
@@ -172,15 +172,15 @@ class TrackServer:
 def parse_arguments() -> argparse.Namespace:
     """parse command line arguments and return argument object"""
     parser = argparse.ArgumentParser(description=__doc__)
-    track_base.util.setup_argument_parser(parser)
+    common.setup_argument_parser(parser)
     return parser.parse_args()
 
 
 def main() -> None:
     """Doc"""
     args = parse_arguments()
-    track_base.util.setup_logging(args, syslog=True)
-    track_base.util.log_system_info()
+    util.setup_logging(args, syslog=True)
+    util.log_system_info()
 
     for sig in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
         signal.signal(sig, lambda signal, frame: sys.exit)  # type: ignore

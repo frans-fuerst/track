@@ -2,10 +2,12 @@
 # -*- encoding: utf-8 -*-
 # pylint: disable=expression-not-assigned
 
+"""Executable entry point for main application
+"""
+
 from contextlib import suppress
-from track import main
+from application.ui import main
 
 if __name__ == "__main__":
     with suppress(KeyboardInterrupt, BrokenPipeError):
         raise SystemExit(main())
-

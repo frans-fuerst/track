@@ -8,12 +8,11 @@ import re
 
 from typing import Any
 
-from PyQt5 import QtCore, QtGui
+from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
 
-from track_qt.qt_common import change_emitter
-import track_base
-from track_base import log
+from .qt_common import change_emitter
+from ..core.util import log
 
 
 class RulesModelQt(QtCore.QAbstractTableModel):
@@ -90,7 +89,10 @@ class RulesModelQt(QtCore.QAbstractTableModel):
         if not index.isValid():
             return QtCore.Qt.ItemIsDropEnabled
         if index.row() < len(self._rules):
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled
+            return (QtCore.Qt.ItemIsEnabled |
+                    QtCore.Qt.ItemIsEditable |
+                    QtCore.Qt.ItemIsSelectable |
+                    QtCore.Qt.ItemIsDragEnabled)
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
 
     def supportedDropActions(self) -> bool:

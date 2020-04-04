@@ -9,12 +9,10 @@ import os
 import re
 from typing import Dict, Any, Sequence, Tuple
 
-import desktop_usage_info
+from . import common, ActiveApplications, AppInfo, Category
+from ..core.util import catch, log, exception_to_string
+from ..core import desktop_usage_info
 
-from track_base import ActiveApplications, AppInfo, Category
-from track_base import track_common
-
-from track_base import catch, log, exception_to_string
 
 class TimeTracker:
     """ * retrieves system data
@@ -29,12 +27,12 @@ class TimeTracker:
         self._current_process_exe = ""
         self._current_category = 0
         self._user_is_active = True
-        self._active_day = track_common.today_int()
+        self._active_day = common.today_int()
         self._storage_dir = os.path.expanduser("~/.track")
 
         # -- data to persist
         data = catch(
-            lambda: self._load_json("track-%s.json" % track_common.today_str()),
+            lambda: self._load_json("track-%s.json" % common.today_str()),
             (FileNotFoundError, json.JSONDecodeError),
             {})
         self._applications = ActiveApplications(data.get("tracker_data"))
@@ -63,7 +61,7 @@ class TimeTracker:
         for rule, category in self._re_rules:
             if re.search(rule, app_string_representation):
                 return category
-        return track_common.Category.UNASSIGNED
+        return common.Category.UNASSIGNED
 
     def _recategorize(self):
         for _title, app in self._applications._apps.items():
@@ -83,7 +81,6 @@ class TimeTracker:
                 file,
                 sort_keys=True,
                 indent=4,
-                #separators=(',', ': '),
             )
 
     def __eq__(self, other):
@@ -98,7 +95,7 @@ class TimeTracker:
         self._save_json(
             {"tracker_data": self._applications.__data__(),
              "daily_note": self.note},
-            filename or "track-%s.json" % track_common.today_str())
+            filename or "track-%s.json" % common.today_str())
 
         _test_model = ActiveApplications()
         _test_model.from_dict(self._applications.__data__())
@@ -125,8 +122,8 @@ class TimeTracker:
     def update(self) -> None:
         """Gather desktop usage info"""
         try:
-            current_day = track_common.today_int()
-            current_minute = track_common.minutes_since_midnight()
+            current_day = common.today_int()
+            current_minute = common.minutes_since_midnight()
 
             if self._active_day < current_day:
                 print("current minute is %d - it's midnight" % self._current_minute)
@@ -148,7 +145,7 @@ class TimeTracker:
                 self._user_is_active = False
                 return
 
-            _app = track_common.AppInfo(self._current_app_title, self._current_process_exe)
+            _app = common.AppInfo(self._current_app_title, self._current_process_exe)
             self._current_category = self._get_category(_app)
             _app._category = self._current_category
             self._applications.update(self._current_minute, _app)

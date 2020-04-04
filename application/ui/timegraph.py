@@ -1,30 +1,30 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import track_base
-from track_qt import CategoryColor
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-from PyQt5.QtCore import pyqtSignal
+from ..core import common
+from . import CategoryColor
 
 
 class Timegraph(QtWidgets.QFrame):
-    clipFromClicked = pyqtSignal(int)
-    clipToClicked  = pyqtSignal(int)
+    clipFromClicked = QtCore.pyqtSignal(int)
+    clipToClicked = QtCore.pyqtSignal(int)
+
     def __init__(self, parent):
         super().__init__(parent)
         self._tracker = None
         self.setMouseTracking(True)
         self._selected = None
 
-    def leaveEvent(self, e):
+    def leaveEvent(self, _event):
         self.select()
 
     def setTracker(self, tracker):
         self._tracker = tracker
 
-    def paintEvent(self, e):
-        super().paintEvent(e)
+    def paintEvent(self, event):
+        super().paintEvent(event)
         if self._tracker is None:
             return
 
@@ -33,23 +33,23 @@ class Timegraph(QtWidgets.QFrame):
         self.drawPoints(qp)
         qp.end()
 
-    def mouseMoveEvent(self, e):
-        _index = self._tracker.begin_index() - 50 + e.x() - 1
+    def mouseMoveEvent(self, event):
+        _index = self._tracker.begin_index() - 50 + event.x() - 1
         _cs, _activity = self._tracker.info(_index)
 
-        _info_str =  "%s: %s (%s)" % (
-            track_base.mins_to_dur(_index),
+        _info_str = "%s: %s (%s)" % (
+            common.mins_to_dur(_index),
             _activity,
-            track_base.mins_to_dur(_cs[1]-_cs[0]))
+            common.mins_to_dur(_cs[1]-_cs[0]))
         self.select(_cs[0], _cs[1])
         self.setToolTip(_info_str)
 
-    def contextMenuEvent(self, e):
+    def contextMenuEvent(self, event):
         menu = QtWidgets.QMenu(self)
-        index = self._tracker.begin_index() - 50 + e.x() - 1
-        clip_from = menu.addAction("clip before %s (erases data!)" % track_base.mins_to_dur(index))
-        clip_to = menu.addAction("clip after %s (erases data!)" % track_base.mins_to_dur(index))
-        action = menu.exec_(self.mapToGlobal(e.pos()))
+        index = self._tracker.begin_index() - 50 + event.x() - 1
+        clip_from = menu.addAction("clip before %s (erases data!)" % common.mins_to_dur(index))
+        clip_to = menu.addAction("clip after %s (erases data!)" % common.mins_to_dur(index))
+        action = menu.exec_(self.mapToGlobal(event.pos()))
         if action == clip_from:
             self.clipFromClicked.emit(index)
         if action == clip_to:
@@ -81,4 +81,3 @@ class Timegraph(QtWidgets.QFrame):
     def select(self, begin=None, end=None):
         self._selected = (begin, end) if begin is not None and end is not None else None
         self.update()
-

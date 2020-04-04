@@ -11,18 +11,18 @@ import sys
 from contextlib import suppress
 import argparse
 import json
-
 from typing import List
 
-import track_base.util
-from track_base import ActiveApplications
-from track_base.util import log
+import zmq
+
+from .core import util, common, ActiveApplications
+from .core.util import log
 
 
 def parse_arguments(argv: List[str]) -> argparse.Namespace:
     """parse command line arguments and return argument object"""
     parser = argparse.ArgumentParser(description=__doc__)
-    track_base.util.setup_argument_parser(parser)
+    common.setup_argument_parser(parser)
 
     subparsers = parser.add_subparsers(help='available commands', metavar="CMD")
 
@@ -53,8 +53,10 @@ def handle_result(result):
         raise Exception('server replied with error: "%s"' % result['what'])
     print(result)
 
+
 def convert(data):
     return data if "tracker_data" in data else {"tracker_data": data}
+
 
 def fn_info(args) -> None:
     def to_time(value):
@@ -67,24 +69,24 @@ def fn_info(args) -> None:
             apps = ActiveApplications(data["tracker_data"])
             print("%s: %s - %s = %s => %s" % (
                 file,
-                  to_time(apps.begin_index()),
-                  to_time(apps.end_index()),
-                  to_time(apps.end_index() - apps.begin_index()),
-                  to_time(apps.end_index() - apps.begin_index() - 60)))
+                to_time(apps.begin_index()),
+                to_time(apps.end_index()),
+                to_time(apps.end_index() - apps.begin_index()),
+                to_time(apps.end_index() - apps.begin_index() - 60)))
             for time in (t for t in range(apps.begin_index(), apps.end_index()) if t in apps._minutes):
                 print(to_time(time))
 
     else:
         log().info("List recorded data")
         for file in (
-            f
-            for f in sorted(os.listdir(log_dir))
-            if not '-log-' in f and not "rules" in f and f.endswith(".json")
-        ):
+                f
+                for f in sorted(os.listdir(log_dir))
+                if not '-log-' in f and not "rules" in f and f.endswith(".json")
+                ):
             data = convert(json.load(open(os.path.join(log_dir, file))))
             if "20200503" in file:
                 print(file)
-            apps = track_base.ActiveApplications(data["tracker_data"])
+            apps = ActiveApplications(data["tracker_data"])
             daily_note = data.get("daily_note") or ""
             print("%s: %s - %s = %s => %s (note: %r)" % (
                 file,
@@ -102,8 +104,8 @@ def main(argv=None) -> int:
     specified on command line"""
 
     args = parse_arguments(argv or sys.argv[1:])
-    track_base.util.setup_logging(args)
-    track_base.util.log_system_info()
+    util.setup_logging(args)
+    util.log_system_info()
 
     args.func(args)
 
@@ -151,4 +153,3 @@ def main(argv=None) -> int:
 if __name__ == "__main__":
     with suppress(KeyboardInterrupt, BrokenPipeError):
         raise SystemExit(main())
-

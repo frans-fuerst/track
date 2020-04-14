@@ -2,6 +2,7 @@
 # -*- encoding: utf-8 -*-
 # pylint: disable=expression-not-assigned
 
+from contextlib import suppress
 from track import main
 
 if __name__ == "__main__":

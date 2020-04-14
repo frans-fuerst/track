@@ -103,3 +103,4 @@ To list starting / endings times of recorded days run `track-cli list`
 * No check for plausibility: if - for example - your computer wakes up at 3:12 for just a second
   this incident will be recorded and currently there is no way to remove this stray event and
   your day will officially start at 3:12
+* Setup / autostart worked once upon a time but doesn't now. But as a Linux Pro you know what to do.

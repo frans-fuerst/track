@@ -1,5 +1,7 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+"""
+"""
 
 import zmq
 import logging
@@ -10,7 +12,7 @@ import sys
 import threading
 import os
 
-import desktop_usage_info 
+import desktop_usage_info
 
 import track_base
 
@@ -59,7 +61,7 @@ class track_server:
             except Exception as ex:
                 log.error("Unhandled Exception: %s", ex)
                 import traceback
-                traceback.print_exc()                
+                traceback.print_exc()
 
             log.debug(self._tracker.get_current_data())
 
@@ -69,6 +71,7 @@ class track_server:
 
         elif request['type'] == 'quit':
             self._running = False
+            self._system_monitoring_thread.join()
             return {'type': 'ok'}
 
         elif request['type'] == 'version':
@@ -142,9 +145,6 @@ class track_server:
 
 
 def main():
-    track_server().run()
-
-if __name__ == '__main__':
     _level = logging.INFO
     if '-v' in sys.argv:
         _level = logging.DEBUG
@@ -161,5 +161,5 @@ if __name__ == '__main__':
     for s in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
         signal.signal(s, lambda signal, frame: sys.exit)
 
-    main()
+    track_server().run()
     log.info('quit')

@@ -1,8 +1,10 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from track_qt.active_applications_qtmodel import active_applications_qtmodel
-from track_qt.rules_model_qt import rules_model_qt
+"""
+"""
+
+from track_qt.active_applications_qtmodel import ActiveApplicationsModel
+from track_qt.rules_model_qt import RulesModelQt
 
 import track_base
 
@@ -16,7 +18,7 @@ log = logging.getLogger('time_tracker_qt')
 class server_timeout(Exception):
     pass
 
-class time_tracker_qt:
+class TimeTracker:
     """ * retrieves system data
         * holds the application data object as
           well as some meta information
@@ -29,12 +31,12 @@ class time_tracker_qt:
 
         self._current_data = None
         self._initialized = False
-        self._connected = False
+        self.connected = False
 
         self._active_day = track_base.today_int()
 
-        self._applications = active_applications_qtmodel(parent)
-        self._rules = rules_model_qt(parent)
+        self._applications = ActiveApplicationsModel(parent)
+        self._rules = RulesModelQt(parent)
         self._rules.modified_rules.connect(self.update_categories)
 
         self._req_poller = zmq.Poller()
@@ -65,7 +67,7 @@ class time_tracker_qt:
         return self._req_socket.recv_json()
 
     def _request(self, msg, timeout=50, raise_on_timeout=False):
-        if not self._connected:
+        if not self.connected:
             raise track_base.not_connected()
         self._req_send(msg)
         return self._req_recv(timeout, raise_on_timeout)
@@ -79,7 +81,7 @@ class time_tracker_qt:
         self._req_poller.register(self._req_socket, zmq.POLLIN)
         self._req_socket.connect(endpoint)
         self._check_version()
-        self._connected = True
+        self.connected = True
         self._fetch_rules()
 
     def _check_version(self):
@@ -111,7 +113,6 @@ class time_tracker_qt:
 
     def update(self):
         with track_base.frame_grabber(log):
-
             received_data = self._request({'type': 'current'})
             if not 'current' in received_data:
                 raise
@@ -123,6 +124,10 @@ class time_tracker_qt:
             self._applications.from_dict(received_data['apps'])
 
             self._initialized = True
+
+    def quit_server(self):
+        self._request({'type': 'quit'})
+        self.connected = False
 
     def initialized(self):
         return self._initialized
@@ -199,9 +204,5 @@ class time_tracker_qt:
     def user_is_active(self):
         return self._current_data['user_active']
 
-    #@pyqtSlot()
     def update_categories(self):
         self._applications.update_all_categories(self._rules.get_first_matching_key)
-
-    def new_regex_rule(self):
-        self._rules.add_rule()

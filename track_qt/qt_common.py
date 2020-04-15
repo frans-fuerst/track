@@ -19,8 +19,7 @@ class matrix_table_model(QtCore.QAbstractTableModel):
     """ generic model holding a sortable list of list-likes
     """
     def __init__(self, parent, *args):
-        QtCore.QAbstractTableModel.__init__(self, parent, *args)
-        self._mylist = [('eins', 'zwei', 'drei')]
+        super().__init__(parent, *args)
         self.header = ['1', '2', '3']
         self._sort_col = 0
         self._sort_reverse = False
@@ -29,17 +28,7 @@ class matrix_table_model(QtCore.QAbstractTableModel):
         return len(self._mylist)
 
     def columnCount(self, parent):
-        return len(self._mylist[0])
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        elif role != QtCore.Qt.DisplayRole:
-            return None
-        return self._data(index.row(), index.column())
-
-    def _data(self, row, column):
-        return self._mylist[row][column]
+        return len(self.header)
 
     def headerData(self, col, orientation, role):
         if (orientation == QtCore.Qt.Horizontal and
@@ -52,10 +41,3 @@ class matrix_table_model(QtCore.QAbstractTableModel):
             self._sort_col = col
             self._sort_reverse = (order != QtCore.Qt.DescendingOrder)
             self._sort()
-
-    def _sort(self):
-        self._mylist.sort(
-            key=lambda tup: tup[self._sort_col],
-            reverse=self._sort_reverse)
-
-

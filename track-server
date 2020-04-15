@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+# -*- encoding: utf-8 -*-
+# pylint: disable=expression-not-assigned
+
+from contextlib import suppress
+from track_server import main
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt, BrokenPipeError):
+        raise SystemExit(main())
+

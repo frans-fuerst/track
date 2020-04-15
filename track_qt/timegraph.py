@@ -8,8 +8,8 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 class timegraph(QtWidgets.QFrame):
 
     def __init__(self, parent):
+        super().__init__(parent)
         self._tracker = None
-        super(timegraph, self).__init__(parent)
         self.setMouseTracking(True)
         self._selected = None
 
@@ -20,8 +20,7 @@ class timegraph(QtWidgets.QFrame):
         self._tracker = tracker
 
     def paintEvent(self, e):
-
-        super(timegraph, self).paintEvent(e)
+        super().paintEvent(e)
         if self._tracker is None:
             return
 
@@ -35,7 +34,8 @@ class timegraph(QtWidgets.QFrame):
         _cs, _activity = self._tracker.info(_index)
 
         _info_str =  "%s: %s (%s)" % (
-            track_base.mins_to_dur(_index), _activity,
+            track_base.mins_to_dur(_index),
+            _activity,
             track_base.mins_to_dur(_cs[1]-_cs[0]))
         # print("time: %d/%s" % (
         #     (e.x(), _info)))
@@ -78,9 +78,6 @@ class timegraph(QtWidgets.QFrame):
             qp.drawLine(i - _start_index, 0 + 20, i - _start_index, self.height() - 2 - 20)
 
     def select(self, begin=None, end=None):
-        if not begin:
-            self._selected = None
-        else:
-            self._selected = (begin, end)
+        self._selected = (begin, end) if begin is not None and end is not None else None
         self.update()
 

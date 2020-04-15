@@ -3,6 +3,8 @@
 
 import re
 
+from typing import Any
+
 from track_qt.qt_common import matrix_table_model
 from track_qt.qt_common import change_emitter
 import track_base
@@ -10,16 +12,16 @@ import track_base
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
 
-class rules_model_qt(matrix_table_model):
+class RulesModelQt(matrix_table_model):
     modified_rules = pyqtSignal()
 
     def __init__(self, parent, *args):
-        matrix_table_model.__init__(self, parent, *args)
-        self.header = ('M', 'regex', 'category', 'time')
+        super().__init__(parent, *args)
+        self.header = ['M', 'Regex', 'Category', 'Spent']
         self._matching = []
         self._time = {}
         self._rules = []
-        
+
     def supportedDragActions(self):
         return QtCore.Qt.MoveAction
 
@@ -27,35 +29,23 @@ class rules_model_qt(matrix_table_model):
         self._time = new_time
 
     def get_time_category(self, rule):
-        category = rule[1]
-        if category in self._time:
-            return self._time[category]
-        else:
-            return 0
-
-    def columnCount(self, parent):  # const
-        return 4
+        return self._time.get(rule[1], 0)
 
     def supportedDropActions(self):
         return QtCore.Qt.MoveAction|QtCore.Qt.CopyAction
 
     def rowCount(self, parent):
-        return len(self._rules)
+        return len(self._rules) + 1
 
-    def _data(self, row, column):  # const
-        if column == 0:
-            if len(self._matching) >= row+1 and self._matching[row]:
-                return 'X'
-        if column == 1:
-            return self._rules[row][0]
-        if column == 2:
-            return self._rules[row][1]
-        if column == 3: #time column
-            return track_base.secs_to_dur(self.get_time_category(self._rules[row]))
-        return None
-
-    def __data__(self):  # const
-        return ""
+    def data(self, index, role):
+        if not (index.isValid() and role in {QtCore.Qt.DisplayRole, QtCore.Qt.EditRole}):
+            return None
+        row, column = index.row(), index.column()
+        if row >= len(self._rules):
+            return None
+        return ("?" if column == 0 else
+                self._rules[row][column - 1] if column < 3 else
+                track_base.secs_to_dur(self.get_time_category(self._rules[row])))
 
     def from_dict(self, data):
         with change_emitter(self):
@@ -78,22 +68,34 @@ class rules_model_qt(matrix_table_model):
                 return c
         return 0
 
-    #Makes it editable:
-    def setData(self, index, value, role):
-        if value != "":
-            regex_str=str(value)
+    def setData(self, index: QtCore.QModelIndex, value: str, role: int):
+        assert role == QtCore.Qt.EditRole
+        row, column = index.row(), index.column()
+        current_rule = self._rules[row] if row < len(self._rules) else [".*", 0]
+
+        if column == 1:
             try:
-                re.compile(regex_str)
-                is_valid = True
+                re.compile(value)
             except re.error:
-                is_valid = False
-            if(is_valid):
-                self._rules[index.row()][index.column()-1] = regex_str
-                self.modified_rules.emit()
-                # TODO: save rule changes to disk
-                # self.save_to_disk()
-            else:
-                self._rules[index.row()][index.column()-1] = "invalid regex"
+                print("invalid regex")
+                return False
+            current_rule[0] = value
+        if column == 2:
+            try:
+                current_rule[1] = int(value)
+            except ValueError:
+                print("invalid int")
+                return False
+
+        if row < len(self._rules):
+            self._rules[row] = current_rule
+        else:
+            self.beginInsertRows(QtCore.QModelIndex(), row, row)
+            self._rules.append(current_rule)
+            self.endInsertRows()
+
+        self.modified_rules.emit()
+        # TODO: save rule changes to disk
         return True
 
     def flags(self, index):
@@ -107,9 +109,6 @@ class rules_model_qt(matrix_table_model):
             return (QtCore.Qt.ItemIsEnabled |
                     QtCore.Qt.ItemIsSelectable|
                     QtCore.Qt.ItemIsDropEnabled)
-
-    def add_rule(self):
-        self._rules.insert(0, ["new rule", 0])
 
     def isEditable(self,index):
         return index.column() > 0

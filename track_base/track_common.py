@@ -8,7 +8,12 @@ import logging
 from collections import namedtuple
 import traceback
 import operator
+from enum import IntEnum
 
+class Category(IntEnum):
+    IDLE = 0
+    WORK = 1
+    PRIVATE = 2
 
 class track_error(Exception):
     pass
@@ -86,16 +91,10 @@ class app_info():
         self._category = 0
         self._count = 0
 
-    def __eq__(self, other):
-        if not self._wndtitle == other._wndtitle:
-            return False
-        if not self._cmdline == other._cmdline:
-            return False
-        if not self._category == other._category:
-            return False
-        if not self._count == other._count:
-            return False
-        return True
+    def __eq__(self, other) -> bool:
+        return (self._wndtitle == other._wndtitle and
+                self._cmdline == other._cmdline and
+                self._category == other._category)
 
     def generate_identifier(self):
         return self._wndtitle
@@ -133,10 +132,7 @@ class minute():
     """
     def __init__(self, category=0, apps=None):
         self._category = 0
-        if apps is None:
-            self._apps = {}
-        else:
-            self._apps = apps  # app_info -> count
+        self._apps = apps if apps is not None else {}
 
     def __eq__(self, other):
         if not self._category == other._category:

@@ -24,3 +24,4 @@ proj.directory-list = [{'dirloc': loc('track_base'),
                         'watch_for_changes': True}]
 proj.file-list = [loc('track')]
 proj.file-type = 'shared'
+proj.main-file = loc('track')

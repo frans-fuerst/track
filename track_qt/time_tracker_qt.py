@@ -18,7 +18,7 @@ log = logging.getLogger('time_tracker_qt')
 class server_timeout(Exception):
     pass
 
-class TimeTracker:
+class TimeTrackerClientQt:
     """ * retrieves system data
         * holds the application data object as
           well as some meta information
@@ -85,25 +85,28 @@ class TimeTracker:
         self._fetch_rules()
 
     def _check_version(self):
-        with track_base.frame_grabber(log):
-            self._req_send({'type': 'version'})
-            _version = self._req_recv(timeout=1000, raise_on_timeout=True)
-            log.info('server version: %s', _version)
+        self._req_send({'type': 'version'})
+        _version = self._req_recv(timeout=1000, raise_on_timeout=True)
+        log.info('server version: %s', _version)
 
     def _fetch_rules(self):
-        with track_base.frame_grabber(log):
-            _received_data = self._request({'type': 'rules'})
-            self._rules.from_dict(_received_data)
-            if not 'rules' in _received_data:
-                raise
+        _received_data = self._request({'type': 'rules'})
+        self._rules.from_dict(_received_data)
+        if not 'rules' in _received_data:
+            raise
 
     def save(self):
-        with track_base.frame_grabber(log):
-            _received_data = self._request({'type': 'save'})
+        _received_data = self._request({'type': 'save'})
 
     def clear(self):
         # must not be overwritten - we need the instance
         self._applications.clear()
+
+    def clip_from(self, index):
+        print(self._request({'type': 'clip_from', "index": index}))
+
+    def clip_to(self, index):
+        print(self._request({'type': 'clip_to', "index": index}))
 
     def get_applications_model(self):
         return self._applications
@@ -112,18 +115,17 @@ class TimeTracker:
         return self._rules
 
     def update(self):
-        with track_base.frame_grabber(log):
-            received_data = self._request({'type': 'current'})
-            if not 'current' in received_data:
-                raise
-            self._current_data = received_data['current']
+        received_data = self._request({'type': 'current'})
+        if not 'current' in received_data:
+            raise
+        self._current_data = received_data['current']
 
-            received_data = self._request({'type': 'apps'})
-            if not 'apps' in received_data:
-                raise
-            self._applications.from_dict(received_data['apps'])
+        received_data = self._request({'type': 'apps'})
+        if not 'apps' in received_data:
+            raise
+        self._applications.from_dict(received_data['apps'])
 
-            self._initialized = True
+        self._initialized = True
 
     def quit_server(self):
         self._request({'type': 'quit'})
@@ -149,8 +151,8 @@ class TimeTracker:
     def is_active(self, minute):
         return self._applications.is_active(minute)
 
-    def is_private(self, minute):
-        return self._applications.is_private(minute)
+    def category_at(self, minute):
+        return self._applications.category_at(minute)
 
     def get_time_total(self):
         return self._current_data['time_total']
@@ -159,15 +161,11 @@ class TimeTracker:
         return len(self._applications._minutes)
 
     def get_time_work(self):
-        r = 0
-        for i, m in self._applications._minutes.items():
-            r += 1 if str(m._category) != "0" else 0
+        r = sum(minute.main_category() == 2 for _, minute in self._applications._minutes.items())
         return r
 
     def get_time_private(self):
-        r = 0
-        for i, m in self._applications._minutes.items():
-            r += str(m._category) == "0"
+        r = sum(minute.main_category() == 3 for _, minute in self._applications._minutes.items())
         return r
 
     def get_time_per_categories(self):
@@ -189,6 +187,9 @@ class TimeTracker:
     def get_max_minute(self):
         return self._applications.end_index()
 
+    def get_current_category(self):
+        return self._current_data['category']
+
     def get_current_minute(self):
         return self._current_data['minute']
 
@@ -205,4 +206,4 @@ class TimeTracker:
         return self._current_data['user_active']
 
     def update_categories(self):
-        self._applications.update_all_categories(self._rules.get_first_matching_key)
+        print(self._request({'type': 'set_rules', "data": self._rules.to_dict()}))

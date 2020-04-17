@@ -51,6 +51,9 @@ class RulesModelQt(matrix_table_model):
         with change_emitter(self):
             self._rules = data['rules']
 
+    def to_dict(self):
+        return self._rules
+
     def highlight_string(self, string):
         with change_emitter(self):
             self._matching = []
@@ -69,9 +72,10 @@ class RulesModelQt(matrix_table_model):
         return 0
 
     def setData(self, index: QtCore.QModelIndex, value: str, role: int):
-        assert role == QtCore.Qt.EditRole
+        if not role == QtCore.Qt.EditRole:
+            return True
         row, column = index.row(), index.column()
-        current_rule = self._rules[row] if row < len(self._rules) else [".*", 0]
+        current_rule = self._rules[row] if row < len(self._rules) else [".*", 2]
 
         if column == 1:
             try:
@@ -95,7 +99,6 @@ class RulesModelQt(matrix_table_model):
             self.endInsertRows()
 
         self.modified_rules.emit()
-        # TODO: save rule changes to disk
         return True
 
     def flags(self, index):

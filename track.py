@@ -9,6 +9,7 @@ import argparse
 import os.path
 from contextlib import suppress
 from typing import List
+from track_qt import CategoryColor
 
 try:
     from PyQt5 import QtWidgets, QtGui, QtCore, uic
@@ -33,11 +34,18 @@ def start_server_process():
 
 
 class TrackUI(QtWidgets.QMainWindow):
+    class ApplicationTableDelegate(QtWidgets.QStyledItemDelegate):
+        """"""
+        def initStyleOption(self, option, index):
+            super().initStyleOption(option, index)
+            if index.column() == 2:
+                option.font.setBold(True)
+                option.backgroundBrush = QtGui.QBrush(CategoryColor(index.data()))
     def __init__(self):
         super().__init__()
         uic.loadUi(os.path.join(os.path.dirname(__file__), 'track.ui'), self)
 
-        self._tracker = track_qt.TimeTracker(self)
+        self._tracker = track_qt.TimeTrackerClientQt(self)
 
         self.setGeometry(300, 0, 700, 680)  # todo: maximize vertically
 #        self.setGeometry(300, 50, 700, 680)  # todo: maximize vertically
@@ -63,6 +71,8 @@ class TrackUI(QtWidgets.QMainWindow):
         self.tbl_active_applications.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.tbl_active_applications.setDragEnabled(True)
         self.tbl_active_applications.setDropIndicatorShown(True)
+        self.tbl_active_applications.setItemDelegate(self.ApplicationTableDelegate())
+
 
         self.tbl_category_rules.setModel(self._tracker.get_rules_model())
         self.tbl_category_rules.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
@@ -76,6 +86,8 @@ class TrackUI(QtWidgets.QMainWindow):
         self.tbl_category_rules.setDropIndicatorShown(True)
         self.tbl_category_rules.viewport().setAcceptDrops(True)
         self.tbl_category_rules.setDragDropOverwriteMode(False)
+        #self.frm_timegraph.clipFromClicked.connect(self.on_frm_timegraph_clipFromClicked)
+        #self.frm_timegraph.clipToClicked.connect(self.on_frm_timegraph_clipToClicked)
 
 
     def initialize_tray_icon(self):
@@ -111,91 +123,95 @@ class TrackUI(QtWidgets.QMainWindow):
         _type = event.type()
         _event_str = "'%s' (%d)" % (
             i_to_e[_type] if _type in i_to_e else "unknown", _type)
-        with track_base.frame_grabber(log(), _event_str):
-            if _type == QtCore.QEvent.WindowActivate and not self._tracker.connected:
-                # we abuse this event as some sort of WindowShow event
-                if self._connect():
-                    self._update_timer.start(1000)
-                else:
-                    QtWidgets.QMessageBox.information(
-                        self, "track service unreachable",
-                        "Cannot reach the local track service even after starting "
-                        "a new instance.\nPlease restart track on command "
-                        "line to get some more info and file a bug!\n\nBye!",
-                        buttons=QtWidgets.QMessageBox.Ok)
-                    QtWidgets.QApplication.quit()
-            elif _type == QtCore.QEvent.WindowStateChange and self.isMinimized():
-                # The window is already minimized at this point.  AFAIK,
-                # there is no hook stop a minimize event. Instead,
-                # removing the Qt.Tool flag should remove the window
-                # from the taskbar.
-                self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.Tool)
-                self.tray_icon.show()
-                return True
+        if _type == QtCore.QEvent.WindowActivate and not self._tracker.connected:
+            # we abuse this event as some sort of WindowShow event
+            if self._connect():
+                self._update_timer.start(1000)
             else:
-                # log.debug("unhandled event '%s' (%d)",
-                #         i_to_e[_type] if _type in i_to_e else "unknown",
-                #         _type)
-                pass
+                QtWidgets.QMessageBox.information(
+                    self, "track service unreachable",
+                    "Cannot reach the local track service even after starting "
+                    "a new instance.\nPlease restart track on command "
+                    "line to get some more info and file a bug!\n\nBye!",
+                    buttons=QtWidgets.QMessageBox.Ok)
+                QtWidgets.QApplication.quit()
+        elif _type == QtCore.QEvent.WindowStateChange and self.isMinimized():
+            # The window is already minimized at this point.  AFAIK,
+            # there is no hook stop a minimize event. Instead,
+            # removing the Qt.Tool flag should remove the window
+            # from the taskbar.
+            self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.Tool)
+            self.tray_icon.show()
+            return True
+        else:
+            # log.debug("unhandled event '%s' (%d)",
+            #         i_to_e[_type] if _type in i_to_e else "unknown",
+            #         _type)
+            pass
 
         return super().event(event)
 
     def restore_window(self, reason):
-        with track_base.frame_grabber(log()):
-            if reason == QtWidgets.QSystemTrayIcon.DoubleClick:
-                self.tray_icon.hide()
-                # self.showNormal will restore the window even if it was
-                # minimized.
-                self.showNormal()
+        if reason == QtWidgets.QSystemTrayIcon.DoubleClick:
+            self.tray_icon.hide()
+            # self.showNormal will restore the window even if it was
+            # minimized.
+            self.showNormal()
 
     def pb_quit_server_clicked(self):
         self._tracker.quit_server()
         self.close()
 
+    def on_frm_timegraph_clipFromClicked(self, index):
+        self._tracker.clip_from(index)
+
+    def on_frm_timegraph_clipToClicked(self, index):
+        self._tracker.clip_to(index)
+
     def update_idle(self):
-        with track_base.frame_grabber(log()):
-            self._tracker.update()
-            _idle = self._tracker.get_idle()
-            def fmt(dur):
-                return "%d:%02d" % (dur / 60, dur % 60) if dur >= 60 else "%dm" % dur
+        self._tracker.update()
+        _idle = self._tracker.get_idle()
+        def fmt(dur):
+            return "%d:%02d" % (dur / 60, dur % 60) if dur >= 60 else "%dm" % dur
 
-            try:
-                self.lbl_title.setText(self._tracker.get_current_app_title())
-                self.lbl_idle.setText("%ds" % _idle)
-                self.lbl_process.setText(self._tracker.get_current_process_name())
+        try:
+            self.lbl_title.setText(self._tracker.get_current_app_title())
+            self.lbl_idle.setText("%ds" % _idle)
+            self.lbl_process.setText(self._tracker.get_current_process_name())
 
-                _time_total = self._tracker.get_time_total()
-                _time_active = self._tracker.get_time_active()
-                _time_work = self._tracker.get_time_work()
-                _time_private = self._tracker.get_time_private()
-                _time_idle = self._tracker.get_time_idle()
-                percentage = 100. / _time_total
-                #self.lbl_time_total.setText("total: %s" % fmt(_time_total))
-                self.lbl_time_active.setText("active: %s (%d%%)" % (
-                    fmt(_time_active), _time_active * percentage))
-                self.lbl_time_work.setText("work: %s (%d%%)" % (
-                    fmt(_time_work), _time_work * percentage))
-                self.lbl_time_private.setText("private: %s (%d%%)" % (
-                    fmt(_time_private), _time_private * percentage))
-                self.lbl_time_idle.setText("idle: %s (%d%%)" % (
-                    fmt(_time_idle), _time_idle * percentage))
+            _time_total = self._tracker.get_time_total()
+            _time_active = self._tracker.get_time_active()
+            _time_work = self._tracker.get_time_work()
+            _time_private = self._tracker.get_time_private()
+            _time_idle = self._tracker.get_time_idle()
+            percentage = 100. / _time_total
+            #self.lbl_time_total.setText("total: %s" % fmt(_time_total))
+            self.lbl_time_active.setText("active: %s (%d%%)" % (
+                fmt(_time_active), _time_active * percentage))
+            self.lbl_time_work.setText("work: %s (%d%%)" % (
+                fmt(_time_work), _time_work * percentage))
+            self.lbl_time_private.setText("private: %s (%d%%)" % (
+                fmt(_time_private), _time_private * percentage))
+            self.lbl_time_idle.setText("idle: %s (%d%%)" % (
+                fmt(_time_idle), _time_idle * percentage))
 
-                self.lbl_start_time.setText("%s - %s: %s" % (
-                    self._tracker.start_time(),
-                    self._tracker.now(),
-                    fmt(self._tracker.get_time_total())))
+            self.lbl_start_time.setText("%s - %s: %s" % (
+                self._tracker.start_time(),
+                self._tracker.now(),
+                fmt(self._tracker.get_time_total())))
 
-            except Exception as e:
-                log().error(e)
+        except Exception as e:
+            log().error(e)
 
-            palette = self.lbl_title.palette()
-            palette.setColor(
-                self.lbl_title.backgroundRole(),
-                QtCore.Qt.green if self._tracker.user_is_active() else QtCore.Qt.gray)
-            self.lbl_idle.setPalette(palette)
-            self.lbl_title.setPalette(palette)
+        palette = self.lbl_title.palette()
+        palette.setColor(
+            self.lbl_title.backgroundRole(),
+            CategoryColor(self._tracker.get_current_category())
+            if self._tracker.user_is_active() else QtCore.Qt.gray)
+        self.lbl_idle.setPalette(palette)
+        self.lbl_title.setPalette(palette)
 
-            self.update()
+        self.update()
 
     def closeEvent(self, _) -> None:
         self._update_timer.stop()
@@ -208,19 +224,18 @@ class TrackUI(QtWidgets.QMainWindow):
 
 
 def sigint_handler(s, window):
-    with track_base.frame_grabber(log()):
-        sig_name = "unknown"
-        if s == signal.SIGABRT:
-            sig_name = "SIGABRT"
-        if s == signal.SIGINT:
-            sig_name = "SIGINT"
-        if s == signal.SIGSEGV:
-            sig_name = "SIGSEGV"
-        if s == signal.SIGTERM:
-            sig_name = "SIGTERM"
-        log().info("got signal %s (%s)", sig_name, str(s))
-        window.cleanup()
-        QtWidgets.QApplication.quit()
+    sig_name = "unknown"
+    if s == signal.SIGABRT:
+        sig_name = "SIGABRT"
+    if s == signal.SIGINT:
+        sig_name = "SIGINT"
+    if s == signal.SIGSEGV:
+        sig_name = "SIGSEGV"
+    if s == signal.SIGTERM:
+        sig_name = "SIGTERM"
+    log().info("got signal %s (%s)", sig_name, str(s))
+    window.cleanup()
+    QtWidgets.QApplication.quit()
 
 
 def parse_arguments(argv: List[str]) -> argparse.Namespace:

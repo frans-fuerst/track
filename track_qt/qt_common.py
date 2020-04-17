@@ -3,6 +3,17 @@
 
 from PyQt5 import QtCore
 
+from track_base import Category
+
+def CategoryColor(category):
+    return {
+        Category.IDLE: QtCore.Qt.white,
+        Category.UNASSIGNED: QtCore.Qt.lightGray,
+        Category.WORK: QtCore.Qt.darkCyan,
+        Category.PRIVATE: QtCore.Qt.cyan,
+        Category.BREAK: QtCore.Qt.green,
+    }.get(category, QtCore.Qt.red)
+
 class change_emitter:
     def __init__(self, emitter):
         self._emitter = emitter

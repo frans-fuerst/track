@@ -45,7 +45,7 @@ class ActiveApplicationsModel(matrix_table_model):
         self._sorted_keys = []
 
         # to be persisted
-        self._apps = {}     # app identifier => app_info instance
+        self._apps = {}     # app identifier => AppInfo instance
         self._minutes = {}  # i_min          => minute
 
 
@@ -53,7 +53,7 @@ class ActiveApplicationsModel(matrix_table_model):
         with track_qt.change_emitter(self):
             self._index_min = None
             self._index_max = None
-            self._apps = {}     # app identifier => app_info instance
+            self._apps = {}     # app identifier => AppInfo instance
             self._minutes = {}  # i_min          => minute
 
     def rowCount(self, parent=None):
@@ -83,40 +83,32 @@ class ActiveApplicationsModel(matrix_table_model):
                      (lambda x: x[1]._category)),
                 reverse=self._sort_reverse)]
 
-    def __data__(self):  # const
-        """ we have to create an indexed list here because the minutes
-            dict has to store references to app_info.
-            intermediate: _indexed: {app_id => (i_index, app_info)}
-            result:    app:     [app_info]
-                       minutes: {i_minute: (i_category, [(app_info, i_count)])}
+    #def __data__(self):  # const
+        #""" we have to create an indexed list here because the minutes
+            #dict has to store references to AppInfo.
+            #intermediate: _indexed: {app_id => (i_index, AppInfo)}
+            #result:    app:     [AppInfo]
+                       #minutes: {i_minute: (i_category, [(AppInfo, i_count)])}
 
-            """
-        _indexed = {a: i for i, a in enumerate(self._apps.values())}
-        _apps = [d[1] for d in sorted([(e[1], e[0].__data__())
-                                       for e in _indexed.items()])]
-        _minutes = {i: (m._category, [(_indexed[a], c)
-                                      for a, c in m._apps.items()])
-                    for i, m in self._minutes.items()}
+            #"""
+        #_indexed = {a: i for i, a in enumerate(self._apps.values())}
+        #_apps = [d[1] for d in sorted([(e[1], e[0].__data__())
+                                       #for e in _indexed.items()])]
+        #_minutes = {i: (m._category, [(_indexed[a], c)
+                                      #for a, c in m._apps.items()])
+                    #for i, m in self._minutes.items()}
 
-        return {"apps": _apps, 'minutes': _minutes}
+        #return {"apps": _apps, 'minutes': _minutes}
 
     def from_dict(self, data):
         assert 'apps' in data
         assert 'minutes' in data
         _a = data['apps']
-        _indexed = [track_base.app_info().load(d) for d in _a]
+        _indexed = [track_base.AppInfo().load(d) for d in _a]
+
         _m = data['minutes']
-        _minutes = {
-            int(i) : track_base.minute().init(
-                (
-                    m[0],
-                    {
-                        _indexed[a]: c for a, c in m[1]
-                    }
-                )
-            )
-            for i, m in _m.items()
-        }
+        _minutes = {int(i) : track_base.Minute({_indexed[a]: c for a, c in m})
+                    for i, m in _m.items()}
 
         # x = {i:len({a:0 for a in i}) for i in l}
         _apps = {a.generate_identifier(): a for a in _indexed}
@@ -150,7 +142,7 @@ class ActiveApplicationsModel(matrix_table_model):
             _app._count += 1
 
             if minute_index not in self._minutes:
-                self._minutes[minute_index] = track_base.minute()
+                self._minutes[minute_index] = track_base.Minute()
                 if not self._index_min or self._index_min > minute_index:
                     self._index_min = minute_index
 
@@ -173,7 +165,7 @@ class ActiveApplicationsModel(matrix_table_model):
         if minute > self._index_max or minute < self._index_min:
             return _begin, _end
 
-        _a = self._minutes[minute].get_main_app() if self.is_active(minute) else None
+        _a = self._minutes[minute].main_app() if self.is_active(minute) else None
         _minutes = sorted(self._minutes.keys())
         _lower_range = [i for i in _minutes if i < minute]
         _upper_range = [i for i in _minutes if i > minute]
@@ -185,13 +177,13 @@ class ActiveApplicationsModel(matrix_table_model):
         for i in reversed(_lower_range):
             if _begin - i > 1:
                 break
-            if self._minutes[i].get_main_app() == _a:
+            if self._minutes[i].main_app() == _a:
                 _begin = i
 
         for i in _upper_range:
             if i - _end > 1:
                 break
-            if self._minutes[i].get_main_app() == _a:
+            if self._minutes[i].main_app() == _a:
                 _end = i
 
         # todo: currently gap is max 1min - make configurable
@@ -199,13 +191,13 @@ class ActiveApplicationsModel(matrix_table_model):
 
     def info(self, minute: int) -> Tuple[int, str]:
         return (self.get_chunk_size(minute),
-                self._minutes[minute].get_main_app() if self.is_active(minute) else "idle")
+                self._minutes[minute].main_app() if self.is_active(minute) else "idle")
 
     def is_active(self, minute):
         return minute in self._minutes
 
-    def is_private(self, minute):
-        return minute in self._minutes and self._minutes[minute]._category != 0
+    def category_at(self, minute):
+        return self._minutes[minute].main_category() if minute in self._minutes else 0
 
     @pyqtSlot()
     def update_all_categories(self, get_category_from_app) -> None:

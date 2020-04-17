@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""All the stuff needed by several components
+"""
+
 from datetime import datetime
 import time
 import os
 import logging
-from collections import namedtuple
+from collections import namedtuple, Counter
 import traceback
 import operator
 from enum import IntEnum
 
 class Category(IntEnum):
     IDLE = 0
-    WORK = 1
-    PRIVATE = 2
+    UNASSIGNED = 1
+    WORK = 2
+    PRIVATE = 3
+    BREAK = 4
+
 
 class track_error(Exception):
     pass
@@ -54,6 +60,8 @@ def secs_to_dur(mins):
 
 
 def mins_to_dur(mins):
+    return "%d:%02d" % (mins / 60, mins % 60) if mins >= 60 else "%dm" % mins
+
     _result = ""
     _minutes = mins
     if _minutes >= 60:
@@ -83,8 +91,8 @@ def minutes_since_midnight():
     #return int(seconds_since_midnight() / 2)
     return int(seconds_since_midnight() / 60)
 
-class app_info():
 
+class AppInfo:
     def __init__(self, windowtitle="", cmdline=""):
         self._wndtitle = windowtitle
         self._cmdline = cmdline
@@ -100,11 +108,10 @@ class app_info():
         return self._wndtitle
 
     def __hash__(self):
-        x = hash((self._wndtitle, self._cmdline))
-        return x
+        return hash((self._wndtitle, self._cmdline))
 
     def __str__(self):
-        return "%s - [%s %d]" % (self._wndtitle, self._category, self._count)
+        return "%s - [cat: %s, count: %d]" % (self._wndtitle, self._category, self._count)
 
     def load(self, data):
         try:
@@ -112,7 +119,7 @@ class app_info():
         except:
             print('tried to expand %s to (title, category, count, cmdline)' % (
                   str(data)))
-            raise Exception('could not load app_info data')
+            raise Exception('could not load AppInfo data')
         return self
 
     def __data__(self):  # const
@@ -127,59 +134,36 @@ class app_info():
     def get_count(self):
         return self._count
 
-class minute():
+
+class Minute:
     """ a minute holds a category and a list of apps
     """
-    def __init__(self, category=0, apps=None):
-        self._category = 0
-        self._apps = apps if apps is not None else {}
+    def __init__(self, app_counter=None):
+        self._app_counter = app_counter or {}
 
     def __eq__(self, other):
-        if not self._category == other._category:
-            return False
-        if not self._apps == other._apps:
-            for a, c in self._apps.items():
+        if not self._app_counter == other._app_counter:
+            for a, c in self._app_counter.items():
                 print("s: %s:'%s' - %d" % (hex(id(a)), a, c))
-            for a, c in other._apps.items():
+            for a, c in other._app_counter.items():
                 print("o: %s - %d" % (a, c))
             return False
         return True
 
-    def dump(self):
-        print("category %d" % self._category)
-
-    def init(self, data):
-        self._category, self._apps = data
-        return self
-
-    def _rebuild(self):
-        if len(self._apps) == 0:
-            return 0  # todo: need undefined
-
-        _categories = {} # category -> sum
-        for a, c in self._apps.items():
-            if a._category not in _categories:
-                _categories[a._category] = c
-            else:
-                _categories[a._category] += c
-
-        self._category = max(_categories.items(), key=operator.itemgetter(1))[0]
+    def main_category(self):
+        # app1(2): 5
+        # app2(1): 2
+        # app3(1): 7
+        # 2: 5, 1: 2, 1: 7
+        # 2: 5, 1: 9
+        return self.main_app()._category
 
     def add(self, app_instance):
-        if app_instance not in self._apps:
-            self._apps[app_instance] = 1
-        else:
-            self._apps[app_instance] += 1
-        self._rebuild()
+        self._app_counter[app_instance] = self._app_counter.get(app_instance, 0) + 1
 
-    def get_main_app(self):
-        _a = max(self._apps, key=lambda x: self._apps[x])
-        return _a._wndtitle
+    def main_app(self):
+        return max(self._app_counter, key=lambda x: self._app_counter[x])
 
-    def rebuild_categories(self, get_category):
-        for a, c in self._apps.items():
-            a.set_new_category(get_category(a))
-        self._rebuild()
 
 def setup_logging(level=logging.INFO):
     logging.basicConfig(
@@ -192,30 +176,6 @@ def setup_logging(level=logging.INFO):
     logging.addLevelName(logging.INFO,     "II")
     logging.addLevelName(logging.DEBUG,    "DD")
     logging.addLevelName(logging.NOTSET,   "NA")
-
-import threading
-class frame_grabber:
-    stacks = {}
-    def __init__(self, logger, extra=None):
-        self.n = traceback.extract_stack()[-2][2]
-        self.e = extra
-        self.l = logger
-        t = threading.current_thread()
-        if not t in frame_grabber.stacks:
-            frame_grabber.stacks[t] = (len(frame_grabber.stacks) * 10, [])
-        self.s = frame_grabber.stacks[t]
-        self.prefix = "T%d %s" % (self.s[0], " " * 4 * len(self.s[1]))
-        self.postfix = "%s() %s" % (self.n, "(%s)" % self.e if self.e else "")
-
-    def __enter__(self):
-        self.s[1].append(self.n)
-        self.l.debug('>> %s enter %s', self.prefix, self.postfix)
-        return self
-
-    def __exit__(self, *args):
-        self.l.debug('<< %s leave %s', self.prefix, self.postfix)
-        self.s[1].pop()
-        return
 
 
 def fopen(filename, mode='r', buffering=1):

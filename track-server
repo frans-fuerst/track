@@ -2,6 +2,9 @@
 # -*- encoding: utf-8 -*-
 # pylint: disable=expression-not-assigned
 
+"""Executable stub for track-server
+"""
+
 from contextlib import suppress
 from track_server import main
 

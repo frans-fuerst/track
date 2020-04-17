@@ -1,6 +1,7 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
+"""Implements the track server which lurks in the background and collect application data
 """
 
 import zmq
@@ -11,6 +12,8 @@ import time
 import sys
 import threading
 import os
+from contextlib import suppress
+import traceback
 
 import desktop_usage_info
 
@@ -41,13 +44,13 @@ class track_server:
     def __init__(self):
         self._running = False
         self._system_monitoring_thread = None
-        self._tracker = track_base.time_tracker()
+        self._tracker = track_base.TimeTracker()
         self._last_save_time = 0
 
-    def _save_tracker_data(self, interval=60, force=False):
+    def _save_tracker_data(self, interval=20, force=False):
         if time.time() - self._last_save_time > interval or force:
             log.info('save data..')
-            self._tracker.save()
+            self._tracker.persist()
             self._last_save_time = time.time()
 
     def _system_monitoring_fn(self):
@@ -59,9 +62,9 @@ class track_server:
             except desktop_usage_info.WindowInformationError:
                 pass
             except Exception as ex:
-                log.error("Unhandled Exception: %s", ex)
-                import traceback
                 traceback.print_exc()
+                log.error("Unhandled Exception: %s", ex)
+                raise
 
             log.debug(self._tracker.get_current_data())
 
@@ -78,13 +81,28 @@ class track_server:
             return {'version': str(track_base.version_info)}
 
         elif request['type'] == 'apps':
-            return {'type': 'info', 'apps': self._tracker.get_applications_model().__data__()}
+            _d = self._tracker.get_applications_model().__data__()
+            return {'type': 'info', 'apps': _d}
 
         elif request['type'] == 'current':
             return {'type': 'info', 'current': self._tracker.get_current_data()}
 
         elif request['type'] == 'rules':
-            return {'type': 'info', 'rules': self._tracker.get_rules_model().__data__()}
+            return {'type': 'info', 'rules': self._tracker.rules()}
+
+        elif request['type'] == 'set_rules':
+            self._tracker.set_rules(request.get("data", []))
+            return {'type': 'ok'}
+
+        elif request['type'] == 'clip_from':
+            self._tracker.get_applications_model().clip_from(request["index"])
+            # self._save_tracker_data(force=True)
+            return {'type': 'ok'}
+
+        elif request['type'] == 'clip_to':
+            self._tracker.get_applications_model().clip_to(request["index"])
+            # self._save_tracker_data(force=True)
+            return {'type': 'ok'}
 
         elif request['type'] == 'save':
             self._save_tracker_data(force=True)
@@ -104,13 +122,12 @@ class track_server:
         except zmq.ZMQError as e:
             log.error(e)
             return
-        self._tracker.set_persistency_folder('~/.track')
-        self._tracker.load()
+        #self._tracker.load()
         self._running = True
 
         self._system_monitoring_thread = threading.Thread(
-            target=self._system_monitoring_fn)
-        self._system_monitoring_thread.daemon = True
+            target=self._system_monitoring_fn,
+            daemon = True)
         self._system_monitoring_thread.start()
 
         while self._running:
@@ -120,9 +137,6 @@ class track_server:
             except zmq.ZMQError:
                 self._running = False
                 self._system_monitoring_thread.join()
-                break
-            except KeyboardInterrupt:
-                log.info("got keyboard interrupt - exit")
                 break
 
             log.debug(request)
@@ -163,3 +177,9 @@ def main():
 
     track_server().run()
     log.info('quit')
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt, BrokenPipeError):
+        raise SystemExit(main())
+

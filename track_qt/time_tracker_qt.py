@@ -1,22 +1,21 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""Client side part of TrimeTracker
 """
-"""
 
-from track_qt.active_applications_qtmodel import ActiveApplicationsModel
-from track_qt.rules_model_qt import RulesModelQt
+from contextlib import suppress
 
-import track_base
+from typing import Dict, Any, Optional
+from PyQt5 import QtWidgets  # type: ignore
 
-from PyQt5.QtCore import pyqtSlot
+import zmq  # type: ignore
 
-import zmq
-import logging
+from track_base.util import log
+from . import track_base
+from . import ActiveApplicationsModel
+from . import RulesModelQt
 
-log = logging.getLogger('time_tracker_qt')
-
-class server_timeout(Exception):
-    pass
 
 class TimeTrackerClientQt:
     """ * retrieves system data
@@ -24,9 +23,10 @@ class TimeTrackerClientQt:
           well as some meta information
         * provides persistence
     """
-    def __init__(self, parent):
-        self._req_socket = None
-        self._req_poller = None
+    def __init__(self, parent:QtWidgets.QWidget) -> None:
+        self._req_socket = None  # type: Optional[zmq.Socket]
+        self._req_poller = zmq.Poller()
+        self._zmq_context = zmq.Context()
         self._receiving = False
 
         self._current_data = None
@@ -39,40 +39,47 @@ class TimeTrackerClientQt:
         self._rules = RulesModelQt(parent)
         self._rules.modified_rules.connect(self.update_categories)
 
-        self._req_poller = zmq.Poller()
-        self._zmq_context = zmq.Context()
+    def clear(self) -> None:
+        # must not be overwritten - we need the instance
+        self._applications.clear()
 
-    def __eq__(self, other):
-        return False
-
-    def _req_send(self, msg):
-        if self._receiving:
+    def _req_send(self, msg: Dict[str, Any]) -> None:
+        if self._receiving or self._req_socket is None:
             raise Exception('wrong send/recv state!')
         self._receiving = True
         self._req_socket.send_json(msg)
 
-    def _req_recv(self, timeout, raise_on_timeout):
-        if not self._receiving:
+    def _req_recv(self, timeout:int, raise_on_timeout:bool) -> Dict[str, Any]:
+        if not self._receiving or self._req_socket is None:
             raise Exception('wrong send/recv state!')
         self._receiving = False
         _timeout = timeout
         while True:
             if self._req_poller.poll(_timeout) == []:
                 if raise_on_timeout:
-                    raise server_timeout("timeout on recv()")
-                log.warning('server timeout. did you even start one?')
+                    raise TimeoutError("timeout on recv()")
+                log().warning('server timeout. did you even start one?')
                 _timeout = 2000
                 continue
             break
         return self._req_socket.recv_json()
 
-    def _request(self, msg, timeout=50, raise_on_timeout=False):
+    def _request(self,
+                 cmd: str,
+                 *,
+                 data: Optional[Dict[str, Any]] = None,
+                 timeout: str = 50,
+                 raise_on_timeout: bool = False) -> Dict[str, Any]:
+        def result_or_exception(result):
+            if result.get("type") == "error":
+                raise RuntimeError(result["what"])
+            return result.get("data")
         if not self.connected:
-            raise track_base.not_connected()
-        self._req_send(msg)
-        return self._req_recv(timeout, raise_on_timeout)
+            raise RuntimeError("Tried to send request while not connected to server")
+        self._req_send({"cmd": cmd, "data": data})
+        return result_or_exception(self._req_recv(timeout, raise_on_timeout))
 
-    def connect(self, endpoint):
+    def connect(self, endpoint: str) -> None:
         if self._req_socket:
             self._req_poller.unregister(self._req_socket)
             self._req_socket.close()
@@ -85,54 +92,56 @@ class TimeTrackerClientQt:
         self._fetch_rules()
 
     def _check_version(self):
-        self._req_send({'type': 'version'})
+        self._req_send({"cmd": 'version'})
         _version = self._req_recv(timeout=1000, raise_on_timeout=True)
-        log.info('server version: %s', _version)
+        log().info('server version: %s', _version)
 
     def _fetch_rules(self):
-        _received_data = self._request({'type': 'rules'})
-        self._rules.from_dict(_received_data)
-        if not 'rules' in _received_data:
-            raise
+        rules = self._request("rules").get("rules")
+        self._rules.from_dict(rules)
 
-    def save(self):
-        _received_data = self._request({'type': 'save'})
+    def note(self) -> str:
+        return self._request("note").get("note")
 
-    def clear(self):
-        # must not be overwritten - we need the instance
-        self._applications.clear()
+    def save(self) -> None:
+        self._request("save")
 
-    def clip_from(self, index):
-        print(self._request({'type': 'clip_from', "index": index}))
+    def clip_from(self, index: str) -> None:
+        self._request("clip_from", data={"index": index})
 
-    def clip_to(self, index):
-        print(self._request({'type': 'clip_to', "index": index}))
+    def clip_to(self, index: int) -> None:
+        self._request("clip_to", data={"index": index})
+
+    def update(self) -> None:
+        current_data = self._request("current").get("current")
+        apps = self._request("apps").get("apps")
+
+        assert current_data is not None and apps is not None
+
+        self._current_data = current_data
+        self._applications.from_dict(apps)
+
+        self._initialized = True
+
+    def update_categories(self):
+        self._request("set_rules", data={"rules": self._rules.to_dict()})
+
+    def set_note(self, text) -> None:
+        self._request("set_note", data={"note": text})
+
+    def quit_server(self):
+        with suppress(RuntimeError):
+            self._request("quit")
+        self.connected = False
+
+    def initialized(self):
+        return self._initialized
 
     def get_applications_model(self):
         return self._applications
 
     def get_rules_model(self):
         return self._rules
-
-    def update(self):
-        received_data = self._request({'type': 'current'})
-        if not 'current' in received_data:
-            raise
-        self._current_data = received_data['current']
-
-        received_data = self._request({'type': 'apps'})
-        if not 'apps' in received_data:
-            raise
-        self._applications.from_dict(received_data['apps'])
-
-        self._initialized = True
-
-    def quit_server(self):
-        self._request({'type': 'quit'})
-        self.connected = False
-
-    def initialized(self):
-        return self._initialized
 
     def info(self, minute):
         return self._applications.info(minute)
@@ -161,21 +170,19 @@ class TimeTrackerClientQt:
         return len(self._applications._minutes)
 
     def get_time_work(self):
-        r = sum(minute.main_category() == 2 for _, minute in self._applications._minutes.items())
-        return r
+        return sum(minute.main_category() == 2 for _, minute in self._applications._minutes.items())
 
     def get_time_private(self):
-        r = sum(minute.main_category() == 3 for _, minute in self._applications._minutes.items())
-        return r
+        return sum(minute.main_category() == 3 for _, minute in self._applications._minutes.items())
 
     def get_time_per_categories(self):
-        ##TODO: cache this, so you don't do so many operations per second.
-        ##This is pretty inneficient
-        time_dict={}
+        # TODO: cache this, so you don't do so many operations per second.
+        # This is pretty inneficient
+        time_dict = {}
         for app_name in self._applications._apps:
             app = self._applications._apps[app_name]
-            category=str(app._category)
-            if(category in time_dict):
+            category = str(app._category)
+            if category in time_dict:
                 time_dict[category] += app.get_count()
             else:
                 time_dict[category] = app.get_count()
@@ -202,8 +209,5 @@ class TimeTrackerClientQt:
     def get_current_process_name(self):
         return self._current_data['process_name']
 
-    def user_is_active(self):
+    def user_is_active(self) -> bool:
         return self._current_data['user_active']
-
-    def update_categories(self):
-        print(self._request({'type': 'set_rules', "data": self._rules.to_dict()}))

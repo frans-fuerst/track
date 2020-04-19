@@ -3,7 +3,7 @@
 
 from track_base import track_common
 
-class active_applications:
+class ActiveApplications:
     ''' the data model which holds all application usage data for one
         day. That is:
 
@@ -83,6 +83,8 @@ class active_applications:
         _a = data['apps']
         _indexed = [track_common.AppInfo().load(d) for d in _a]
         _m = data['minutes']
+        if _m and len(next(iter(_m.items()))[1]) == 2:
+            _m = {key: value[1] for key, value in _m.items()}
         _minutes = {int(i): track_common.Minute({_indexed[a]: c for a, c in m})
                     for i, m in _m.items()}
 

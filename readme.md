@@ -76,13 +76,19 @@ result in category 1 (which you might be *private* in your eyes).
 
 ## Requirements
 
+Basically you Python3 with `PyQt5`, `psutil` and `zmq` installed. Some PyQt5 versions do not
+behave well and you will need build-essentials etc to make it work.
+For me installing the following packages worked:
+
 * Linux with X11 (Wayland had some problems when I last checked it)
 * or Windows - it once worked but currently I have no way to check it
 * Python 3+
-* PyQt5
-* python-libwnck
-* libXScrnSaver
-* python-psutil
+* `python3-devel` or equivalent via `apt`, `dnf`, etc.
+* `PyQt5` via pip (v5.14 worked for me)
+* `zmq` via pip
+* `psutil` via pip
+
+Try this pip command: `pip3 install --user --upgrade psutil zmq PyQt5==5.14`
 
 
 ## How to run

@@ -2,7 +2,7 @@
 
 """Describes the model containing distinct applications assigned to minutes
 """
-from typing import Any, Tuple
+from typing import Any, Tuple, Dict
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -12,8 +12,6 @@ import track_base
 
 from track_qt.qt_common import matrix_table_model
 
-def throw(exc):
-    raise exc
 
 class ActiveApplicationsModel(matrix_table_model):
     ''' the data model which holds all application usage data for one
@@ -100,7 +98,7 @@ class ActiveApplicationsModel(matrix_table_model):
 
         #return {"apps": _apps, 'minutes': _minutes}
 
-    def from_dict(self, data):
+    def from_dict(self, data: Dict[str, Any]) -> None:
         assert 'apps' in data
         assert 'minutes' in data
         _a = data['apps']

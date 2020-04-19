@@ -10,11 +10,11 @@ log = logging.getLogger('base.time_tracker')
 
 import desktop_usage_info
 
-from track_base.active_applications import active_applications
+from track_base import ActiveApplications
 from track_base import track_common
 import track_base
 
-from util import catch
+from track_base import catch
 
 class TimeTracker:
     """ * retrieves system data
@@ -33,14 +33,29 @@ class TimeTracker:
         self._storage_dir = os.path.expanduser("~/.track")
 
         # -- data to persist
-        self._applications = active_applications(
-            self.load_json("track-%s.json" % track_common.today_str()))
+        data = catch(
+            lambda: self.load_json("track-%s.json" % track_common.today_str()),
+            (FileNotFoundError, json.JSONDecodeError),
+            {})
+        self._applications = ActiveApplications(data.get("tracker_data"))
+        self.note = data.get("daily_note")
 
         self._re_rules = catch(
             lambda: self.load_json("category_rules.json"),
             (FileNotFoundError, json.JSONDecodeError),
-            [(".* - Mozilla Firefox.*", 3),
-             (".*gedit.*", 2)])
+            [
+                ("check_mk", 2),
+                (".*Zoom.*",2),
+                ("^Slack", 2),
+                ("^su heute", 2),
+                ("^Signal", 3),
+                ("^Zimbra", 2),
+                ("^gerrit/cmk", 2),
+                ("\[Jenkins\]", 2),
+                ("Track", 2),
+                ("^DER SPIEGEL", 3),
+                (".*SZ.de", 3),
+            ])
         self._recategorize()
 
     def get_category(self, app):
@@ -77,11 +92,12 @@ class TimeTracker:
         self._applications.clear()
 
     def persist(self, filename=None):
-        self.save_json(
-            self._applications.__data__(),
+        self.save_json({
+            "tracker_data": self._applications.__data__(),
+            "daily_note": self.note},
             filename or "track-%s.json" % track_common.today_str())
 
-        _test_model = active_applications()
+        _test_model = ActiveApplications()
         _test_model.from_dict( self._applications.__data__())
         assert self._applications == _test_model
         self.save_json(self._re_rules, "category_rules.json")
@@ -95,6 +111,9 @@ class TimeTracker:
     def set_rules(self, rules):
         self._re_rules = rules
         self._recategorize()
+
+    def set_note(self, note):
+        self.note = note
 
     def update(self):
         try:

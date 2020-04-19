@@ -263,7 +263,7 @@
       <item>
        <widget class="QLabel" name="label_7">
         <property name="text">
-         <string>Personal daily notes:</string>
+         <string>Daily notes:</string>
         </property>
        </widget>
       </item>
@@ -405,7 +405,7 @@
            </size>
           </property>
           <property name="text">
-           <string>work</string>
+           <string>work (2)</string>
           </property>
          </widget>
         </item>
@@ -513,7 +513,7 @@
            </size>
           </property>
           <property name="text">
-           <string>private</string>
+           <string>private (3)</string>
           </property>
          </widget>
         </item>
@@ -621,7 +621,7 @@
            </size>
           </property>
           <property name="text">
-           <string>break</string>
+           <string>break (4)</string>
           </property>
          </widget>
         </item>
@@ -729,7 +729,7 @@
            </size>
           </property>
           <property name="text">
-           <string>idle</string>
+           <string>idle (0)</string>
           </property>
          </widget>
         </item>
@@ -837,7 +837,7 @@
            </size>
           </property>
           <property name="text">
-           <string>not handled</string>
+           <string>not handled (1)</string>
           </property>
          </widget>
         </item>

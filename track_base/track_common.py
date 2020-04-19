@@ -59,18 +59,8 @@ def secs_to_dur(mins):
     return _result
 
 
-def mins_to_dur(mins):
+def mins_to_dur(mins:int) -> str:
     return "%d:%02d" % (mins / 60, mins % 60) if mins >= 60 else "%dm" % mins
-
-    _result = ""
-    _minutes = mins
-    if _minutes >= 60:
-        _result = str(int(_minutes / 60)) + "h "
-        _minutes %= 60
-        _result += "%02d" % _minutes + "m"
-    else:
-        _result += "%d" % _minutes + "m"
-    return _result
 
 
 def today_str():
@@ -176,22 +166,3 @@ def setup_logging(level=logging.INFO):
     logging.addLevelName(logging.INFO,     "II")
     logging.addLevelName(logging.DEBUG,    "DD")
     logging.addLevelName(logging.NOTSET,   "NA")
-
-
-def fopen(filename, mode='r', buffering=1):
-    try:
-        return open(filename, mode, buffering)
-    except IOError as ex:
-        if ex.errno == 2:
-            raise file_not_found_error()
-        elif ex.errno == 13:
-            raise read_permission_error()
-        raise
-
-def make_dirs(path):
-    try:
-        os.makedirs(os.path.expanduser(path))
-    except OSError as ex:
-        if ex.errno == 17:
-            raise path_exists_error()
-        raise

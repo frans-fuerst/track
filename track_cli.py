@@ -14,14 +14,15 @@ import json
 
 from typing import List
 
-from track_base.active_applications import active_applications
-from util import setup_logging, log, setup_argument_parser, show_system_info
+import track_base.util
+from track_base import ActiveApplications
+from track_base.util import log
 
 
 def parse_arguments(argv: List[str]) -> argparse.Namespace:
     """parse command line arguments and return argument object"""
     parser = argparse.ArgumentParser(description=__doc__)
-    setup_argument_parser(parser)
+    track_base.util.setup_argument_parser(parser)
 
     subparsers = parser.add_subparsers(help='available commands', metavar="CMD")
 
@@ -52,6 +53,8 @@ def handle_result(result):
         raise Exception('server replied with error: "%s"' % result['what'])
     print(result)
 
+def convert(data):
+    return data if "tracker_data" in data else {"tracker_data": data}
 
 def fn_info(args) -> None:
     def to_time(value):
@@ -60,7 +63,8 @@ def fn_info(args) -> None:
     if args.element:
         log().info("Show infos for %r", args.element)
         for file in args.element:
-            apps = active_applications(json.load(open(os.path.join(log_dir, file))))
+            data = convert(json.load(open(os.path.join(log_dir, file))))
+            apps = ActiveApplications(data["tracker_data"])
             print("%s: %s - %s = %s => %s" % (
                 file,
                   to_time(apps.begin_index()),
@@ -74,15 +78,18 @@ def fn_info(args) -> None:
         log().info("List recorded data")
         for file in (
             f
-            for f in sorted(os.listdir(log_dir)) if not '-log-' in f and f.endswith(".json")
+            for f in sorted(os.listdir(log_dir))
+            if not '-log-' in f and not "rules" in f and f.endswith(".json")
         ):
-            apps = active_applications(json.load(open(os.path.join(log_dir, file))))
-            print("%s: %s - %s = %s => %s" % (
+            data = convert(json.load(open(os.path.join(log_dir, file))))
+            apps = track_base.ActiveApplications(data["tracker_data"])
+            print("%s: %s - %s = %s => %s (note: %r)" % (
                 file,
-                  to_time(apps.begin_index()),
-                  to_time(apps.end_index()),
-                  to_time(apps.end_index() - apps.begin_index()),
-                  to_time(apps.end_index() - apps.begin_index() - 60)))
+                to_time(apps.begin_index()),
+                to_time(apps.end_index()),
+                to_time(apps.end_index() - apps.begin_index()),
+                to_time(apps.end_index() - apps.begin_index() - 60),
+                data.get("daily_note", "").split("\n")[0]))
             #print("".join(("X" if minute in apps._minutes else " ")
             #        for minute in range(apps.begin_index(), apps.end_index() + 1)))
 
@@ -90,10 +97,10 @@ def fn_info(args) -> None:
 def main(argv=None) -> int:
     """read command line arguments, configure application and run command
     specified on command line"""
-    args = parse_arguments(argv or sys.argv[1:])
-    setup_logging(args)
 
-    show_system_info()
+    args = parse_arguments(argv or sys.argv[1:])
+    track_base.util.setup_logging(args)
+    track_base.util.log_system_info()
 
     args.func(args)
 

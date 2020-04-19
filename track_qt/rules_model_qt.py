@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import re
@@ -47,22 +47,12 @@ class RulesModelQt(matrix_table_model):
                 self._rules[row][column - 1] if column < 3 else
                 track_base.secs_to_dur(self.get_time_category(self._rules[row])))
 
-    def from_dict(self, data):
+    def from_dict(self, rules):
         with change_emitter(self):
-            self._rules = data['rules']
+            self._rules = rules
 
     def to_dict(self):
         return self._rules
-
-    def highlight_string(self, string):
-        with change_emitter(self):
-            self._matching = []
-            for i, (r, c) in enumerate(self._rules):
-                if re.search(r, string):
-                    # print("'%s' matches" % r)
-                    self._matching.append(True)
-                else:
-                    self._matching.append(False)
 
     def get_first_matching_key(self, app):
         _string = app.generate_identifier()
@@ -116,3 +106,10 @@ class RulesModelQt(matrix_table_model):
     def isEditable(self,index):
         return index.column() > 0
 
+    def check_string(self, string):
+        print("check",string)
+        for regex, category in self._rules:
+            if re.search(regex, string):
+                print("%r matches: %r" % (string, regex))
+                return
+        print("%r does not match" % string)

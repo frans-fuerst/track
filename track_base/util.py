@@ -44,6 +44,7 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument('--data-dir',
                         '-d',
                         default=os.path.expanduser('~/.track'),)
+    parser.add_argument('--port', type=int, default=3456, help='IPv4 port to connect to')
 
 
 def throw(exc: Exception) -> None:
@@ -58,6 +59,8 @@ def catch(func, exceptions, default=None) -> Any:
     except exceptions:
         return default
 
+def exception_to_string(exc:Exception) -> str:
+    return "%r" % exc
 
 def log(name="track") -> logging.Logger:
     """Convenience function to access logger 'app logger'"""

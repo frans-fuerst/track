@@ -10,7 +10,7 @@ import argparse
 import os.path
 import subprocess
 from contextlib import suppress
-from typing import List
+from typing import Any
 from track_qt import CategoryColor
 
 try:
@@ -37,16 +37,32 @@ class TrackUI(QtWidgets.QMainWindow):
     """Track recorder UI"""
     class ApplicationTableDelegate(QtWidgets.QStyledItemDelegate):
         """Delegator which draws a coloured background for a certain column"""
-        def initStyleOption(self, option, index):
+        def initStyleOption(
+            self,
+            option:QtWidgets.QStyleOptionViewItem, index:
+            QtCore.QModelIndex
+        ) -> None:
+            """Set text style and color"""
             super().initStyleOption(option, index)
             if index.column() == 2:
-                option.font.setBold(True)
+                #option.font.setBold(True)
                 option.backgroundBrush = QtGui.QBrush(CategoryColor(index.data()))
+        def displayText(self, value: Any, locale:QtCore.QLocale) -> Any:
+            """Convert from category to category names"""
+            return (
+                {
+                    0: "idle",
+                    1: "unassigned",
+                    2: "work",
+                    3: "private",
+                    4: "break",
+                }.get(value, "?") if isinstance(value, int) else
+                super().displayText(value, locale))
 
-    def __init__(self) -> None:
+    def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
         uic.loadUi(os.path.join(os.path.dirname(__file__), 'track.ui'), self)
-
+        self._endpoint = "tcp://127.0.0.1:%s" % str(args.port)
         self._tracker = track_qt.TimeTrackerClientQt(self)
 
         self.setGeometry(0, 0, 700, 680)  # todo: maximize vertically
@@ -167,7 +183,7 @@ class TrackUI(QtWidgets.QMainWindow):
         while True:
             try:
                 log().info('connect to track server..')
-                self._tracker.connect('tcp://127.0.0.1:3456')
+                self._tracker.connect(self._endpoint)
                 log().info('connected!')
                 return True
             except TimeoutError:
@@ -245,13 +261,12 @@ def main() -> int:
     args = parse_arguments()
     track_base.util.setup_logging(args)
     track_base.util.log_system_info()
-
     app = QtWidgets.QApplication(sys.argv)
 
     #with open(os.path.join(APP_DIR, STYLESHEET)) as f:
     #    app.setStyleSheet(f.read())
 
-    ex = TrackUI()
+    ex = TrackUI(args)
     ex.show()
 
     for sig in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):

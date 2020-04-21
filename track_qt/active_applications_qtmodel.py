@@ -61,13 +61,19 @@ class ActiveApplicationsModel(matrix_table_model):
         return 3
 
     def data(self, index, role):
-        if not (index.isValid() and role == QtCore.Qt.DisplayRole):
+        if not index.isValid():
             return None
         row, column = index.row(), index.column()
-        return (self._apps[self._sorted_keys[row]]._wndtitle if column == 0 else
-                track_base.secs_to_dur(self._apps[self._sorted_keys[row]]._count) if column == 1 else
-                self._apps[self._sorted_keys[row]]._category if column == 2 else
-                throw(IndexError))
+        if role == QtCore.Qt.TextAlignmentRole:
+            if column == 2:
+                return QtCore.Qt.AlignHCenter
+        if not role == QtCore.Qt.DisplayRole:
+            return None
+        return (
+            self._apps[self._sorted_keys[row]]._wndtitle if column == 0 else
+            track_base.secs_to_dur(self._apps[self._sorted_keys[row]]._count) if column == 1 else
+            self._apps[self._sorted_keys[row]]._category if column == 2 else
+            throw(IndexError))
 
     def __eq__(self, other):
         return self._apps == other._apps and self._minutes == other._minutes

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Implements the track server which lurks in the background and collect
+"""Implements the track server which lurks in the background and collects
 application data
 """
 
@@ -51,10 +51,10 @@ class TrackServer:
                 log().error("Unhandled Exception: %s", ex)
                 raise
 
-            log().debug(self._tracker.get_current_data())
+            log().debug(self._tracker.current_state())
 
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Doc"""
+        """Process a single request"""
         def wrong_command_fn(request: Dict[str, Any]) -> Dict[str, Any]:
             raise track_base.errors.RequestMalformed("Command %r not known" % request["cmd"])
 
@@ -73,13 +73,13 @@ class TrackServer:
             return {"data": {"apps": self._tracker.get_applications_model().__data__()}}
 
         def current_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
-            return {"data": {"current": self._tracker.get_current_data()}}
+            return {"data": {"current": self._tracker.current_state()}}
 
         def rules_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
             return {"data": {"rules": self._tracker.rules()}}
 
         def set_rules_fn(request: Dict[str, Any]) -> Dict[str, Any]:
-            if not "data" in request or not "rules" in request["data"]:
+            if "data" not in request or "rules" not in request["data"]:
                 raise track_base.errors.RequestMalformed('No "rules" provided')
             self._tracker.set_rules(request["data"]["rules"])
             return {'type': 'ok'}
@@ -88,20 +88,20 @@ class TrackServer:
             return {"data": {"note": self._tracker.note}}
 
         def set_note_fn(request: Dict[str, Any]) -> Dict[str, Any]:
-            if not "data" in request or not "note" in request["data"]:
+            if "data" not in request or "note" not in request["data"]:
                 raise track_base.errors.RequestMalformed('No "note" provided')
             self._tracker.set_note(request["data"]["note"])
             return {'type': 'ok'}
 
         def clip_from_fn(request: Dict[str, Any]) -> Dict[str, Any]:
-            if not "data" in request or not "index" in request["data"]:
+            if "data" not in request or "index" not in request["data"]:
                 raise track_base.errors.RequestMalformed('No "index" provided')
             self._tracker.get_applications_model().clip_from(request["data"]["index"])
             # self._save_data(force=True)
             return {'type': 'ok'}
 
         def clip_to_fn(request: Dict[str, Any]) -> Dict[str, Any]:
-            if not "data" in request or not "index" in request["data"]:
+            if "data" not in request or "index" not in request["data"]:
                 raise track_base.errors.RequestMalformed('No "index" provided')
             self._tracker.get_applications_model().clip_to(request["data"]["index"])
             # self._save_data(force=True)
@@ -126,13 +126,13 @@ class TrackServer:
             "save": save_fn,
             }.get(request.get("cmd", None), wrong_command_fn)(request)
 
-    def run(self) -> None:
-        """Doc"""
+    def run(self, args: argparse.Namespace) -> None:
+        """Run zmq message dispatching loop"""
         context = zmq.Context()
         # wing disable: undefined-attribute
         rep_socket = context.socket(zmq.REP)
         try:
-            rep_socket.bind('tcp://127.0.0.1:3456')
+            rep_socket.bind("tcp://127.0.0.1:%s" % str(args.port))
         except zmq.ZMQError as exc:
             log().error(exc)
             return
@@ -184,7 +184,7 @@ def main() -> None:
 
     for sig in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
         signal.signal(sig, lambda signal, frame: sys.exit)  # type: ignore
-    TrackServer().run()
+    TrackServer().run(args)
 
 
 if __name__ == "__main__":

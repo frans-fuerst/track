@@ -1,9 +1,12 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+"""Things needed by several components"""
 
 from PyQt5 import QtCore
 
 from track_base import Category
+
 
 def CategoryColor(category):
     return {
@@ -13,6 +16,7 @@ def CategoryColor(category):
         Category.PRIVATE: QtCore.Qt.cyan,
         Category.BREAK: QtCore.Qt.green,
     }.get(category, QtCore.Qt.red)
+
 
 class change_emitter:
     def __init__(self, emitter):

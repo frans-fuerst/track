@@ -38,9 +38,14 @@ class RulesModelQt(matrix_table_model):
         return len(self._rules) + 1
 
     def data(self, index, role):
-        if not (index.isValid() and role in {QtCore.Qt.DisplayRole, QtCore.Qt.EditRole}):
+        if not index.isValid():
             return None
         row, column = index.row(), index.column()
+        if role == QtCore.Qt.TextAlignmentRole:
+            if column == 2:
+                return QtCore.Qt.AlignHCenter
+        if role not in {QtCore.Qt.DisplayRole, QtCore.Qt.EditRole}:
+            return None
         if row >= len(self._rules):
             return None
         return ("?" if column == 0 else

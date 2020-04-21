@@ -5,6 +5,8 @@ from . import util
 from . import errors
 from .util import (
     catch,
+    log,
+    exception_to_string,
     )
 
 from .track_common import (

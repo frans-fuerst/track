@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""Defines TimeTracker class which gathers and provides information about deskopt usage
+"""
+
 import json
 import os
-import logging
 import re
-from typing import Any
-log = logging.getLogger('base.time_tracker')
+from typing import Dict, Any, Sequence, Tuple
 
 import desktop_usage_info
 
-from track_base import ActiveApplications
+from track_base import ActiveApplications, AppInfo, Category
 from track_base import track_common
-import track_base
 
-from track_base import catch
+from track_base import catch, log, exception_to_string
 
 class TimeTracker:
     """ * retrieves system data
@@ -22,7 +22,7 @@ class TimeTracker:
           well as some meta information
         * provides persistence
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self._idle_current = 0
         self._current_minute = 0  # does not need to be highest minute index
         self._current_app_title = ""
@@ -34,31 +34,31 @@ class TimeTracker:
 
         # -- data to persist
         data = catch(
-            lambda: self.load_json("track-%s.json" % track_common.today_str()),
+            lambda: self._load_json("track-%s.json" % track_common.today_str()),
             (FileNotFoundError, json.JSONDecodeError),
             {})
         self._applications = ActiveApplications(data.get("tracker_data"))
         self.note = data.get("daily_note")
 
         self._re_rules = catch(
-            lambda: self.load_json("category_rules.json"),
+            lambda: self._load_json("category_rules.json"),
             (FileNotFoundError, json.JSONDecodeError),
             [
-                ("check_mk", 2),
-                (".*Zoom.*",2),
-                ("^Slack", 2),
-                ("^su heute", 2),
-                ("^Signal", 3),
-                ("^Zimbra", 2),
-                ("^gerrit/cmk", 2),
-                ("\[Jenkins\]", 2),
-                ("Track", 2),
-                ("^DER SPIEGEL", 3),
-                (".*SZ.de", 3),
+                (r"check_mk", 2),
+                (r".*Zoom.*", 2),
+                (r"^Slack", 2),
+                (r"^su heute", 2),
+                (r"^Signal", 3),
+                (r"^Zimbra", 2),
+                (r"^gerrit/cmk", 2),
+                (r"\[Jenkins\]", 2),
+                (r"Track", 2),
+                (r"^DER SPIEGEL", 3),
+                (r".*SZ.de", 3),
             ])
         self._recategorize()
 
-    def get_category(self, app):
+    def _get_category(self, app: AppInfo) -> Category:
         app_string_representation = app.generate_identifier()
         for rule, category in self._re_rules:
             if re.search(rule, app_string_representation):
@@ -66,14 +66,16 @@ class TimeTracker:
         return track_common.Category.UNASSIGNED
 
     def _recategorize(self):
-        for title, app in self._applications._apps.items():
-            app._category = self.get_category(app)
+        for _title, app in self._applications._apps.items():
+            app._category = self._get_category(app)
 
-    def load_json(self, filename: str) -> Any:
+    def _load_json(self, filename: str) -> Any:
+        """Properly read data from a JSON file"""
         with open(os.path.join(self._storage_dir, filename)) as file:
             return json.load(file)
 
-    def save_json(self, data, filename):
+    def _save_json(self, data, filename):
+        """Properly write data to a JSON file"""
         os.makedirs(self._storage_dir, exist_ok=True)
         with open(os.path.join(self._storage_dir, filename), 'w') as file:
             json.dump(
@@ -87,35 +89,41 @@ class TimeTracker:
     def __eq__(self, other):
         return False
 
-    def clear(self):
-        # must not be overwritten - we need the instance
+    def clear(self) -> None:
+        """Clear the application store - keeps the instance"""
         self._applications.clear()
 
-    def persist(self, filename=None):
-        self.save_json({
-            "tracker_data": self._applications.__data__(),
-            "daily_note": self.note},
+    def persist(self, filename: str = None) -> None:
+        """Store tracking info and regex rules on file system"""
+        self._save_json(
+            {"tracker_data": self._applications.__data__(),
+             "daily_note": self.note},
             filename or "track-%s.json" % track_common.today_str())
 
         _test_model = ActiveApplications()
-        _test_model.from_dict( self._applications.__data__())
+        _test_model.from_dict(self._applications.__data__())
         assert self._applications == _test_model
-        self.save_json(self._re_rules, "category_rules.json")
+        self._save_json(self._re_rules, "category_rules.json")
 
-    def get_applications_model(self):
+    def get_applications_model(self) -> ActiveApplications:
+        """Return the current application store"""
         return self._applications
 
-    def rules(self):
+    def rules(self) -> Sequence[Tuple[str, int]]:
+        """Return the current set of regex rules"""
         return self._re_rules
 
-    def set_rules(self, rules):
+    def set_rules(self, rules) -> None:
+        """Store a new set of regex rules and recalculate categories"""
         self._re_rules = rules
         self._recategorize()
 
-    def set_note(self, note):
+    def set_note(self, note) -> None:
+        """Store daily note"""
         self.note = note
 
-    def update(self):
+    def update(self) -> None:
+        """Gather desktop usage info"""
         try:
             current_day = track_common.today_int()
             current_minute = track_common.minutes_since_midnight()
@@ -141,16 +149,19 @@ class TimeTracker:
                 return
 
             _app = track_common.AppInfo(self._current_app_title, self._current_process_exe)
-            self._current_category = self.get_category(_app)
+            self._current_category = self._get_category(_app)
             _app._category = self._current_category
-            _app = self._applications.update(self._current_minute, _app)
-
+            self._applications.update(self._current_minute, _app)
+        except KeyError as exc:
+            log().error("%r", _app_info)
+            log().error("Got exception %r", exception_to_string(exc))
         except desktop_usage_info.WindowInformationError:
             pass
-        except desktop_usage_info.ToolError as ex:
-            log.error(ex)
+        except desktop_usage_info.ToolError as exc:
+            log().error(exc)
 
-    def get_current_data(self):
+    def current_state(self) -> Dict[str, Any]:
+        """Retrieve current usage snapshot"""
         return {
             'minute': self._current_minute,
             'category': self._current_category,

@@ -11,7 +11,6 @@ import os.path
 import subprocess
 from contextlib import suppress
 from typing import Any
-from track_qt import CategoryColor
 
 try:
     from PyQt5 import QtWidgets, QtGui, QtCore, uic  # type: ignore
@@ -24,6 +23,7 @@ import track_base
 from track_base import mins_to_dur
 from track_base.util import log
 import track_qt
+from track_qt import CategoryColor
 
 
 def start_server_process() -> None:
@@ -38,16 +38,16 @@ class TrackUI(QtWidgets.QMainWindow):
     class ApplicationTableDelegate(QtWidgets.QStyledItemDelegate):
         """Delegator which draws a coloured background for a certain column"""
         def initStyleOption(
-            self,
-            option:QtWidgets.QStyleOptionViewItem, index:
-            QtCore.QModelIndex
-        ) -> None:
+                self,
+                option: QtWidgets.QStyleOptionViewItem,
+                index: QtCore.QModelIndex) -> None:
             """Set text style and color"""
             super().initStyleOption(option, index)
             if index.column() == 2:
-                #option.font.setBold(True)
+                # option.font.setBold(True)
                 option.backgroundBrush = QtGui.QBrush(CategoryColor(index.data()))
-        def displayText(self, value: Any, locale:QtCore.QLocale) -> Any:
+
+        def displayText(self, value: Any, locale: QtCore.QLocale) -> Any:
             """Convert from category to category names"""
             return (
                 {
@@ -61,20 +61,24 @@ class TrackUI(QtWidgets.QMainWindow):
 
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
+        self.windowTitleChanged.connect(self.on_windowTitleChanged)
         uic.loadUi(os.path.join(os.path.dirname(__file__), 'track.ui'), self)
+
+        self.tbl_category_rules = QtWidgets.QTableView(parent=self)
+        self.regex_spoiler.setTitle("Regex rules (hope you're a developer):")
+        self.regex_spoiler.addWidget(self.tbl_category_rules)
+
+        self.setWindowIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaSeekForward))
+        self.setGeometry(0, 0, 700, 800)
+        self.tray_icon = self._initialize_tray_icon()
+
         self._endpoint = "tcp://127.0.0.1:%s" % str(args.port)
         self._tracker = track_qt.TimeTrackerClientQt(self)
-
-        self.setGeometry(0, 0, 700, 680)  # todo: maximize vertically
-
-        self.setWindowTitle('Track')
 
         self._update_timer = QtCore.QTimer(self)
         self._update_timer.timeout.connect(self.update_idle)
 
         self.pb_quit_server.setVisible(os.environ["USER"] in {"frafue", "frans"})
-
-        self.tray_icon = self.initialize_tray_icon()
 
         self.frm_timegraph.setTracker(self._tracker)
 
@@ -109,22 +113,20 @@ class TrackUI(QtWidgets.QMainWindow):
             return
         self._tracker.get_rules_model().check_string(current.data())
 
-    def initialize_tray_icon(self) -> QtWidgets.QSystemTrayIcon:
+    def _initialize_tray_icon(self) -> QtWidgets.QSystemTrayIcon:
         def restore_window(reason: QtWidgets.QSystemTrayIcon.ActivationReason) -> None:
             if reason == QtWidgets.QSystemTrayIcon.DoubleClick:
                 self.tray_icon.hide()
-                # self.showNormal will restore the window even if it was
-                # minimized.
                 self.showNormal()
 
-        style = self.style()
-        icon = style.standardIcon(QtWidgets.QStyle.SP_MediaSeekForward)
-        tray_icon = QtWidgets.QSystemTrayIcon()
-        tray_icon.setIcon(QtGui.QIcon(icon))
-        self.setWindowIcon(QtGui.QIcon(icon))
-        # Restore the window when the tray icon is double clicked.
+        tray_icon = QtWidgets.QSystemTrayIcon(self)
+        tray_icon.setIcon(self.windowIcon())
         tray_icon.activated.connect(restore_window)
         return tray_icon
+
+    def on_windowTitleChanged(self, title: str) -> None:
+        QtCore.QCoreApplication.setApplicationName(title)
+        self.setWindowIconText(title)
 
     def on_txt_notes_textChanged(self):
         self._tracker.set_note(self.txt_notes.toPlainText())
@@ -142,7 +144,8 @@ class TrackUI(QtWidgets.QMainWindow):
     def update_idle(self) -> None:
         self._tracker.update()
         _idle = self._tracker.get_idle()
-
+        self.lbl_title.setMargin(2)
+        self.lbl_idle.setMargin(2)
         self.lbl_title.setText(self._tracker.get_current_app_title())
         self.lbl_idle.setText("%ds" % _idle)
         self.lbl_process.setText(self._tracker.get_current_process_name())
@@ -153,7 +156,6 @@ class TrackUI(QtWidgets.QMainWindow):
         _time_private = self._tracker.get_time_private()
         _time_idle = self._tracker.get_time_idle()
         percentage = 100. / _time_total
-        #self.lbl_time_total.setText("total: %s" % fmt(_time_total))
         self.lbl_time_active.setText("active: %s (%d%%)" % (
             mins_to_dur(_time_active), _time_active * percentage))
         self.lbl_time_work.setText("work: %s (%d%%)" % (
@@ -214,12 +216,13 @@ class TrackUI(QtWidgets.QMainWindow):
                     buttons=QtWidgets.QMessageBox.Ok)
                 QtWidgets.QApplication.quit()
         elif _type == QtCore.QEvent.WindowStateChange and self.isMinimized():
-            # The window is already minimized at this point.  AFAIK,
-            # there is no hook stop a minimize event. Instead,
-            # removing the Qt.Tool flag should remove the window
-            # from the taskbar.
-            self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.Tool)
-            self.tray_icon.show()
+            if "gnome" not in os.environ.get("DESKTOP_SESSION", ""):
+                # The window is already minimized at this point.  AFAIK,
+                # there is no hook stop a minimize event. Instead,
+                # removing the Qt.Tool flag should remove the window
+                # from the taskbar.
+                self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.Tool)
+                self.tray_icon.show()
             return True
         else:
             # log.debug("unhandled event '%s' (%d)",
@@ -266,11 +269,11 @@ def main() -> int:
     #with open(os.path.join(APP_DIR, STYLESHEET)) as f:
     #    app.setStyleSheet(f.read())
 
-    ex = TrackUI(args)
-    ex.show()
+    window = TrackUI(args)
+    window.show()
 
     for sig in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
-        signal.signal(sig, lambda signal, frame: ex.handle_signal(signal))
+        signal.signal(sig, lambda sign, _frame: window.handle_signal(sign))
 
     # catch the interpreter every now and then to be able to catch
     # signals

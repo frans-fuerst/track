@@ -1,31 +1,42 @@
-## progress
+# Development Progress
 
-### ToDo
+## ToDo
 
-#### version 2.0
-- [ ] allow subsequent assignment of time sections to private or work
-- [ ] provide usage statistics over a week/month/..
-- [ ] connect to scheduling tools like Outlook to get more information
-- [ ] support more states (private, project1, project2, ...)
-- [ ] statistics: compare yourself with your average data
-- [ ] statistics: draw efficiency graph
-- [ ] click and mark sections for summary and subsequent assignments
-- [ ] allow correction of work day start
-- [ ] get parent of window (e.g. 'file changed')
-- [ ] command line tool for statistics, tests etc.
-- [ ] ability to import/combine day-charts
-- [ ] markers for tagging activities
+### version 2.0
+- [ ] Allow subsequent assignment of time sections to private or work
+- [ ] Provide usage statistics over a week/month/..
+- [ ] Connect to scheduling tools like Outlook to get more information
+- [ ] Support more states (private, project1, project2, ...)
+- [ ] Statistics: compare yourself with your average data
+- [ ] Statistics: draw efficiency graph
+- [ ] Click and mark sections for summary and subsequent assignments
+- [ ] Allow correction of work day start
+- [ ] Get parent of window (e.g. 'file changed')
+- [ ] Command line tool for statistics, tests etc.
+- [ ] Ability to import/combine day-charts
+- [ ] Markers for tagging activities
 
-#### version 1.0
-- [ ] highlight current app
-- [ ] bold titles
-- [ ] find a better name (suggestions?) (time, time machine, eta, invest)
-- [ ] generate distribution script for Linux
+### version 1.0
+- [ ] Highlight current app
+- [ ] Bold titles
+- [ ] Find a better name (suggestions?) (time, time machine, eta, invest)
+- [ ] Generate distribution script for Linux
 - [ ] generate distribution script for Windows
-- [ ] preprocess title
+- [ ] Preprocess title
+- [ ] Allow Multi-Device use (e.g. store hostname in tracker data)
 
 
 ### release notes
+
+#### 2020.04.22
+- [ ] Notification when 8h
+- [ ] Markdown-Hightlight
+- [ ] Git update notification
+- [x] Allow editing private note
+- [x] Allow editing rules
+- [x] Improved UI
+- [x] Add CLI for manual investigation
+- [x] Drop Python2 support and massively improve code quality
 
 #### 2016.03.21
 - [x] split up client/server (server can run on startup)

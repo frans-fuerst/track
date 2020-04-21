@@ -42,7 +42,7 @@ However it's totally save to use the tool and it's providing some interesting
 information already.
 
 
-## Categories and rules
+## Categories and Rules
 
 In order to get an idea how much of the day you spend for work and how much
 for private stuff (or how much you spend on project A or project B) track allows
@@ -64,10 +64,10 @@ The technical approach is very simple: you define standard Python *regex* rules
 which are matched against the *title* of the active window.
 
 For example - in a very simple world - it might be enough to define that browsing
-the internet using Firefox is private stuff (category 1) and everything else
-is work (category 0). In this case you would just define one rule:
+the internet using "Firefox" is private stuff (category 3) and everything else
+is work (category 2). In this case you would just define one rule:
 
-    regex=".*-Mozilla Firefox.*" -> category=1
+    regex = `r".*-Mozilla Firefox.*"` -> category = `3`
 
 This way every program whose title does not match `.*-Mozilla Firefox.*` would
 be assigned to the default category 0 and all *Firefox* browser windows would
@@ -93,12 +93,18 @@ Try this pip command: `pip3 install --user --upgrade psutil zmq PyQt5==5.14`
 
 ## How to run
 
-Just clone the repository and run `track`.
+Clone the repo:
+```
+git clone https://github.com/frans-fuerst/track
+```
+
+Run `track` to start Track client and server. The server will keep running in background if UI
+gets closed.
 
 To list starting / endings times of recorded days run `track-cli list`
 
 
-## Know limitations / shortcomings
+## Know limitations / Shortcomings
 
 * Currently Track seems to not work well with Wayland, which might be an issue of both Track and
   Wayland. When your're on Linux consider using X11.
@@ -110,3 +116,8 @@ To list starting / endings times of recorded days run `track-cli list`
   this incident will be recorded and currently there is no way to remove this stray event and
   your day will officially start at 3:12
 * Setup / autostart worked once upon a time but doesn't now. But as a Linux Pro you know what to do.
+* Daily note does'nt get cleared on midnight (but you can simply overwrite it)
+* Break (cat 4) cannot be selected in timechart
+* Bug: Gnome Icon not working
+* Categories limited to 0-4
+* Categories as ints

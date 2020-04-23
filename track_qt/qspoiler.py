@@ -5,22 +5,22 @@
 
 from PyQt5 import QtWidgets, QtCore
 
+
 class QSpoiler(QtWidgets.QFrame):
     """Collapsable spoiler widget
         References:
             # Adapted from c++ version
             http://stackoverflow.com/questions/32476006/how-to-make-an-expandable-collapsable-section-widget-in-qt
     """
-    def __init__(self, parent=None, title=''):
-        """
-        """
-        def set_widget_properties(checked):
-            self._contentArea.setVisible(checked)
-            self._toggleButton.setArrowType(QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow)
+    def __init__(self, parent=None, title: str = "") -> None:
+        """Improvise a collapsable QFrame"""
+        def set_widget_properties(checked: bool) -> None:
+            self._content_area.setVisible(checked)
+            self._toggleButton.setArrowType(
+                QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow)
 
         super().__init__(parent=parent)
-
-        self._contentArea = QtWidgets.QWidget()
+        self._content_area = QtWidgets.QWidget()
         self._headerLine = QtWidgets.QFrame()
         self._toggleButton = QtWidgets.QToolButton()
 
@@ -36,16 +36,18 @@ class QSpoiler(QtWidgets.QFrame):
 
         self._headerLine.setFrameShape(QtWidgets.QFrame.HLine)
         self._headerLine.setFrameShadow(QtWidgets.QFrame.Sunken)
-        self._headerLine.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum)
+        self._headerLine.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum)
 
-        self._contentArea.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        self._content_area.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
 
         self._mainLayout.setVerticalSpacing(0)
         self._mainLayout.setHorizontalSpacing(0)
         self._mainLayout.setContentsMargins(0, 0, 0, 0)
         self._mainLayout.addWidget(self._toggleButton, 0, 0, 1, 1, QtCore.Qt.AlignLeft)
         self._mainLayout.addWidget(self._headerLine, 0, 2, 1, 1)
-        self._mainLayout.addWidget(self._contentArea, 1, 0, 1, 3)
+        self._mainLayout.addWidget(self._content_area, 1, 0, 1, 3)
 
         super().setLayout(self._mainLayout)
 
@@ -55,19 +57,19 @@ class QSpoiler(QtWidgets.QFrame):
 
         self._toggleButton.clicked.connect(set_widget_properties)
 
-    def setTitle(self, title):
+    def setTitle(self, title: str) -> None:
         """Sets the widget title"""
         self._toggleButton.setText(title)
 
-    def layout(self):
+    def layout(self) -> QtWidgets.QLayout:
         """Returns the layout of the content area"""
-        return self._contentArea.layout()
+        return self._content_area.layout()
 
-    def setLayout(self, contentLayout):
+    def setLayout(self, content_layout: QtWidgets.QLayout) -> None:
         """Sets the content area layout"""
-        self._contentArea.destroy()
-        self._contentArea.setLayout(contentLayout)
+        self._content_area.destroy()
+        self._content_area.setLayout(content_layout)
 
-    def addWidget(self, widget):
+    def addWidget(self, widget: QtWidgets.QWidget) -> None:
         """Adds a widget to the content areas layout"""
         self.layout().addWidget(widget)

@@ -8,6 +8,7 @@ import sys
 import signal
 import argparse
 import os.path
+import json
 import subprocess
 from contextlib import suppress
 from typing import Any
@@ -64,9 +65,25 @@ class TrackUI(QtWidgets.QMainWindow):
         self.windowTitleChanged.connect(self.on_windowTitleChanged)
         uic.loadUi(os.path.join(os.path.dirname(__file__), 'track.ui'), self)
 
-        self.tbl_category_rules = QtWidgets.QTableView(parent=self)
-        self.regex_spoiler.setTitle("Regex rules (hope you're a developer):")
+        self.tbl_category_rules = QtWidgets.QTableView()
+        self.regex_spoiler.setTitle("Category assignment rules (caution: regex)")
         self.regex_spoiler.addWidget(self.tbl_category_rules)
+
+        self.tbl_evaluation = QtWidgets.QTextEdit()
+        self.tbl_evaluation.setReadOnly(True)
+        self.tbl_evaluation.setLineWrapMode(0)
+        self.tbl_evaluation.setFontFamily("Courier New")
+        self.tbl_evaluation.setPlainText(self._render_evaluation_text(args.data_dir))
+        self.evaluation_spoiler.setTitle("Evaluation")
+        self.evaluation_spoiler.addWidget(self.tbl_evaluation)
+
+        self.txt_log = QtWidgets.QTextEdit()
+        self.txt_log.setReadOnly(True)
+        self.txt_log.setLineWrapMode(0)
+        self.txt_log.setFontFamily("Courier New")
+        self.txt_log.setPlainText("nothing to see here")
+        self.log_spoiler.setTitle("Log messages")
+        self.log_spoiler.addWidget(self.txt_log)
 
         self.setWindowIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaSeekForward))
         self.setGeometry(0, 0, 700, 800)
@@ -95,18 +112,26 @@ class TrackUI(QtWidgets.QMainWindow):
         self.tbl_active_applications.selectionModel().currentRowChanged.connect(self.cc)
 
         self.tbl_category_rules.setModel(self._tracker.get_rules_model())
-        category_rules_header = self.tbl_category_rules.horizontalHeader()
-        category_rules_header.setDefaultAlignment(QtCore.Qt.AlignLeft)
-        category_rules_header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
-        category_rules_header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
-        category_rules_header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
-        category_rules_header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
 
         self.tbl_category_rules.setDragEnabled(True)
-        self.tbl_category_rules.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
+        self.tbl_category_rules.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.tbl_category_rules.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
+        self.tbl_category_rules.setDragEnabled(True)
+        self.tbl_category_rules.setAcceptDrops(True)
         self.tbl_category_rules.setDropIndicatorShown(True)
+
+        self.tbl_category_rules.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.tbl_category_rules.viewport().setAcceptDrops(True)
         self.tbl_category_rules.setDragDropOverwriteMode(False)
+
+        category_rules_header = self.tbl_category_rules.horizontalHeader()
+        category_rules_header.setDefaultAlignment(QtCore.Qt.AlignLeft)
+        category_rules_header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        category_rules_header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+
+        self.tbl_category_rules.verticalHeader().setSectionsMovable(True)
+        self.tbl_category_rules.verticalHeader().setDragEnabled(True)
+        self.tbl_category_rules.verticalHeader().setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
     def cc(self, current):
         if not current.column() == 0:
@@ -197,6 +222,39 @@ class TrackUI(QtWidgets.QMainWindow):
                     "it's not running and start a server instance")
                 _retried = True
                 start_server_process()
+
+    def _render_evaluation_text(self, path):
+        def to_time(value):
+            return "%2d:%.2d" % (value // 60, value % 60)
+        def convert(data):
+            return data if "tracker_data" in data else {"tracker_data": data}
+        def to_string(file):
+            data = convert(json.load(open(os.path.join(path, file))))
+            apps = track_base.ActiveApplications(data["tracker_data"])
+            return("%s: %s - %s = %s => %s (note: %r)" % (
+                file.replace(".json", "").replace("track-", ""),
+                to_time(apps.begin_index()),
+                to_time(apps.end_index()),
+                to_time(apps.end_index() - apps.begin_index()),
+                to_time(apps.end_index() - apps.begin_index() - 60),
+                data.get("daily_note", "").split("\n")[0]))
+
+        return ("More coming soon - this is just a small overview \n\n" +
+                "\n".join(to_string(filename) for filename in (
+                    f
+                    for f in sorted(os.listdir(path), reverse=True)
+                    if not '-log-' in f and not "rules" in f and f.endswith(".json"))))
+
+
+
+    def keyPressEvent(self, event: QtCore.QEvent) -> bool:
+        if event.key() == QtCore.Qt.Key_Delete and self.tbl_category_rules.hasFocus():
+            indices = self.tbl_category_rules.selectedIndexes()
+            for index in indices:
+                self._tracker.get_rules_model().removeRow(index.row())
+            self.tbl_category_rules.update()
+
+        return super().keyPressEvent(event)
 
     def event(self, event: QtCore.QEvent) -> bool:
         """Handle Qt events"""

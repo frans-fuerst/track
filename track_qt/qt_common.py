@@ -3,7 +3,7 @@
 
 """Things needed by several components"""
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 
 from track_base import Category
 
@@ -11,7 +11,7 @@ from track_base import Category
 def CategoryColor(category):
     return {
         Category.IDLE: QtCore.Qt.white,
-        Category.UNASSIGNED: QtCore.Qt.lightGray,
+        Category.UNASSIGNED: QtGui.QColor(206, 92, 0),
         Category.WORK: QtCore.Qt.darkCyan,
         Category.PRIVATE: QtCore.Qt.cyan,
         Category.BREAK: QtCore.Qt.green,

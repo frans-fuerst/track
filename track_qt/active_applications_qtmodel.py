@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+
 # -*- coding: utf-8 -*-
 
-"""Describes the model containing distinct applications assigned to minutes
+"""Defines ActiveApplicationsModel
 """
+
 from typing import Any, Tuple, Dict
 
 from PyQt5 import QtCore
@@ -14,7 +17,7 @@ from track_qt.qt_common import matrix_table_model
 
 
 class ActiveApplicationsModel(matrix_table_model):
-    ''' the data model which holds all application usage data for one
+    """Data model which holds all application usage data for one
         day. That is:
 
         app_data:  {app_id: application}
@@ -30,9 +33,7 @@ class ActiveApplicationsModel(matrix_table_model):
             * sortable by key
             * can be done with list of keys sorted by given value
             [(app_id, i_secs, i_cat)]
-
-    '''
-
+    """
     def __init__(self, parent, *args) -> None:
         super().__init__(parent, *args)
         self.header = ['Application title', 'Spent', 'Category']
@@ -45,7 +46,6 @@ class ActiveApplicationsModel(matrix_table_model):
         # to be persisted
         self._apps = {}     # app identifier => AppInfo instance
         self._minutes = {}  # i_min          => minute
-
 
     def clear(self):
         with track_qt.change_emitter(self):
@@ -66,7 +66,7 @@ class ActiveApplicationsModel(matrix_table_model):
         row, column = index.row(), index.column()
         if role == QtCore.Qt.TextAlignmentRole:
             if column == 2:
-                return QtCore.Qt.AlignHCenter
+                return QtCore.Qt.AlignCenter
         if not role == QtCore.Qt.DisplayRole:
             return None
         return (

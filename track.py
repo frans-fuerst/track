@@ -68,6 +68,7 @@ class TrackUI(QtWidgets.QMainWindow):
         self.tbl_category_rules = QtWidgets.QTableView()
         self.regex_spoiler.setTitle("Category assignment rules (caution: regex)")
         self.regex_spoiler.addWidget(self.tbl_category_rules)
+        self.regex_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
 
         self.tbl_evaluation = QtWidgets.QTextEdit()
         self.tbl_evaluation.setReadOnly(True)
@@ -76,6 +77,7 @@ class TrackUI(QtWidgets.QMainWindow):
         self.tbl_evaluation.setPlainText(self._render_evaluation_text(args.data_dir))
         self.evaluation_spoiler.setTitle("Evaluation")
         self.evaluation_spoiler.addWidget(self.tbl_evaluation)
+        self.evaluation_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
 
         self.txt_log = QtWidgets.QTextEdit()
         self.txt_log.setReadOnly(True)
@@ -84,6 +86,7 @@ class TrackUI(QtWidgets.QMainWindow):
         self.txt_log.setPlainText("nothing to see here")
         self.log_spoiler.setTitle("Log messages")
         self.log_spoiler.addWidget(self.txt_log)
+        self.log_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
 
         self.setWindowIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaSeekForward))
         self.setGeometry(0, 0, 700, 800)
@@ -231,13 +234,14 @@ class TrackUI(QtWidgets.QMainWindow):
         def to_string(file):
             data = convert(json.load(open(os.path.join(path, file))))
             apps = track_base.ActiveApplications(data["tracker_data"])
+            daily_note = data.get("daily_note") or ""
             return("%s: %s - %s = %s => %s (note: %r)" % (
                 file.replace(".json", "").replace("track-", ""),
                 to_time(apps.begin_index()),
                 to_time(apps.end_index()),
                 to_time(apps.end_index() - apps.begin_index()),
                 to_time(apps.end_index() - apps.begin_index() - 60),
-                data.get("daily_note", "").split("\n")[0]))
+                daily_note.split("\n")[0]))
 
         return ("More coming soon - this is just a small overview \n\n" +
                 "\n".join(to_string(filename) for filename in (
@@ -323,9 +327,10 @@ def main() -> int:
     track_base.util.setup_logging(args)
     track_base.util.log_system_info()
     app = QtWidgets.QApplication(sys.argv)
+    with suppress(FileNotFoundError):
+        with open(os.path.join(os.path.dirname(__file__), "track.qss")) as f:
+            app.setStyleSheet(f.read())
 
-    #with open(os.path.join(APP_DIR, STYLESHEET)) as f:
-    #    app.setStyleSheet(f.read())
 
     window = TrackUI(args)
     window.show()

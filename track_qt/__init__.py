@@ -11,4 +11,4 @@ from .qt_common import (
     CategoryColor,
     )
 from .timegraph import Timegraph
-
+from .qreordertableview import ReorderTableView

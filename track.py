@@ -24,7 +24,7 @@ import track_base
 from track_base import mins_to_dur
 from track_base.util import log
 import track_qt
-from track_qt import CategoryColor
+from track_qt import CategoryColor, ReorderTableView
 
 
 def start_server_process() -> None:
@@ -33,6 +33,14 @@ def start_server_process() -> None:
     server_file = os.path.join(os.path.dirname(__file__), 'track-server')
     subprocess.Popen([sys.executable, server_file])
 
+def category_name(value):
+    return {
+        0: "idle",
+        1: "unassigned",
+        2: "work",
+        3: "private",
+        4: "break",
+        }.get(value, "?")
 
 class TrackUI(QtWidgets.QMainWindow):
     """Track recorder UI"""
@@ -45,27 +53,42 @@ class TrackUI(QtWidgets.QMainWindow):
             """Set text style and color"""
             super().initStyleOption(option, index)
             if index.column() == 2:
-                # option.font.setBold(True)
                 option.backgroundBrush = QtGui.QBrush(CategoryColor(index.data()))
 
         def displayText(self, value: Any, locale: QtCore.QLocale) -> Any:
             """Convert from category to category names"""
-            return (
-                {
-                    0: "idle",
-                    1: "unassigned",
-                    2: "work",
-                    3: "private",
-                    4: "break",
-                }.get(value, "?") if isinstance(value, int) else
-                super().displayText(value, locale))
+            return (category_name(value) if isinstance(value, int) else
+                    super().displayText(value, locale))
+
+    class RulesTableDelegate(QtWidgets.QStyledItemDelegate):
+        """Delegator which draws a coloured background for a certain column"""
+        def initStyleOption(
+                self,
+                option: QtWidgets.QStyleOptionViewItem,
+                index: QtCore.QModelIndex) -> None:
+            """Set text style and color"""
+            super().initStyleOption(option, index)
+            if index.column() == 0:
+                option.font.setFamily("Courier New")
+                if index.data() == "":
+                    option.displayAlignment = QtCore.Qt.AlignCenter
+            if index.column() == 1:
+                option.displayAlignment = QtCore.Qt.AlignCenter
+                option.backgroundBrush = QtGui.QBrush(CategoryColor(index.data()))
+
+        def displayText(self, value: Any, locale: QtCore.QLocale) -> Any:
+            """Convert from category to category names"""
+            return (category_name(value) if isinstance(value, int) else
+                    "new rule" if value is "" else
+                    super().displayText(value, locale))
+
 
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
         self.windowTitleChanged.connect(self.on_windowTitleChanged)
         uic.loadUi(os.path.join(os.path.dirname(__file__), 'track.ui'), self)
 
-        self.tbl_category_rules = QtWidgets.QTableView()
+        self.tbl_category_rules = ReorderTableView()
         self.regex_spoiler.setTitle("Category assignment rules (caution: regex)")
         self.regex_spoiler.addWidget(self.tbl_category_rules)
         self.regex_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
@@ -110,31 +133,16 @@ class TrackUI(QtWidgets.QMainWindow):
         active_applications_header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
         self.tbl_active_applications.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.tbl_active_applications.setDragEnabled(True)
-        self.tbl_active_applications.setDropIndicatorShown(True)
         self.tbl_active_applications.setItemDelegate(self.ApplicationTableDelegate())
         self.tbl_active_applications.selectionModel().currentRowChanged.connect(self.cc)
 
         self.tbl_category_rules.setModel(self._tracker.get_rules_model())
 
-        self.tbl_category_rules.setDragEnabled(True)
-        self.tbl_category_rules.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
-        self.tbl_category_rules.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
-        self.tbl_category_rules.setDragEnabled(True)
-        self.tbl_category_rules.setAcceptDrops(True)
-        self.tbl_category_rules.setDropIndicatorShown(True)
-
-        self.tbl_category_rules.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
-        self.tbl_category_rules.viewport().setAcceptDrops(True)
-        self.tbl_category_rules.setDragDropOverwriteMode(False)
-
         category_rules_header = self.tbl_category_rules.horizontalHeader()
         category_rules_header.setDefaultAlignment(QtCore.Qt.AlignLeft)
         category_rules_header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         category_rules_header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
-
-        self.tbl_category_rules.verticalHeader().setSectionsMovable(True)
-        self.tbl_category_rules.verticalHeader().setDragEnabled(True)
-        self.tbl_category_rules.verticalHeader().setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
+        self.tbl_category_rules.setItemDelegate(self.RulesTableDelegate())
 
     def cc(self, current):
         if not current.column() == 0:
@@ -249,13 +257,11 @@ class TrackUI(QtWidgets.QMainWindow):
                     for f in sorted(os.listdir(path), reverse=True)
                     if not '-log-' in f and not "rules" in f and f.endswith(".json"))))
 
-
-
     def keyPressEvent(self, event: QtCore.QEvent) -> bool:
         if event.key() == QtCore.Qt.Key_Delete and self.tbl_category_rules.hasFocus():
-            indices = self.tbl_category_rules.selectedIndexes()
-            for index in indices:
-                self._tracker.get_rules_model().removeRow(index.row())
+            rows = set(index.row() for index in self.tbl_category_rules.selectedIndexes())
+            for row in rows:
+                self._tracker.get_rules_model().removeRow(row)
             self.tbl_category_rules.update()
 
         return super().keyPressEvent(event)
@@ -327,10 +333,10 @@ def main() -> int:
     track_base.util.setup_logging(args)
     track_base.util.log_system_info()
     app = QtWidgets.QApplication(sys.argv)
-    with suppress(FileNotFoundError):
+
+    with suppress(Exception):
         with open(os.path.join(os.path.dirname(__file__), "track.qss")) as f:
             app.setStyleSheet(f.read())
-
 
     window = TrackUI(args)
     window.show()

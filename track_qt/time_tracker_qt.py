@@ -23,7 +23,7 @@ class TimeTrackerClientQt:
           well as some meta information
         * provides persistence
     """
-    def __init__(self, parent:QtWidgets.QWidget) -> None:
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
         self._req_socket = None  # type: Optional[zmq.Socket]
         self._req_poller = zmq.Poller()
         self._zmq_context = zmq.Context()
@@ -36,8 +36,8 @@ class TimeTrackerClientQt:
         self._active_day = track_base.today_int()
 
         self._applications = ActiveApplicationsModel(parent)
-        self._rules = RulesModelQt(parent)
-        self._rules.modified_rules.connect(self.update_categories)
+        self._rules = RulesModelQt(parent=parent)
+        self._rules.rulesChanged.connect(self.update_categories)
 
     def clear(self) -> None:
         # must not be overwritten - we need the instance
@@ -49,7 +49,7 @@ class TimeTrackerClientQt:
         self._receiving = True
         self._req_socket.send_json(msg)
 
-    def _req_recv(self, timeout:int, raise_on_timeout:bool) -> Dict[str, Any]:
+    def _req_recv(self, timeout: int, raise_on_timeout: bool) -> Dict[str, Any]:
         if not self._receiving or self._req_socket is None:
             raise Exception('wrong send/recv state!')
         self._receiving = False
@@ -98,7 +98,7 @@ class TimeTrackerClientQt:
 
     def _fetch_rules(self):
         rules = self._request("rules").get("rules")
-        self._rules.from_dict(rules)
+        self._rules.set_rules(rules)
 
     def note(self) -> str:
         return self._request("note").get("note")
@@ -124,7 +124,8 @@ class TimeTrackerClientQt:
         self._initialized = True
 
     def update_categories(self):
-        self._request("set_rules", data={"rules": self._rules.to_dict()})
+        log().info("Category rules have changed")
+        self._request("set_rules", data={"rules": self._rules.rules()})
 
     def set_note(self, text) -> None:
         self._request("set_note", data={"note": text})

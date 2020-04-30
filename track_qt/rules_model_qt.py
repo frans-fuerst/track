@@ -8,57 +8,49 @@ import re
 
 from typing import Any
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal
 
 from track_qt.qt_common import change_emitter
 import track_base
 from track_base import log
 
+
 class RulesModelQt(QtCore.QAbstractTableModel):
-    modified_rules = pyqtSignal()
+    rulesChanged = pyqtSignal()
 
-    def __init__(self, parent, *args):
-        super().__init__(parent, *args)
-        self._header = ['Regex', 'Category']
-        self._rules = []
+    def __init__(self, *, rules=None, parent=None):
+        super().__init__(parent)
+        self._rules = rules or []
 
-    def columnCount(self, parent):
-        return len(self._header)
+    def headerData(self, column: int, orientation, role: QtCore.Qt.ItemDataRole) -> Any:
+        return (
+            ('Regex', 'Category')[column]
+            if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal else
+            None
+        )
 
-    def rowCount(self, parent):
+    def columnCount(self, _parent: QtCore.QModelIndex = None) -> int:
+        return 2
+
+    def rowCount(self, _parent: QtCore.QModelIndex = None) -> int:
         return len(self._rules) + 1
 
-    def headerData(self, column, orientation, role):
-        return ((self._header[column] if column < len(self._header) else "???")
-                if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal else
-                None)
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        row, column = index.row(), index.column()
-        if role == QtCore.Qt.TextAlignmentRole:
-            if column == 1:
-                return QtCore.Qt.AlignHCenter
-        if role not in {QtCore.Qt.DisplayRole, QtCore.Qt.EditRole}:
-            return None
-        if row >= len(self._rules):
-            return None
-        return self._rules[row][column]
-
-    def sort(self, col, order):
-        with change_emitter(self):
-            self._sort_col = col
-            self._sort_reverse = (order != QtCore.Qt.DescendingOrder)
-            self._sort()
-
-    def from_dict(self, rules):
-        with change_emitter(self):
-            self._rules = rules
-
-    def to_dict(self):
-        return self._rules
+    def data(self, index: QtCore.QModelIndex, role: QtCore.Qt.ItemDataRole) -> Any:
+        return (
+            (
+                (
+                    self._rules[index.row()][index.column()]
+                    if index.row() < len(self._rules) else
+                    ("", 1)[index.column()]
+                    if role == QtCore.Qt.DisplayRole else
+                    (".*", 2)[index.column()]
+                )
+                if role in {QtCore.Qt.DisplayRole, QtCore.Qt.EditRole} else
+                None
+            )
+            if index.isValid() else None
+        )
 
     def setData(self, index: QtCore.QModelIndex, value: str, role: int):
         if not role == QtCore.Qt.EditRole:
@@ -90,27 +82,19 @@ class RulesModelQt(QtCore.QAbstractTableModel):
             self._rules.append(current_rule)
             self.endInsertRows()
 
-        self.modified_rules.emit()
+        self.rulesChanged.emit()
         return True
 
-    def flags(self, index):
-        defaultFlags = super().flags(index)
+    def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
+        # https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
         if not index.isValid():
-            return defaultFlags | QtCore.Qt.ItemIsDropEnabled
+            return QtCore.Qt.ItemIsDropEnabled
+        if index.row() < len(self._rules):
+            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled
+        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
 
-        return (
-            defaultFlags
-            | QtCore.Qt.ItemIsEditable
-            | QtCore.Qt.ItemIsSelectable
-            | QtCore.Qt.ItemIsEnabled
-            | QtCore.Qt.ItemIsDragEnabled
-            | QtCore.Qt.ItemIsDropEnabled)
-
-    def supportedDragActions(self):
-        return QtCore.Qt.MoveAction
-
-    def supportedDropActions(self):
-        return QtCore.Qt.MoveAction #|QtCore.Qt.CopyAction
+    def supportedDropActions(self) -> bool:
+        return QtCore.Qt.MoveAction | QtCore.Qt.CopyAction
 
     def removeRow(self, row: int):
         if row >= len(self._rules):
@@ -118,35 +102,37 @@ class RulesModelQt(QtCore.QAbstractTableModel):
         self.beginRemoveRows(QtCore.QModelIndex(), row, row)
         del self._rules[row]
         self.endRemoveRows()
-        self.modified_rules.emit()
-
-    def removeRows(self, row, count):
-        print("")
-
-    def moveRow(self, index1, row1, index2, row2):
-        print("")
-
-    def moveRows(self, index1, a, b, index2, c):
-        print("")
-
-    def insertRow(self, index, arg0=None):
-        print()
+        self.rulesChanged.emit()
 
     def insertRows(self, row, count, parent=None):
         print(row, count, parent)
         result = super().insertRows(row, count, parent)
         print(result)
-        self.modified_rules.emit()
+        self.rulesChanged.emit()
         return result
 
-    def update_categories_time(self, new_time):
-        self._time = new_time
+    def moveRow(
+            self,
+            sourceParent: QtCore.QModelIndex,
+            sourceRow: int,
+            destinationParent: QtCore.QModelIndex,
+            destinationChild: int) -> bool:
+        row_a, row_b = max(sourceRow, destinationChild), min(sourceRow, destinationChild)
+        self.beginMoveRows(QtCore.QModelIndex(), row_a, row_a, QtCore.QModelIndex(), row_b)
+        self._rules.insert(destinationChild, self._rules.pop(sourceRow))
+        self.endMoveRows()
+        self.rulesChanged.emit()
+        return True
 
-    def get_time_category(self, rule):
-        return self._time.get(rule[1], 0)
+    def set_rules(self, rules):
+        with change_emitter(self):
+            self._rules = rules
 
-    def check_string(self, string):
-        print("check",string)
+    def rules(self):
+        return self._rules
+
+    def check_string(self, string: str) -> None:
+        print("check", string)
         for regex, category in self._rules:
             if re.search(regex, string):
                 print("%r matches: %r" % (string, regex))

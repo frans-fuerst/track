@@ -23,7 +23,6 @@ class QSpoiler(QtWidgets.QFrame):
         self._content_area = QtWidgets.QWidget()
         self._headerLine = QtWidgets.QFrame()
         self._toggleButton = QtWidgets.QToolButton()
-
         self._mainLayout = QtWidgets.QGridLayout()
 
         self._toggleButton.setStyleSheet("QToolButton { border: none; }")

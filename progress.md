@@ -10,28 +10,33 @@
 - [ ] Statistics: compare yourself with your average data
 - [ ] Statistics: draw efficiency graph
 - [ ] Click and mark sections for summary and subsequent assignments
-- [ ] Allow correction of work day start
 - [ ] Get parent of window (e.g. 'file changed')
 - [ ] Command line tool for statistics, tests etc.
 - [ ] Ability to import/combine day-charts
 - [ ] Markers for tagging activities
+- [ ] Notification when time goal achieved
+- [ ] Allow Multi-Device use (e.g. store hostname in tracker data)
 
 ### version 1.0
 - [ ] Highlight current app
-- [ ] Bold titles
 - [ ] Find a better name (suggestions?) (time, time machine, eta, invest)
 - [ ] Generate distribution script for Linux
 - [ ] generate distribution script for Windows
 - [ ] Preprocess title
-- [ ] Allow Multi-Device use (e.g. store hostname in tracker data)
+- [ ] Markdown-Hightlight
 
 
 ### release notes
 
-#### 2020.04.22
-- [ ] Notification when 8h
-- [ ] Markdown-Hightlight
+#### 2020.05.01
+- [ ] Remove category indices from UI
+- [ ] track theme
+- [ ] Log to UI
 - [ ] Git update notification
+- [ ] Basic evaluation
+- [ ] track-cli cleanup
+- [x] Fix icon/title/status icon
+- [x] Reorder Rules with drag&drop
 - [x] Allow editing private note
 - [x] Allow editing rules
 - [x] Improved UI

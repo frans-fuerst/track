@@ -187,16 +187,20 @@ class TrackUI(MainWindow):
             return
         self._tracker.get_rules_model().check_string(current.data())
 
+    @QtCore.pyqtSlot()
     def on_txt_notes_textChanged(self):
         self._tracker.set_note(self.txt_notes.toPlainText())
 
+    @QtCore.pyqtSlot()
     def on_pb_quit_server_clicked(self) -> None:
         self._tracker.quit_server()
         self.close()
 
+    @QtCore.pyqtSlot(int)
     def on_frm_timegraph_clipFromClicked(self, index: int) -> None:
         self._tracker.clip_from(index)
 
+    @QtCore.pyqtSlot(int)
     def on_frm_timegraph_clipToClicked(self, index: int) -> None:
         self._tracker.clip_to(index)
 
@@ -277,9 +281,9 @@ class TrackUI(MainWindow):
         def check_and_restart():
             git_state = check_for_updates()
             if git_state == 0:
-                log().info()
+                log().info("Local track repository is in sync with GitHub")
             elif git_state == 1:
-                log().info()
+                log().info("You have local commits not pushed yet")
             elif git_state in {2, 3}:
                 QtCore.QMetaObject.invokeMethod(
                     self, '_show_info_popup', QtCore.Qt.QueuedConnection)
@@ -359,6 +363,9 @@ class TrackUI(MainWindow):
 
     def closeEvent(self, event: QtCore.QEvent) -> None:
         """Shut down gracefully (i.e. close threads)"""
+        log().info(
+            "Application is about to close %s",
+            "(but server still running)" if self._tracker.connected else "")
         self._update_timer.stop()
         if self._tracker.initialized():
             with suppress(errors.NotConnected, RuntimeError):

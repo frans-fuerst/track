@@ -132,7 +132,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return super().event(e)
 
     def closeEvent(self, event):
-        log().info("application is about to close")
         for handler in logging.getLogger().handlers:
             if isinstance(handler, self.QPlainTextEditLogger):
                 logging.getLogger().removeHandler(handler)

@@ -20,7 +20,7 @@ class TimeTracker:
           well as some meta information
         * provides persistence
     """
-    def __init__(self) -> None:
+    def __init__(self, data_dir) -> None:
         self._idle_current = 0
         self._current_minute = 0  # does not need to be highest minute index
         self._current_app_title = ""
@@ -28,7 +28,7 @@ class TimeTracker:
         self._current_category = 0
         self._user_is_active = True
         self._active_day = common.today_int()
-        self._storage_dir = os.path.expanduser("~/.track")
+        self._storage_dir = data_dir
 
         # -- data to persist
         data = catch(

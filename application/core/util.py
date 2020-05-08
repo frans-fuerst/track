@@ -60,13 +60,6 @@ def setup_logging(args: argparse.Namespace, syslog=False) -> None:
         logging.getLogger().addHandler(handler)
 
 
-def log_system_info() -> None:
-    """Print some interestion system information used for problem solving"""
-    log().info("Used Python interpreter: v%s (%s)",
-               '.'.join((str(e) for e in sys.version_info)), sys.executable)
-    log().info("app version:  %s", str(version_info))
-
-
 def throw(exc: Exception) -> NoReturn:
     """Use an exception as function"""
     raise exc

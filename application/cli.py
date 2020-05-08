@@ -66,7 +66,7 @@ def to_time(value):
 
 
 def fn_show(args) -> None:
-    log_dir = os.path.expanduser("~/.track")
+    log_dir = args.data_dir
 
     log().info("Show infos for %r", args.element)
     for file in args.element:
@@ -85,7 +85,7 @@ def fn_show(args) -> None:
 
 
 def fn_info(args) -> None:
-    log_dir = os.path.expanduser("~/.track")
+    log_dir = args.data_dir
     log().info("List recorded data")
     for file in (
             f
@@ -114,7 +114,7 @@ def main(argv=None) -> int:
 
     args = parse_arguments(argv or sys.argv[1:])
     util.setup_logging(args)
-    util.log_system_info()
+    util.log_system_info(args)
 
     args.func(args)
 

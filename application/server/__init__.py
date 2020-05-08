@@ -24,12 +24,12 @@ class TrackServer:
     """ track activities, provide them to a time_tracker instance and
         run a zmq/json based server which provides the info to external
         consumers like a UI or a web service"""
-    def __init__(self) -> None:
+    def __init__(self, args: argparse.Namespace) -> None:
         self._running = False
         self._system_monitoring_thread = threading.Thread(
             target=self._system_monitoring_fn,
             daemon=True)
-        self._tracker = core.TimeTracker()
+        self._tracker = core.TimeTracker(data_dir=args.data_dir)
         self._last_save_time = 0.
 
     def _save_data(self, interval: int = 20, force: bool = False) -> None:
@@ -180,11 +180,11 @@ def main() -> None:
     """Doc"""
     args = parse_arguments()
     util.setup_logging(args, syslog=True)
-    util.log_system_info()
+    common.log_system_info(args)
 
     for sig in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
         signal.signal(sig, lambda signal, frame: sys.exit)  # type: ignore
-    TrackServer().run(args)
+    TrackServer(args).run(args)
 
 
 if __name__ == "__main__":

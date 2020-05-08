@@ -16,7 +16,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from .. import application_root_dir
 
 from ..core.util import (
-    log_system_info,
     log,
     open_in_directory_of,
 )
@@ -52,7 +51,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.idle_timer.timeout.connect(lambda: None)
         self.idle_timer.start(200)
 
-        log_system_info()
         log().info("app dir: %r", application_root_dir())
 
         self.setMouseTracking(True)

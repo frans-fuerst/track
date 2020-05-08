@@ -4,11 +4,15 @@
 """All the stuff needed by several components
 """
 
+import os
+import sys
 from datetime import datetime
 import time
-import os
 import argparse
 from enum import IntEnum
+
+from .util import log
+from . import version_info
 
 
 class Category(IntEnum):
@@ -144,3 +148,11 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
                         '-d',
                         default=os.path.expanduser('~/.track'),)
     parser.add_argument('--port', type=int, default=3456, help='IPv4 port to connect to')
+
+
+def log_system_info(args) -> None:
+    """Print some interestion system information used for problem solving"""
+    log().info("Used Python interpreter: v%s (%s)",
+               '.'.join((str(e) for e in sys.version_info)), sys.executable)
+    log().info("App version:  %s", str(version_info))
+    log().info("Track dir:  %s", args.data_dir)

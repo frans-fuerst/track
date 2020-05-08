@@ -29,11 +29,16 @@ from .time_tracker_qt import TimeTrackerClientQt
 from .qt_common import CategoryColor, SimpleQtThread
 
 
-def start_server_process() -> None:
+def start_server_process(args) -> None:
     """Start the track server"""
     log().info('start track server daemon')
     server_file = os.path.join(os.path.dirname(__file__), '../../track-server')
-    subprocess.Popen([sys.executable, server_file])
+    subprocess.Popen([
+        sys.executable, server_file,
+        "--log-level", args.log_level,
+        "--data-dir", args.data_dir,
+        "--port", str(args.port),
+    ])
 
 
 def category_name(value):
@@ -125,6 +130,7 @@ class TrackUI(MainWindow):
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
 
+        self._args = args
         self.tbl_category_rules = ReorderTableView()
         self.regex_spoiler.setTitle("Category assignment rules (caution: regex)")
         self.regex_spoiler.addWidget(self.tbl_category_rules)
@@ -134,7 +140,8 @@ class TrackUI(MainWindow):
         self.tbl_evaluation.setReadOnly(True)
         self.tbl_evaluation.setLineWrapMode(0)
         self.tbl_evaluation.setFontFamily("Courier New")
-        self.tbl_evaluation.setPlainText(self._render_evaluation_text(args.data_dir))
+        with suppress(FileNotFoundError):
+            self.tbl_evaluation.setPlainText(self._render_evaluation_text(args.data_dir))
         self.evaluation_spoiler.setTitle("Evaluation")
         self.evaluation_spoiler.addWidget(self.tbl_evaluation)
         self.evaluation_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
@@ -146,6 +153,8 @@ class TrackUI(MainWindow):
         self.log_spoiler.setExpanded(True)
 
         self.setup_common_widgets()
+
+        common.log_system_info(args)
 
         self.setWindowIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaSeekForward))
         self.setGeometry(0, 0, 700, 800)
@@ -159,7 +168,7 @@ class TrackUI(MainWindow):
 
         self._start_git_update_check()
 
-        self.pb_quit_server.setVisible(os.environ["USER"] in {"frafue", "frans"})
+        self.pb_quit_server.setVisible(os.environ.get("USER", "") in {"frafue", "frans"})
 
         self.frm_timegraph.setTracker(self._tracker)
 
@@ -259,7 +268,7 @@ class TrackUI(MainWindow):
                     "could not connect to server - assume "
                     "it's not running and start a server instance")
                 _retried = True
-                start_server_process()
+                start_server_process(self._args)
 
     @QtCore.pyqtSlot()
     def _show_info_popup(self):
@@ -386,7 +395,6 @@ def main() -> int:
     """
     args = parse_arguments()
     core.util.setup_logging(args)
-    core.util.log_system_info()
     app = QtWidgets.QApplication(sys.argv)
 
     window = TrackUI(args)

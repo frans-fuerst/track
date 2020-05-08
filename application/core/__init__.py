@@ -4,7 +4,7 @@
 from collections import namedtuple
 
 version_info = namedtuple('version_info', ['major', 'minor', 'micro', 'patch'])
-version_info = version_info(major=2020, minor=4, micro=17, patch=0)
+version_info = version_info(major=2020, minor=5, micro=8, patch=0)
 
 from . import util
 from . import errors

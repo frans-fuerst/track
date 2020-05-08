@@ -31,7 +31,10 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
 
     parser_list = subparsers.add_parser('list', help='list basic logs')
     parser_list.set_defaults(func=fn_info)
-    parser_list.add_argument("element", nargs="*")
+
+    parser_show = subparsers.add_parser('show', help='show content of one log file')
+    parser_show.set_defaults(func=fn_show)
+    parser_show.add_argument("element", nargs="+")
 
     parser.set_defaults(func=lambda *a: parser.print_usage())
 
@@ -58,45 +61,51 @@ def convert(data):
     return data if "tracker_data" in data else {"tracker_data": data}
 
 
-def fn_info(args) -> None:
-    def to_time(value):
-        return "%2d:%.2d" % (value // 60, value % 60)
-    log_dir = os.path.expanduser("~/.track")
-    if args.element:
-        log().info("Show infos for %r", args.element)
-        for file in args.element:
-            data = convert(json.load(open(os.path.join(log_dir, file))))
-            apps = ActiveApplications(data["tracker_data"])
-            print("%s: %s - %s = %s => %s" % (
-                file,
-                to_time(apps.begin_index()),
-                to_time(apps.end_index()),
-                to_time(apps.end_index() - apps.begin_index()),
-                to_time(apps.end_index() - apps.begin_index() - 60)))
-            for time in (t for t in range(apps.begin_index(), apps.end_index()) if t in apps._minutes):
-                print(to_time(time))
+def to_time(value):
+    return "%2d:%.2d" % (value // 60, value % 60)
 
-    else:
-        log().info("List recorded data")
-        for file in (
-                f
-                for f in sorted(os.listdir(log_dir))
-                if not '-log-' in f and not "rules" in f and f.endswith(".json")
-                ):
-            data = convert(json.load(open(os.path.join(log_dir, file))))
-            if "20200503" in file:
-                print(file)
-            apps = ActiveApplications(data["tracker_data"])
-            daily_note = data.get("daily_note") or ""
-            print("%s: %s - %s = %s => %s (note: %r)" % (
-                file,
-                to_time(apps.begin_index()),
-                to_time(apps.end_index()),
-                to_time(apps.end_index() - apps.begin_index()),
-                to_time(apps.end_index() - apps.begin_index() - 60),
-                daily_note.split("\n")[0]))
-            #print("".join(("X" if minute in apps._minutes else " ")
-            #        for minute in range(apps.begin_index(), apps.end_index() + 1)))
+
+def fn_show(args) -> None:
+    log_dir = os.path.expanduser("~/.track")
+
+    log().info("Show infos for %r", args.element)
+    for file in args.element:
+        data = convert(json.load(open(os.path.join(log_dir, file))))
+        apps = ActiveApplications(data["tracker_data"])
+        daily_note = data.get("daily_note") or ""
+        print("%s: %s - %s = %s => %s" % (
+            file,
+            to_time(apps.begin_index()),
+            to_time(apps.end_index()),
+            to_time(apps.end_index() - apps.begin_index()),
+            to_time(apps.end_index() - apps.begin_index() - 60)))
+        for time in (t for t in range(apps.begin_index(), apps.end_index()) if t in apps._minutes):
+            print(to_time(time))
+        print(daily_note)
+
+
+def fn_info(args) -> None:
+    log_dir = os.path.expanduser("~/.track")
+    log().info("List recorded data")
+    for file in (
+            f
+            for f in sorted(os.listdir(log_dir))
+            if '-log-' not in f and "rules" not in f and f.endswith(".json")
+            ):
+        data = convert(json.load(open(os.path.join(log_dir, file))))
+        if "20200503" in file:
+            print(file)
+        apps = ActiveApplications(data["tracker_data"])
+        daily_note = data.get("daily_note") or ""
+        print("%s: %s - %s = %s => %s (note: %r)" % (
+            file,
+            to_time(apps.begin_index()),
+            to_time(apps.end_index()),
+            to_time(apps.end_index() - apps.begin_index()),
+            to_time(apps.end_index() - apps.begin_index() - 60),
+            daily_note.split("\n")[0]))
+        # print("".join(("X" if minute in apps._minutes else " ")
+        #        for minute in range(apps.begin_index(), apps.end_index() + 1)))
 
 
 def main(argv=None) -> int:

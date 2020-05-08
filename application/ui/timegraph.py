@@ -4,14 +4,14 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 from ..core import common
-from . import CategoryColor
+from .qt_common import CategoryColor
 
 
 class Timegraph(QtWidgets.QFrame):
     clipFromClicked = QtCore.pyqtSignal(int)
     clipToClicked = QtCore.pyqtSignal(int)
 
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self._tracker = None
         self.setMouseTracking(True)
@@ -34,6 +34,8 @@ class Timegraph(QtWidgets.QFrame):
         qp.end()
 
     def mouseMoveEvent(self, event):
+        if self._tracker is None:
+            return
         _index = self._tracker.begin_index() - 50 + event.x() - 1
         _cs, _activity = self._tracker.info(_index)
 

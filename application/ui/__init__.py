@@ -108,6 +108,7 @@ class TrackUI(MainWindow):
         self.log_spoiler.setTitle("Log messages")
         self.log_spoiler.addWidget(self.log_view)
         self.log_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.log_spoiler.setExpanded(True)
 
         self.setup_common_widgets()
 
@@ -262,6 +263,7 @@ class TrackUI(MainWindow):
             if self._connect():
                 self._update_timer.start(1000)
                 self.txt_notes.setText(self._tracker.note())
+                self.log_spoiler.setExpanded(False)
 
             else:
                 QtWidgets.QMessageBox.information(

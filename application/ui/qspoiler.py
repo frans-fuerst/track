@@ -12,7 +12,7 @@ class QSpoiler(QtWidgets.QFrame):
             # Adapted from c++ version
             http://stackoverflow.com/questions/32476006/how-to-make-an-expandable-collapsable-section-widget-in-qt
     """
-    def __init__(self, parent=None, title: str = "") -> None:
+    def __init__(self, parent=None, title: str = "", expanded:bool=False) -> None:
         """Improvise a collapsable QFrame"""
         def set_widget_properties(checked: bool) -> None:
             self._content_area.setVisible(checked)
@@ -29,7 +29,7 @@ class QSpoiler(QtWidgets.QFrame):
         self._toggleButton.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         self.setTitle(title)
         self._toggleButton.setCheckable(True)
-        self._toggleButton.setChecked(False)
+        self._toggleButton.setChecked(expanded)
 
         set_widget_properties(self._toggleButton.isChecked())
 
@@ -54,7 +54,10 @@ class QSpoiler(QtWidgets.QFrame):
         default_layout.setContentsMargins(10, 0, 0, 0)
         self.setLayout(default_layout)
 
-        self._toggleButton.clicked.connect(set_widget_properties)
+        self._toggleButton.toggled.connect(set_widget_properties)
+
+    def setExpanded(self, expanded:bool) -> None:
+        self._toggleButton.setChecked(expanded)
 
     def setTitle(self, title: str) -> None:
         """Sets the widget title"""

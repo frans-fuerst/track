@@ -29,3 +29,9 @@ class change_emitter:
     def __exit__(self, type, value, tb):
         self._emitter.layoutChanged.emit()
 
+
+class SimpleQtThread(QtCore.QThread):
+    def __init__(self, target):
+        super().__init__()
+        self.run = target
+        self.start()

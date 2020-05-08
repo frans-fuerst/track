@@ -26,7 +26,7 @@ from ..core.util import log
 from .mainwindow import MainWindow
 from .qreordertableview import ReorderTableView
 from .time_tracker_qt import TimeTrackerClientQt
-from .qt_common import CategoryColor
+from .qt_common import CategoryColor, SimpleQtThread
 
 
 def start_server_process() -> None:
@@ -45,6 +45,41 @@ def category_name(value):
         3: "private",
         4: "break",
         }.get(value, "?")
+
+
+def check_for_updates() -> None:
+    """Identifies whether the track instance is git versioned, fetches from upstream and
+    checks whether there are updates to pull"""
+    log().info("Check for remote app updates on git remote..")
+    def git_cmd(cmd) -> str:
+        result = subprocess.run(
+            ["git"] + cmd,
+            cwd=os.path.dirname(__file__),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+            universal_newlines=True)
+        for line in (l for l in result.stderr.split("\n") if l.strip() != ""):
+            log().debug("git: %r", line)
+        return result.stdout.rstrip("\n")
+
+    try:
+        origin = git_cmd(["config", "--get", "remote.origin.url"])
+        log().debug("Git repo origin: %r", origin)
+        if "frans-fuerst/track" not in origin:
+            log().info("Identified git repo is not the original one - skip fetch")
+            return
+        for line in git_cmd(["fetch"]):
+            log().debug(line)
+        local_sha = git_cmd(["rev-parse", "@"])
+        remote_sha = git_cmd(["rev-parse", "@{u}"])
+        base_sha = git_cmd(["merge-base", "@", "@{u}"])
+        return (0 if local_sha == remote_sha else
+                1 if remote_sha == base_sha else
+                2 if local_sha == base_sha else
+                3)
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        log().warning("Was not able to check for git updates: %r", exc)
 
 
 class TrackUI(MainWindow):
@@ -121,6 +156,8 @@ class TrackUI(MainWindow):
 
         self._update_timer = QtCore.QTimer(self)
         self._update_timer.timeout.connect(self.update_idle)
+
+        self._start_git_update_check()
 
         self.pb_quit_server.setVisible(os.environ["USER"] in {"frafue", "frans"})
 
@@ -220,6 +257,37 @@ class TrackUI(MainWindow):
                 _retried = True
                 start_server_process()
 
+    @QtCore.pyqtSlot()
+    def _show_info_popup(self):
+        if QtWidgets.QMessageBox.question(
+                self,
+                "Good news everyone!",
+                "Looks like Track has been updated on GitHub.\n"
+                "Maybe you should give it a try and run `git pull` (manually)!\n"
+                "Do you want to close Track (and its server)?"
+                ) == QtWidgets.QMessageBox.Yes:
+            self._tracker.quit_server()
+            self.close()
+
+    @QtCore.pyqtSlot()
+    def _git_update_timer_timeout(self):
+        QtCore.QTimer.singleShot(10 * 60 * 1000, self._start_git_update_check)
+
+    def _start_git_update_check(self):
+        def check_and_restart():
+            git_state = check_for_updates()
+            if git_state == 0:
+                log().info()
+            elif git_state == 1:
+                log().info()
+            elif git_state in {2, 3}:
+                QtCore.QMetaObject.invokeMethod(
+                    self, '_show_info_popup', QtCore.Qt.QueuedConnection)
+            QtCore.QMetaObject.invokeMethod(
+                self, '_git_update_timer_timeout', QtCore.Qt.QueuedConnection)
+
+        self._just_to_keep_the_thread = SimpleQtThread(target=check_and_restart)
+
     @staticmethod
     def _render_evaluation_text(path):
         def to_time(value):
@@ -258,8 +326,7 @@ class TrackUI(MainWindow):
     def event(self, event: QtCore.QEvent) -> bool:
         """Handle Qt events"""
         _type = event.type()
-        if _type == QtCore.QEvent.WindowActivate and not self._tracker.connected:
-            # we abuse this event as some sort of WindowShow event
+        if isinstance(event, QtGui.QShowEvent) and not self._tracker.connected:
             if self._connect():
                 self._update_timer.start(1000)
                 self.txt_notes.setText(self._tracker.note())

@@ -31,10 +31,11 @@
 #### 2020.05.01
 - [ ] Remove category indices from UI
 - [ ] track theme
-- [ ] Log to UI
-- [ ] Git update notification
 - [ ] Basic evaluation
+- [ ] re-establish tests
 - [ ] track-cli cleanup
+- [x] Git update notification
+- [x] Log to UI
 - [x] Fix icon/title/status icon
 - [x] Reorder Rules with drag&drop
 - [x] Allow editing private note

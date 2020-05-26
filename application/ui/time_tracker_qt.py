@@ -38,8 +38,8 @@ class TimeTrackerClientQt(TimechartDataprovider):
         self._active_day = core.today_int()
 
         self._applications = ActiveApplicationsModel(parent)
-        self._rules = RulesModelQt(parent=parent)
-        self._rules.rulesChanged.connect(self.update_categories)
+        self._rules_model = RulesModelQt(parent=parent)
+        self._rules_model.rulesChanged.connect(self.update_categories)
         self._date = datetime.now()
 
     def date(self):
@@ -147,7 +147,7 @@ class TimeTrackerClientQt(TimechartDataprovider):
 
     def _fetch_rules(self):
         rules = self._request("rules").get("rules")
-        self._rules.set_rules(rules)
+        self._rules_model.set_rules(rules)
 
     def note(self) -> str:
         return self._request("note").get("note")
@@ -168,7 +168,7 @@ class TimeTrackerClientQt(TimechartDataprovider):
 
     def update_categories(self):
         log().info("Category rules have changed")
-        self._request("set_rules", data={"rules": self._rules.rules()})
+        self._request("set_rules", data={"rules": self._rules_model.rules()})
 
     def set_note(self, text) -> None:
         self._request("set_note", data={"note": text})
@@ -181,8 +181,8 @@ class TimeTrackerClientQt(TimechartDataprovider):
     def get_applications_model(self):
         return self._applications
 
-    def get_rules_model(self):
-        return self._rules
+    def rules_model(self):
+        return self._rules_model
 
     def is_active(self, minute):
         return self._applications.is_active(minute)

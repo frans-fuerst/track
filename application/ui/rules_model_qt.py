@@ -129,6 +129,7 @@ class RulesModelQt(QtCore.QAbstractTableModel):
     def set_rules(self, rules):
         with change_emitter(self):
             self._rules = rules
+            self.rulesChanged.emit()
 
     def rules(self):
         return self._rules

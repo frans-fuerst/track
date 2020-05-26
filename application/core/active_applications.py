@@ -28,12 +28,7 @@ class ActiveApplications:
             [(app_id, i_secs, i_cat)]
     """
     def __init__(self, json_data=None):
-        self._index_min = None
-        self._index_max = None
-
-        # to be persisted
-        self._apps = {}     # app identifier => AppInfo instance
-        self._minutes = {}  # i_min          => minute
+        self.clear()
 
         if json_data is not None:
             self.from_dict(json_data)
@@ -181,3 +176,6 @@ class ActiveApplications:
 
     def category_at(self, minute):
         return self._minutes[minute].main_category() if minute in self._minutes else 0
+
+    def apps(self):
+        return (app for _, app in self._apps.items())

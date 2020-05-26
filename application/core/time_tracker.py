@@ -6,10 +6,9 @@
 
 import json
 import os
-import re
-from typing import Dict, Any, Sequence, Tuple
+from typing import Any, Dict, Sequence, Tuple  # pylint: disable=unused-import
 
-from . import common, ActiveApplications, AppInfo, Category
+from . import common, ActiveApplications, Category
 from ..core.util import catch, log, exception_to_string
 from ..core import desktop_usage_info
 
@@ -54,18 +53,7 @@ class TimeTracker:
                 (r"^DER SPIEGEL", 3),
                 (r".*SZ.de", 3),
             ])
-        self._recategorize()
-
-    def _get_category(self, app: AppInfo) -> Category:
-        app_string_representation = app.generate_identifier()
-        for rule, category in self._re_rules:
-            if re.search(rule, app_string_representation):
-                return category
-        return common.Category.UNASSIGNED
-
-    def _recategorize(self):
-        for _title, app in self._applications._apps.items():
-            app._category = self._get_category(app)
+        common.recategorize(self._applications.apps(), self._re_rules)
 
     def _load_json(self, filename: str) -> Any:
         """Properly read data from a JSON file"""
@@ -113,7 +101,7 @@ class TimeTracker:
     def set_rules(self, rules) -> None:
         """Store a new set of regex rules and recalculate categories"""
         self._re_rules = rules
-        self._recategorize()
+        common.recategorize(self._applications.apps(), self._re_rules)
 
     def set_note(self, note) -> None:
         """Store daily note"""
@@ -145,10 +133,10 @@ class TimeTracker:
                 self._user_is_active = False
                 return
 
-            _app = common.AppInfo(self._current_app_title, self._current_process_exe)
-            self._current_category = self._get_category(_app)
-            _app._category = self._current_category
-            self._applications.update(self._current_minute, _app)
+            app = common.AppInfo(self._current_app_title, self._current_process_exe)
+            self._current_category = common.get_category(app, self._re_rules)
+            app.set_category(self._current_category)
+            self._applications.update(self._current_minute, app)
         except KeyError as exc:
             log().error("%r", _app_info)
             log().error("Got exception %r", exception_to_string(exc))

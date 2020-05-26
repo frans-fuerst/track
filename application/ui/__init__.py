@@ -18,7 +18,6 @@ except ImportError:
           % ".".join(str(x) for x in sys.version_info))
     sys.exit(-1)
 
-#from .. import core
 from ..core import common, errors, util
 from ..core.util import log
 
@@ -216,7 +215,8 @@ class TrackUI(MainWindow):
         self.tbl_active_applications.setItemDelegate(self.ApplicationTableDelegate())
         self.tbl_active_applications.selectionModel().currentRowChanged.connect(self.cc)
 
-        self.tbl_category_rules.setModel(self._tracker.get_rules_model())
+        self._tracker.rules_model().rulesChanged.connect(self.on_rules_changed)
+        self.tbl_category_rules.setModel(self._tracker.rules_model())
 
         category_rules_header = self.tbl_category_rules.horizontalHeader()
         category_rules_header.setDefaultAlignment(QtCore.Qt.AlignLeft)
@@ -227,7 +227,7 @@ class TrackUI(MainWindow):
     def cc(self, current):
         if not current.column() == 0:
             return
-        self._tracker.get_rules_model().check_string(current.data())
+        self._tracker.rules_model().check_string(current.data())
 
     @QtCore.pyqtSlot()
     def on_txt_notes_textChanged(self):
@@ -237,6 +237,13 @@ class TrackUI(MainWindow):
     def on_pb_quit_server_clicked(self) -> None:
         self._tracker.quit_server()
         self.close()
+
+    @QtCore.pyqtSlot()
+    def on_rules_changed(self) -> None:
+        self.tbl_category_rules.update()
+        for i in range(self.tbl_evaluation.count()):
+            self.tbl_evaluation.itemWidget(
+                self.tbl_evaluation.item(i)).recategorize(self._tracker.rules_model().rules())
 
     def update_idle(self) -> None:
         self._tracker.update()
@@ -311,8 +318,7 @@ class TrackUI(MainWindow):
         if event.key() == QtCore.Qt.Key_Delete and self.tbl_category_rules.hasFocus():
             rows = set(index.row() for index in self.tbl_category_rules.selectedIndexes())
             for row in rows:
-                self._tracker.get_rules_model().removeRow(row)
-            self.tbl_category_rules.update()
+                self._tracker.rules_model().removeRow(row)
 
         return super().keyPressEvent(event)
 

@@ -67,6 +67,9 @@ class FileDataprovider(TimechartDataprovider):
     def time_idle(self):
         return self.time_total() - self.time_active()
 
+    def recategorize(self, rules: common.Rules) -> None:
+        common.recategorize(self.apps.apps(), rules)
+
 
 class Timegraph(QtWidgets.QFrame):
     clipFromClicked = QtCore.pyqtSignal(int)
@@ -229,3 +232,7 @@ class EvaluationWidget(QtWidgets.QFrame):
             fmt(dp.begin_index()),
             fmt(dp.current_minute()),
             common.mins_to_dur(_time_total)))
+
+    def recategorize(self, rules: common.Rules):
+        self.timegraph.dataprovider().recategorize(rules)
+        self.timegraph.update()

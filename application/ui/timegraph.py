@@ -35,10 +35,10 @@ class FileDataprovider(TimechartDataprovider):
         return self.end_index()
 
     def clip_from(self, index: str) -> None:
-        pass
+        self.apps.clip_from(index)
 
     def clip_to(self, index: int) -> None:
-        pass
+        self.apps.clip_to(index)
 
     def begin_index(self):
         return self.apps.begin_index()
@@ -198,10 +198,12 @@ class EvaluationWidget(QtWidgets.QFrame):
     @QtCore.pyqtSlot(int)
     def on_timegraph_clipFromClicked(self, index: int) -> None:
         self.timegraph.dataprovider().clip_from(index)
+        self.update_widgets()
 
     @QtCore.pyqtSlot(int)
     def on_timegraph_clipToClicked(self, index: int) -> None:
         self.timegraph.dataprovider().clip_to(index)
+        self.update_widgets()
 
     def set_dataprovider(self, dataprovider):
         self.timegraph.set_dataprovider(dataprovider)
@@ -211,6 +213,7 @@ class EvaluationWidget(QtWidgets.QFrame):
         def fmt(dur: int) -> str:
             return "%0.2d:%0.2d" % (int(dur // 60), dur % 60)
 
+        self.timegraph.update()
         dp = self.timegraph.dataprovider()
         self.lbl_date.setText(dp.date().strftime("%Y/%m/%d-%A"))
         _time_total = dp.time_total()
@@ -235,4 +238,4 @@ class EvaluationWidget(QtWidgets.QFrame):
 
     def recategorize(self, rules: common.Rules):
         self.timegraph.dataprovider().recategorize(rules)
-        self.timegraph.update()
+        self.update_widgets()

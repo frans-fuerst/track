@@ -32,6 +32,10 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
     parser_list = subparsers.add_parser('list', help='list basic logs')
     parser_list.set_defaults(func=fn_info)
 
+    parser_server = subparsers.add_parser('server', help='send command to server')
+    parser_server.set_defaults(func=fn_server)
+    parser_server.add_argument("command")
+
     parser_show = subparsers.add_parser('show', help='show content of one log file')
     parser_show.set_defaults(func=fn_show)
     parser_show.add_argument("element", nargs="+")
@@ -63,6 +67,18 @@ def convert(data):
 
 def to_time(value):
     return "%2d:%.2d" % (value // 60, value % 60)
+
+def fn_server(args) -> None:
+    if args.command not in {"quit", "version", "apps", "current", "rules", "save", "note"}:
+        log().error("Command not known: %r", args.command)
+        return
+
+    try:
+        result = send_request({"cmd": args.command})
+        handle_result(result)
+    except zmq.ZMQError as e:
+        log.error(e)
+        return
 
 
 def fn_show(args) -> None:
@@ -114,50 +130,10 @@ def main(argv=None) -> int:
 
     args = parse_arguments(argv or sys.argv[1:])
     util.setup_logging(args)
-    util.log_system_info(args)
+    common.log_system_info(args)
 
     args.func(args)
 
-    '''
-    args = sys.argv[1:]
-
-    if args == []:
-        print('no command provided')
-        return
-    elif args == ['quit']:
-        request = {'type': 'quit'}
-
-    elif args == ['version']:
-        request = {'type': 'version'}
-
-    elif args == ['apps']:
-        request = {'type': 'apps'}
-
-    elif args == ['current']:
-        request = {'type': 'current'}
-
-    elif args == ['rules']:
-        request = {'type': 'rules'}
-
-    elif args == ['save']:
-        request = {'type': 'save'}
-
-    elif args == ['help']:
-        print(['quit', 'version', 'apps', 'current', 'rules'])
-        sys.exit()
-
-    else:
-        raise Exception('command not handled: %s' % args)
-
-    try:
-        result = send_request(request)
-        handle_result(result)
-    except zmq.ZMQError as e:
-        log.error(e)
-        return
-    except KeyboardInterrupt:
-        log.info("got keyboard interrupt - exit")
-    '''
 
 if __name__ == "__main__":
     with suppress(KeyboardInterrupt, BrokenPipeError):

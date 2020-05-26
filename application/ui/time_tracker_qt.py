@@ -5,7 +5,7 @@
 """
 
 from contextlib import suppress
-
+from datetime import datetime
 from typing import Dict, Any, Optional
 from PyQt5 import QtWidgets  # type: ignore
 
@@ -13,12 +13,13 @@ import zmq  # type: ignore
 
 from .active_applications_qtmodel import ActiveApplicationsModel
 from .rules_model_qt import RulesModelQt
+from .qt_common import TimechartDataprovider
 from .. import core
 from ..core.util import log
 from ..core import errors
 
 
-class TimeTrackerClientQt:
+class TimeTrackerClientQt(TimechartDataprovider):
     """ * retrieves system data
         * holds the application data object as
           well as some meta information
@@ -30,7 +31,7 @@ class TimeTrackerClientQt:
         self._zmq_context = zmq.Context()
         self._receiving = False
 
-        self._current_data = None
+        self._current_data = {}
         self._initialized = False
         self.connected = False
 
@@ -39,9 +40,51 @@ class TimeTrackerClientQt:
         self._applications = ActiveApplicationsModel(parent)
         self._rules = RulesModelQt(parent=parent)
         self._rules.rulesChanged.connect(self.update_categories)
+        self._date = datetime.now()
+
+    def date(self):
+        return self._date
+
+    def initialized(self):
+        return self._initialized
+
+    def begin_index(self):
+        return self._applications.begin_index()
+
+    def end_index(self):
+        return self._applications.end_index()
+
+    def info_at(self, minute: int):
+        return self._applications.info_at(minute)
+
+    def category_at(self, minute: int):
+        return self._applications.category_at(minute)
+
+    def current_minute(self):
+        return self._current_data.get('minute', 0)
+
+    def time_total(self):
+        return self.end_index() - self.begin_index() + 1
+
+    def time_active(self):
+        return len(self._applications._minutes)
+
+    def time_work(self):
+        return sum(minute.main_category() == 2 for _, minute in self._applications._minutes.items())
+
+    def time_private(self):
+        return sum(minute.main_category() == 3 for _, minute in self._applications._minutes.items())
+
+    def time_idle(self):
+        return self.time_total() - len(self._applications._minutes)
+
+    def clip_from(self, index: str) -> None:
+        self._request("clip_from", data={"index": index})
+
+    def clip_to(self, index: int) -> None:
+        self._request("clip_to", data={"index": index})
 
     def clear(self) -> None:
-        # must not be overwritten - we need the instance
         self._applications.clear()
 
     def _req_send(self, msg: Dict[str, Any]) -> None:
@@ -68,7 +111,7 @@ class TimeTrackerClientQt:
     def _request(self,
                  cmd: str,
                  *,
-                 data: Optional[Dict[str, Any]] = None,
+                 data: Optional[Dict[str, Any]]=None,
                  timeout: str=50,
                  raise_on_timeout: bool = False) -> Dict[str, Any]:
         def result_or_exception(result):
@@ -94,8 +137,13 @@ class TimeTrackerClientQt:
 
     def _check_version(self):
         self._req_send({"cmd": 'version'})
-        _version = self._req_recv(timeout=1000, raise_on_timeout=True)
-        log().info('server version: %s', _version)
+        server_version = self._req_recv(timeout=1000, raise_on_timeout=True)["data"]["version"]
+        if server_version > str(core.version_info):
+            log().critical('Server version: %s', server_version)
+        elif server_version < str(core.version_info):
+            log().error('Server version: %s', server_version)
+        else:
+            log().error('Server version: %s', server_version)
 
     def _fetch_rules(self):
         rules = self._request("rules").get("rules")
@@ -106,12 +154,6 @@ class TimeTrackerClientQt:
 
     def save(self) -> None:
         self._request("save")
-
-    def clip_from(self, index: str) -> None:
-        self._request("clip_from", data={"index": index})
-
-    def clip_to(self, index: int) -> None:
-        self._request("clip_to", data={"index": index})
 
     def update(self) -> None:
         current_data = self._request("current").get("current")
@@ -136,46 +178,14 @@ class TimeTrackerClientQt:
             self._request("quit")
         self.connected = False
 
-    def initialized(self):
-        return self._initialized
-
     def get_applications_model(self):
         return self._applications
 
     def get_rules_model(self):
         return self._rules
 
-    def info(self, minute):
-        return self._applications.info(minute)
-
-    def begin_index(self):
-        return self._applications.begin_index()
-
-    def start_time(self):
-        _s = self._applications.begin_index()
-        return "%0.2d:%0.2d" % (int(_s / 60), _s % 60)
-
-    def now(self):
-        _s = self._current_data['minute']
-        return "%0.2d:%0.2d" % (int(_s / 60), _s % 60)
-
     def is_active(self, minute):
         return self._applications.is_active(minute)
-
-    def category_at(self, minute):
-        return self._applications.category_at(minute)
-
-    def get_time_total(self):
-        return self._current_data['time_total']
-
-    def get_time_active(self):
-        return len(self._applications._minutes)
-
-    def get_time_work(self):
-        return sum(minute.main_category() == 2 for _, minute in self._applications._minutes.items())
-
-    def get_time_private(self):
-        return sum(minute.main_category() == 3 for _, minute in self._applications._minutes.items())
 
     def get_time_per_categories(self):
         # TODO: cache this, so you don't do so many operations per second.
@@ -190,17 +200,8 @@ class TimeTrackerClientQt:
                 time_dict[category] = app.get_count()
         return time_dict
 
-    def get_time_idle(self):
-        return self.get_time_total() - len(self._applications._minutes)
-
-    def get_max_minute(self):
-        return self._applications.end_index()
-
     def get_current_category(self):
         return self._current_data['category']
-
-    def get_current_minute(self):
-        return self._current_data['minute']
 
     def get_idle(self):
         return self._current_data['user_idle']

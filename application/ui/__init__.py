@@ -7,7 +7,6 @@
 import sys
 import argparse
 import os.path
-import json
 import subprocess
 from contextlib import suppress
 from typing import Any
@@ -19,13 +18,14 @@ except ImportError:
           % ".".join(str(x) for x in sys.version_info))
     sys.exit(-1)
 
-from .. import core
-from ..core import common, errors
+#from .. import core
+from ..core import common, errors, util
 from ..core.util import log
 
 from .mainwindow import MainWindow
 from .qreordertableview import ReorderTableView
 from .time_tracker_qt import TimeTrackerClientQt
+from .timegraph import EvaluationWidget, FileDataprovider
 from .qt_common import CategoryColor, SimpleQtThread
 
 
@@ -131,20 +131,50 @@ class TrackUI(MainWindow):
         super().__init__()
 
         self._args = args
+
+        self.txt_notes = QtWidgets.QTextEdit()
+
+        font = QtGui.QFont("FreeMono")
+        font.setStyleHint(QtGui.QFont.Monospace)
+        font.setPointSize(12)
+        font.setBold(True)
+        self.txt_notes.setFont(font)
+        self.txt_notes.setPlaceholderText("Write a line about what you're doing today")
+        self.txt_notes.setAcceptRichText(False)
+        self.txt_notes.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
+
+        self.notes_spoiler.setTitle("Daily notes")
+        self.notes_spoiler.addWidget(self.txt_notes)
+        self.notes_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.notes_spoiler.setExpanded(True)
+
         self.tbl_category_rules = ReorderTableView()
         self.regex_spoiler.setTitle("Category assignment rules (caution: regex)")
         self.regex_spoiler.addWidget(self.tbl_category_rules)
         self.regex_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
 
-        self.tbl_evaluation = QtWidgets.QTextEdit()
-        self.tbl_evaluation.setReadOnly(True)
-        self.tbl_evaluation.setLineWrapMode(0)
-        self.tbl_evaluation.setFontFamily("Courier New")
-        with suppress(FileNotFoundError):
-            self.tbl_evaluation.setPlainText(self._render_evaluation_text(args.data_dir))
+        self.active_applications_spoiler.setTitle("Active Applications")
+        self.active_applications_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.tbl_active_applications = QtWidgets.QTableView()
+        self.active_applications_spoiler.addWidget(self.tbl_active_applications)
+        self.active_applications_spoiler.setExpanded(True)
+
+        self.tbl_evaluation = QtWidgets.QListWidget()
+        for filename in sorted(
+            (file for file in os.listdir(args.data_dir)
+             if not '-log-' in file and "rules" not in file and file.endswith(".json")),
+            reverse=True
+        ):
+            myQCustomQWidget = EvaluationWidget(
+                dataprovider=FileDataprovider(os.path.join(args.data_dir, filename)))
+            myQListWidgetItem = QtWidgets.QListWidgetItem(self.tbl_evaluation)
+            myQListWidgetItem.setSizeHint(myQCustomQWidget.sizeHint())
+            self.tbl_evaluation.addItem(myQListWidgetItem)
+            self.tbl_evaluation.setItemWidget(myQListWidgetItem, myQCustomQWidget)
+
         self.evaluation_spoiler.setTitle("Evaluation")
-        self.evaluation_spoiler.addWidget(self.tbl_evaluation)
         self.evaluation_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.evaluation_spoiler.addWidget(self.tbl_evaluation)
 
         self.log_view = QtWidgets.QPlainTextEdit()
         self.log_spoiler.setTitle("Log messages")
@@ -170,10 +200,13 @@ class TrackUI(MainWindow):
 
         self.pb_quit_server.setVisible(os.environ.get("USER", "") in {"frafue", "frans"})
 
-        self.frm_timegraph.setTracker(self._tracker)
+        self.frm_timegraph.set_dataprovider(self._tracker)
 
         self.tbl_active_applications.setModel(self._tracker.get_applications_model())
+        self.tbl_active_applications.setSortingEnabled(True)
+        self.tbl_active_applications.verticalHeader().setVisible(False)
         active_applications_header = self.tbl_active_applications.horizontalHeader()
+        active_applications_header.setSortIndicatorShown(True)
         active_applications_header.setDefaultAlignment(QtCore.Qt.AlignLeft)
         active_applications_header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         active_applications_header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
@@ -205,42 +238,15 @@ class TrackUI(MainWindow):
         self._tracker.quit_server()
         self.close()
 
-    @QtCore.pyqtSlot(int)
-    def on_frm_timegraph_clipFromClicked(self, index: int) -> None:
-        self._tracker.clip_from(index)
-
-    @QtCore.pyqtSlot(int)
-    def on_frm_timegraph_clipToClicked(self, index: int) -> None:
-        self._tracker.clip_to(index)
-
     def update_idle(self) -> None:
         self._tracker.update()
-        _idle = self._tracker.get_idle()
+        self.frm_timegraph.update_widgets()
         self.lbl_title.setMargin(2)
         self.lbl_idle.setMargin(2)
+        self.lbl_process.setMargin(4)
         self.lbl_title.setText(self._tracker.get_current_app_title())
-        self.lbl_idle.setText("%ds" % _idle)
+        self.lbl_idle.setText("%ds" % self._tracker.get_idle())
         self.lbl_process.setText(self._tracker.get_current_process_name())
-
-        _time_total = self._tracker.get_time_total()
-        _time_active = self._tracker.get_time_active()
-        _time_work = self._tracker.get_time_work()
-        _time_private = self._tracker.get_time_private()
-        _time_idle = self._tracker.get_time_idle()
-        percentage = 100. / _time_total
-        self.lbl_time_active.setText("active: %s (%d%%)" % (
-            common.mins_to_dur(_time_active), _time_active * percentage))
-        self.lbl_time_work.setText("work: %s (%d%%)" % (
-            common.mins_to_dur(_time_work), _time_work * percentage))
-        self.lbl_time_private.setText("private: %s (%d%%)" % (
-            common.mins_to_dur(_time_private), _time_private * percentage))
-        self.lbl_time_idle.setText("idle: %s (%d%%)" % (
-            common.mins_to_dur(_time_idle), _time_idle * percentage))
-
-        self.lbl_start_time.setText("%s - %s: %s" % (
-            self._tracker.start_time(),
-            self._tracker.now(),
-            common.mins_to_dur(self._tracker.get_time_total())))
 
         palette = self.lbl_title.palette()
         palette.setColor(
@@ -301,32 +307,6 @@ class TrackUI(MainWindow):
 
         self._just_to_keep_the_thread = SimpleQtThread(target=check_and_restart)
 
-    @staticmethod
-    def _render_evaluation_text(path):
-        def to_time(value):
-            return "%2d:%.2d" % (value // 60, value % 60)
-
-        def convert(data):
-            return data if "tracker_data" in data else {"tracker_data": data}
-
-        def to_string(file):
-            data = convert(json.load(open(os.path.join(path, file))))
-            apps = core.ActiveApplications(data["tracker_data"])
-            daily_note = data.get("daily_note") or ""
-            return("%s: %s - %s = %s => %s (note: %r)" % (
-                file.replace(".json", "").replace("track-", ""),
-                to_time(apps.begin_index()),
-                to_time(apps.end_index()),
-                to_time(apps.end_index() - apps.begin_index()),
-                to_time(apps.end_index() - apps.begin_index() - 60),
-                daily_note.split("\n")[0]))
-
-        return ("More coming soon - this is just a small overview \n\n" +
-                "\n".join(to_string(filename) for filename in (
-                    f
-                    for f in sorted(os.listdir(path), reverse=True)
-                    if not '-log-' in f and "rules" not in f and f.endswith(".json"))))
-
     def keyPressEvent(self, event: QtCore.QEvent) -> bool:
         if event.key() == QtCore.Qt.Key_Delete and self.tbl_category_rules.hasFocus():
             rows = set(index.row() for index in self.tbl_category_rules.selectedIndexes())
@@ -385,7 +365,7 @@ class TrackUI(MainWindow):
 def parse_arguments() -> argparse.Namespace:
     """parse command line arguments and return argument object"""
     parser = argparse.ArgumentParser(description=__doc__)
-    core.common.setup_argument_parser(parser)
+    common.setup_argument_parser(parser)
     return parser.parse_args()
 
 
@@ -394,7 +374,7 @@ def main() -> int:
     specified on command line
     """
     args = parse_arguments()
-    core.util.setup_logging(args)
+    util.setup_logging(args)
     app = QtWidgets.QApplication(sys.argv)
 
     window = TrackUI(args)

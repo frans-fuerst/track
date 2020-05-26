@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""Defines class ActiveApplications
+"""
+
+from typing import Any, Tuple, Dict  # pylint: disable=unused-import
+
 from ..core import common
 
 
 class ActiveApplications:
-    ''' the data model which holds all application usage data for one
+    """Data model which holds all application usage data for one
         day. That is:
 
         app_data:  {app_id: application}
@@ -21,9 +26,7 @@ class ActiveApplications:
             * sortable by key
             * can be done with list of keys sorted by given value
             [(app_id, i_secs, i_cat)]
-
-    '''
-
+    """
     def __init__(self, json_data=None):
         self._index_min = None
         self._index_max = None
@@ -36,6 +39,7 @@ class ActiveApplications:
             self.from_dict(json_data)
 
     def clear(self):
+        """Clears all data (app info and timeline)"""
         # todo: mutex
         self._index_min = None
         self._index_max = None
@@ -43,16 +47,17 @@ class ActiveApplications:
         self._minutes = {}  # i_min          => minute
 
     def clip_from(self, index):
+        """Removes all timeline data before provided index"""
         self._minutes = {minute: apps for minute, apps in self._minutes.items() if minute >= index}
         self._index_min = min(self._minutes.keys())
 
     def clip_to(self, index):
+        """Removes all timeline data after provided index"""
         self._minutes = {minute: apps for minute, apps in self._minutes.items() if minute <= index}
         self._index_max = max(self._minutes.keys())
 
     def __eq__(self, other):
-        ''' comparing is only needed for tests
-        '''
+        """Comparing is only needed for tests"""
         if not self._apps == other._apps:
             return False
         if not self._minutes == other._minutes:
@@ -70,7 +75,7 @@ class ActiveApplications:
             result:    app:     [AppInfo]
                        minutes: {i_minute: (i_category, [(AppInfo, i_count)])}
 
-            """
+        """
         _indexed = {a: i for i, a in enumerate(self._apps.values())}
         _apps = [d[1] for d in sorted([(e[1], e[0].__data__())
                                        for e in _indexed.items()])]
@@ -133,57 +138,46 @@ class ActiveApplications:
         self._minutes[minute_index].add(_app)
 
     def get_chunk_size(self, minute):
+        if not (self._index_max and self._index_min):
+            return 0, 0
+
         _begin = minute
         _end = minute
 
         if minute > self._index_max or minute < self._index_min:
-            return (_begin, _end)
+            return _begin, _end
 
-        if self.is_active(minute):
-            _a = self._minutes[minute].get_main_app()
-        else:
-            _a = None
-
+        _a = self._minutes[minute].main_app() if self.is_active(minute) else None
         _minutes = sorted(self._minutes.keys())
 
         _lower_range = [i for i in _minutes if i < minute]
         _upper_range = [i for i in _minutes if i > minute]
 
         if _a is None:
-            _begin = _lower_range[-1] if _lower_range != [] else _begin
-            _end = _upper_range[0] if _upper_range != [] else _end
-            return (_begin, _end)
+            return (_lower_range[-1] if _lower_range != [] else _begin,
+                    _upper_range[0] if _upper_range != [] else _end)
 
         for i in reversed(_lower_range):
             if _begin - i > 1:
                 break
-            if self._minutes[i].get_main_app() == _a:
+            if self._minutes[i].main_app() == _a:
                 _begin = i
 
         for i in _upper_range:
             if i - _end > 1:
                 break
-            if self._minutes[i].get_main_app() == _a:
+            if self._minutes[i].main_app() == _a:
                 _end = i
 
         # todo: currently gap is max 1min - make configurable
-        return (_begin, _end)
+        return _begin, _end
 
-    def info(self, minute):
-        if self.is_active(minute):
-            _activity = self._minutes[minute].get_main_app()
-        else:
-            _activity = 'idle'
-
-        _cs = self.get_chunk_size(minute)
-        return (_cs, _activity)
+    def info_at(self, minute: int) -> Tuple[int, str]:
+        return (self.get_chunk_size(minute),
+                self._minutes[minute].main_app() if self.is_active(minute) else "idle")
 
     def is_active(self, minute):
-        if minute in self._minutes:
-            return True
-        return False
+        return minute in self._minutes
 
-    def is_private(self, minute):
-        if minute not in self._minutes:
-            return False
-        return self._minutes[minute]._category != 0
+    def category_at(self, minute):
+        return self._minutes[minute].main_category() if minute in self._minutes else 0

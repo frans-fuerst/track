@@ -31,9 +31,12 @@
 #### 2020.05.01
 - [ ] Remove category indices from UI
 - [ ] track theme
-- [ ] Basic evaluation
 - [ ] re-establish tests
 - [ ] track-cli cleanup
+- [ ] complexer search: search in hostname, process name, window title
+- [ ] allow case (in)sensitive regexes
+- [ ] Basic evaluation
+- [ ] resizable spoiler sections
 - [x] Git update notification
 - [x] Log to UI
 - [x] Fix icon/title/status icon

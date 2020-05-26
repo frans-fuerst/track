@@ -110,7 +110,7 @@ def get_category(app: AppInfo, rules: Rules) -> Category:
     """Maps an Application to a track category"""
     app_string_representation = app.generate_identifier()
     for rule, category in rules:
-        if re.search(rule, app_string_representation):
+        if re.search(rule, app_string_representation, flags=re.IGNORECASE):
             return category
     return Category.UNASSIGNED
 

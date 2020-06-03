@@ -33,6 +33,14 @@ class ActiveApplications:
         if json_data is not None:
             self.from_dict(json_data)
 
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __str__(self) -> str:
+        return "Apps(%r to %r)" % (
+            common.mins_to_date(self._index_min),
+            common.mins_to_date(self._index_max))
+
     def clear(self):
         """Clears all data (app info and timeline)"""
         # todo: mutex

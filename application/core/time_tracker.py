@@ -6,9 +6,9 @@
 
 import json
 import os
-from typing import Any, Dict, Sequence, Tuple  # pylint: disable=unused-import
+from typing import Any, Dict, Sequence, Tuple, Optional  # pylint: disable=unused-import
 
-from . import common, ActiveApplications, Category
+from . import common, ActiveApplications
 from ..core.util import catch, log, exception_to_string
 from ..core import desktop_usage_info
 
@@ -19,15 +19,10 @@ class TimeTracker:
           well as some meta information
         * provides persistence
     """
-    def __init__(self, data_dir) -> None:
-        self._idle_current = 0
-        self._current_minute = 0  # does not need to be highest minute index
-        self._current_app_title = ""
-        self._current_process_exe = ""
-        self._current_category = 0
-        self._user_is_active = True
-        self._active_day = common.today_int()
+    def __init__(self, data_dir: str) -> None:
+        self._last_day = common.today_int()
         self._storage_dir = data_dir
+        self._current_state = {}  # type: Dict[str, Any]
 
         # -- data to persist
         data = catch(
@@ -36,6 +31,7 @@ class TimeTracker:
             {})
         self._applications = ActiveApplications(data.get("tracker_data"))
         self.note = data.get("daily_note")
+        log().info("Found app data: %r", self._applications)
 
         self._re_rules = catch(
             lambda: self._load_json("category_rules.json"),
@@ -60,7 +56,7 @@ class TimeTracker:
         with open(os.path.join(self._storage_dir, filename)) as file:
             return json.load(file)
 
-    def _save_json(self, data, filename):
+    def _save_json(self, data: Dict[str, Any], filename: str) -> None:
         """Properly write data to a JSON file"""
         os.makedirs(self._storage_dir, exist_ok=True)
         with open(os.path.join(self._storage_dir, filename), 'w') as file:
@@ -71,74 +67,82 @@ class TimeTracker:
                 indent=4,
             )
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return False
 
     def clear(self) -> None:
         """Clear the application store - keeps the instance"""
         self._applications.clear()
 
-    def persist(self, filename: str = None) -> None:
+    def persist(self, filename: str) -> None:
         """Store tracking info and regex rules on file system"""
+        log().info('Save tracker data to %r', filename)
         self._save_json(
             {"tracker_data": self._applications.__data__(),
              "daily_note": self.note},
-            filename or "track-%s.json" % common.today_str())
+            filename)
+        self._save_json(self._re_rules, "category_rules.json")
 
+        # just for development
         _test_model = ActiveApplications()
         _test_model.from_dict(self._applications.__data__())
         assert self._applications == _test_model
-        self._save_json(self._re_rules, "category_rules.json")
 
     def get_applications_model(self) -> ActiveApplications:
         """Return the current application store"""
         return self._applications
 
-    def rules(self) -> Sequence[Tuple[str, int]]:
+    def rules(self) -> common.Rules:
         """Return the current set of regex rules"""
         return self._re_rules
 
-    def set_rules(self, rules) -> None:
+    def set_rules(self, rules: common.Rules) -> None:
         """Store a new set of regex rules and recalculate categories"""
         self._re_rules = rules
         common.recategorize(self._applications.apps(), self._re_rules)
 
-    def set_note(self, note) -> None:
+    def set_note(self, note: str) -> None:
         """Store daily note"""
         self.note = note
 
     def update(self) -> None:
         """Gather desktop usage info"""
         try:
-            current_day = common.today_int()
-            current_minute = common.minutes_since_midnight()
+            current_day, current_minute = common.today_int(), common.minutes_since_midnight()
+            midnight = current_day > self._last_day
 
-            if self._active_day < current_day:
-                print("current minute is %d - it's midnight" % self._current_minute)
-                self.persist('track-log-%d.json' % self._active_day)
+            if midnight:
+                log().info("current minute is %d - it's midnight", current_minute)
+                self.persist('track-backup-%d.json' % self._last_day)
                 self.clear()
 
-            self._active_day = current_day
-            self._current_minute = current_minute
+            self._last_day = current_day
 
-            self._user_is_active = True
+            app_info = desktop_usage_info.applicationinfo.get_active_window_information()
+            current_app_title = app_info["TITLE"]
+            current_process_exe = app_info.get("COMMAND", "Process not found")
+            app = common.AppInfo(current_app_title, current_process_exe)
+            current_category = common.get_category(app, self._re_rules)
+            app.set_category(current_category)
 
-            self._idle_current = int(desktop_usage_info.idle.getIdleSec())
-            _app_info = desktop_usage_info.applicationinfo.get_active_window_information()
+            idle_current = desktop_usage_info.idle.getIdleSec()
+            user_is_active = idle_current <= 10
 
-            self._current_app_title = _app_info["TITLE"]
-            self._current_process_exe = _app_info.get("COMMAND", "Process not found")
+            self._current_state = {
+                'minute': current_minute,
+                'category': current_category,
+                'time_total': current_minute - self._applications.begin_index() + 1,
+                'user_idle': idle_current,
+                'user_active': user_is_active,
+                'app_title': current_app_title,
+                'process_name': current_process_exe,
+            }
 
-            if self._idle_current > 10:
-                self._user_is_active = False
-                return
+            if user_is_active:
+                self._applications.update(current_minute, app)
 
-            app = common.AppInfo(self._current_app_title, self._current_process_exe)
-            self._current_category = common.get_category(app, self._re_rules)
-            app.set_category(self._current_category)
-            self._applications.update(self._current_minute, app)
         except KeyError as exc:
-            log().error("%r", _app_info)
+            log().error("%r", app_info)
             log().error("Got exception %r", exception_to_string(exc))
         except desktop_usage_info.WindowInformationError:
             pass
@@ -147,12 +151,4 @@ class TimeTracker:
 
     def current_state(self) -> Dict[str, Any]:
         """Retrieve current usage snapshot"""
-        return {
-            'minute': self._current_minute,
-            'category': self._current_category,
-            'time_total': self._current_minute - self._applications.begin_index() + 1,
-            'user_idle': self._idle_current,
-            'user_active': self._user_is_active,
-            'app_title': self._current_app_title,
-            'process_name': self._current_process_exe,
-        }
+        return self._current_state

@@ -34,8 +34,7 @@ class TrackServer:
 
     def _save_data(self, interval: int = 20, force: bool = False) -> None:
         if time.time() - self._last_save_time > interval or force:
-            log().info('save data..')
-            self._tracker.persist()
+            self._tracker.persist("track-%s.json" % common.today_str())
             self._last_save_time = time.time()
 
     def _system_monitoring_fn(self) -> None:
@@ -180,6 +179,7 @@ def main() -> None:
     """Doc"""
     args = parse_arguments()
     util.setup_logging(args, syslog=True)
+    log().name = "track-server"
     common.log_system_info(args)
 
     for sig in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):

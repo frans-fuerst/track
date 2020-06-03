@@ -103,11 +103,7 @@ def fn_show(args) -> None:
 def fn_info(args) -> None:
     log_dir = args.data_dir
     log().info("List recorded data")
-    for file in (
-            f
-            for f in sorted(os.listdir(log_dir))
-            if '-log-' not in f and "rules" not in f and f.endswith(".json")
-            ):
+    for file in common.log_files(log_dir):
         data = convert(json.load(open(os.path.join(log_dir, file))))
         if "20200503" in file:
             print(file)

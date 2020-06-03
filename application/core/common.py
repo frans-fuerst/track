@@ -11,7 +11,7 @@ import time
 import argparse
 import re
 from enum import IntEnum
-from typing import Any, Dict, Sequence, Tuple  # pylint: disable=unused-import
+from typing import Any, Dict, Sequence, Tuple, List, Optional  # pylint: disable=unused-import
 
 from .util import log
 from . import version_info
@@ -144,22 +144,38 @@ def mins_to_dur(mins: int) -> str:
     return "%d:%02d" % (mins / 60, mins % 60) if mins >= 60 else "%dm" % mins
 
 
-def today_str():
+def today_str() -> str:
     return datetime.fromtimestamp(time.time()).strftime('%Y%m%d')
 
 
-def today_int():
+def today_int() -> int:
     now = datetime.now()
     return now.year * 10000 + now.month * 100 + now.day
 
 
-def seconds_since_midnight():
+def seconds_since_midnight() -> int:
     now = datetime.now()
     return int((now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds())
 
 
-def minutes_since_midnight():
-    return int(seconds_since_midnight() / 60)
+def minutes_since_midnight() -> int:
+    return seconds_since_midnight() // 60
+
+
+def log_files(directory: str, reverse=False, exclude_today: bool=False) -> List[str]:
+    """Return a sorted list of Track log file names found in @directory"""
+    def get_date(filename: str) -> Optional[str]:
+        match = re.search(r"track-(\d{8}).json", filename, flags=re.IGNORECASE)
+        if not match:
+            return None
+        return match.group(1)
+
+    today_timestamp = today_str()
+    return sorted((file
+                   for file in os.listdir(directory)
+                   for date in (get_date(file),)
+                   if date and (date != today_timestamp or not exclude_today)),
+                  reverse=reverse)
 
 
 def setup_argument_parser(parser: argparse.ArgumentParser) -> None:

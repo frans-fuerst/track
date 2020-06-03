@@ -195,11 +195,7 @@ class TrackUI(MainWindow):
         self.active_applications_spoiler.setExpanded(True)
 
         self.tbl_evaluation = QtWidgets.QListWidget()
-        for filename in sorted(
-            (file for file in os.listdir(args.data_dir)
-             if not '-log-' in file and "rules" not in file and file.endswith(".json")),
-            reverse=True
-        ):
+        for filename in common.log_files(args.data_dir, reverse=True, exclude_today=True):
             myQCustomQWidget = EvaluationWidget(
                 dataprovider=FileDataprovider(os.path.join(args.data_dir, filename)))
             myQListWidgetItem = QtWidgets.QListWidgetItem(self.tbl_evaluation)

@@ -324,7 +324,7 @@ class TrackUI(MainWindow):
         if isinstance(event, QtGui.QShowEvent) and not self._tracker.connected:
             if self._connect():
                 self._update_timer.start(1000)
-                self.txt_notes.setText(self._tracker.note())
+                self.txt_notes.setText(self._tracker.daily_note())
                 self.log_spoiler.setExpanded(False)
 
             else:

@@ -54,6 +54,9 @@ class TimeTrackerClientQt(TimechartDataprovider):
     def end_index(self):
         return self._applications.end_index()
 
+    def daily_note(self) -> str:
+        return self._request("note").get("note")
+
     def info_at(self, minute: int):
         return self._applications.info_at(minute)
 
@@ -148,9 +151,6 @@ class TimeTrackerClientQt(TimechartDataprovider):
     def _fetch_rules(self):
         rules = self._request("rules").get("rules")
         self._rules_model.set_rules(rules)
-
-    def note(self) -> str:
-        return self._request("note").get("note")
 
     def save(self) -> None:
         self._request("save")

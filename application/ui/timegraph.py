@@ -11,7 +11,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from ..core import common, ActiveApplications
 from .qt_common import CategoryColor
 from .qt_common import TimechartDataprovider
-from ..core.util import catch
+from ..core.util import catch, log
 
 
 class FileDataprovider(TimechartDataprovider):
@@ -26,7 +26,7 @@ class FileDataprovider(TimechartDataprovider):
                 (FileNotFoundError, json.JSONDecodeError),
                 {})
             self.apps = ActiveApplications(data.get("tracker_data"))
-            self.daily_note = data.get("daily_note") or ""
+            self._daily_note = data.get("daily_note") or ""
         self._date = datetime.strptime(filename[-13:-5], "%Y%m%d")
 
     def date(self) -> datetime:
@@ -49,6 +49,9 @@ class FileDataprovider(TimechartDataprovider):
 
     def end_index(self):
         return self.apps.end_index()
+
+    def daily_note(self) -> str:
+        return self._daily_note
 
     def info_at(self, minute: int):
         return self.apps.info_at(minute)
@@ -108,19 +111,21 @@ class Timegraph(QtWidgets.QFrame):
     def mouseMoveEvent(self, event):
         if self._dataprovider is None:
             return
-        _index = self._dataprovider.begin_index() - 50 + event.x() - 1
-        _cs, _activity = self._dataprovider.info_at(_index)
+        index = self._dataprovider.begin_index() + event.x() - 50 - 1
+        if self._dataprovider.begin_index() <= index <= self._dataprovider.end_index():
+            (start, end), app_info = self._dataprovider.info_at(index)
+            self.select(start, end)
+            self.setToolTip("%s: %s (%s)" % (
+                common.mins_to_dur(index),
+                app_info,
+                common.mins_to_dur(end - start)))
+        else:
+            self.setToolTip(self._dataprovider.daily_note() or "no notes")
 
-        _info_str = "%s: %s (%s)" % (
-            common.mins_to_dur(_index),
-            _activity,
-            common.mins_to_dur(_cs[1]-_cs[0]))
-        self.select(_cs[0], _cs[1])
-        self.setToolTip(_info_str)
 
     def contextMenuEvent(self, event):
         menu = QtWidgets.QMenu(self)
-        index = self._dataprovider.begin_index() - 50 + event.x() - 1
+        index = self._dataprovider.begin_index() + event.x() - 50 - 1
         clip_from = menu.addAction("clip before %s (erases data!)" % common.mins_to_dur(index))
         clip_to = menu.addAction("clip after %s (erases data!)" % common.mins_to_dur(index))
         action = menu.exec_(self.mapToGlobal(event.pos()))

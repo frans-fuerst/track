@@ -41,6 +41,10 @@ class TimechartDataprovider(ABC):
         pass
 
     @abstractmethod
+    def daily_note(self) -> str:
+        pass
+
+    @abstractmethod
     def category_at(self, index: int):
         pass
 

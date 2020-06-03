@@ -45,7 +45,7 @@ def setup_logging(args: argparse.Namespace, syslog=False) -> None:
     """Setup coloring, syslog etc"""
     handler = logging.StreamHandler()
     handler.setFormatter(ColorFormatter(
-        fmt="%(levelname)s %(asctime)s %(name)s %(thread)s: %(message)s",
+        fmt="%(levelname)s %(asctime)s %(name)s %(process)s:%(thread)s: %(message)s",
         datefmt='%Y-%m-%d %H:%M:%S'))
     logging.getLogger().addHandler(handler)
     for level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"):

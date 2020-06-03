@@ -11,6 +11,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from ..core import common, ActiveApplications
 from .qt_common import CategoryColor
 from .qt_common import TimechartDataprovider
+from ..core.util import catch
 
 
 class FileDataprovider(TimechartDataprovider):
@@ -20,8 +21,11 @@ class FileDataprovider(TimechartDataprovider):
             return data if "tracker_data" in data else {"tracker_data": data}
 
         with open(filename) as file:
-            data = convert(json.load(file))
-            self.apps = ActiveApplications(data["tracker_data"])
+            data = catch(
+                lambda: convert(json.load(file)),
+                (FileNotFoundError, json.JSONDecodeError),
+                {})
+            self.apps = ActiveApplications(data.get("tracker_data"))
             self.daily_note = data.get("daily_note") or ""
         self._date = datetime.strptime(filename[-13:-5], "%Y%m%d")
 

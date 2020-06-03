@@ -131,16 +131,31 @@ class TrackUI(MainWindow):
 
         self._args = args
 
-        self.txt_notes = QtWidgets.QTextEdit()
+        # setup log window as early as possible in order to see possible error messages
+        self.log_view = QtWidgets.QPlainTextEdit()
+        self.log_spoiler.setTitle("Log messages")
+        self.log_spoiler.addWidget(self.log_view)
+        self.log_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.log_spoiler.setExpanded(True)
+        self.setup_common_widgets()
+
+        common.log_system_info(args)
+
+        self._endpoint = "tcp://127.0.0.1:%s" % str(args.port)
+        self._tracker = TimeTrackerClientQt(self)
+        self._tracker.rules_model().rulesChanged.connect(self.on_rules_changed)
 
         font = QtGui.QFont("FreeMono")
         font.setStyleHint(QtGui.QFont.Monospace)
         font.setPointSize(12)
         font.setBold(True)
+
+        self.txt_notes = QtWidgets.QTextEdit()
         self.txt_notes.setFont(font)
         self.txt_notes.setPlaceholderText("Write a line about what you're doing today")
         self.txt_notes.setAcceptRichText(False)
         self.txt_notes.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
+        self.txt_notes.textChanged.connect(self.on_txt_notes_textChanged)
 
         self.notes_spoiler.setTitle("Daily notes")
         self.notes_spoiler.addWidget(self.txt_notes)
@@ -148,13 +163,34 @@ class TrackUI(MainWindow):
         self.notes_spoiler.setExpanded(True)
 
         self.tbl_category_rules = ReorderTableView()
+        self.tbl_category_rules.setItemDelegate(self.RulesTableDelegate())
+        self.tbl_category_rules.setModel(self._tracker.rules_model())
+        category_rules_header = self.tbl_category_rules.horizontalHeader()
+        category_rules_header.setDefaultAlignment(QtCore.Qt.AlignLeft)
+        category_rules_header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        category_rules_header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+
         self.regex_spoiler.setTitle("Category assignment rules (caution: regex)")
         self.regex_spoiler.addWidget(self.tbl_category_rules)
         self.regex_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
 
+        self.tbl_active_applications = QtWidgets.QTableView()
+        self.tbl_active_applications.setModel(self._tracker.get_applications_model())
+        self.tbl_active_applications.setSortingEnabled(True)
+        self.tbl_active_applications.verticalHeader().setVisible(False)
+        self.tbl_active_applications.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
+        self.tbl_active_applications.setDragEnabled(True)
+        self.tbl_active_applications.setItemDelegate(self.ApplicationTableDelegate())
+        self.tbl_active_applications.selectionModel().currentRowChanged.connect(self.cc)
+        active_applications_header = self.tbl_active_applications.horizontalHeader()
+        active_applications_header.setSortIndicatorShown(True)
+        active_applications_header.setDefaultAlignment(QtCore.Qt.AlignLeft)
+        active_applications_header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        active_applications_header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+        active_applications_header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
+
         self.active_applications_spoiler.setTitle("Active Applications")
         self.active_applications_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
-        self.tbl_active_applications = QtWidgets.QTableView()
         self.active_applications_spoiler.addWidget(self.tbl_active_applications)
         self.active_applications_spoiler.setExpanded(True)
 
@@ -175,25 +211,9 @@ class TrackUI(MainWindow):
         self.evaluation_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.evaluation_spoiler.addWidget(self.tbl_evaluation)
 
-        self.log_view = QtWidgets.QPlainTextEdit()
-        self.log_spoiler.setTitle("Log messages")
-        self.log_spoiler.addWidget(self.log_view)
-        self.log_spoiler.setFrameShape(QtWidgets.QFrame.NoFrame)
-        self.log_spoiler.setExpanded(True)
-
-        self.setup_common_widgets()
-
-        common.log_system_info(args)
-
         self.setWindowIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaSeekForward))
         self.setGeometry(0, 0, 700, 800)
         self.tray_icon = self._initialize_tray_icon()
-
-        self._endpoint = "tcp://127.0.0.1:%s" % str(args.port)
-        self._tracker = TimeTrackerClientQt(self)
-
-        self._update_timer = QtCore.QTimer(self)
-        self._update_timer.timeout.connect(self.update_idle)
 
         self._start_git_update_check()
 
@@ -201,28 +221,8 @@ class TrackUI(MainWindow):
 
         self.frm_timegraph.set_dataprovider(self._tracker)
 
-        self.tbl_active_applications.setModel(self._tracker.get_applications_model())
-        self.tbl_active_applications.setSortingEnabled(True)
-        self.tbl_active_applications.verticalHeader().setVisible(False)
-        active_applications_header = self.tbl_active_applications.horizontalHeader()
-        active_applications_header.setSortIndicatorShown(True)
-        active_applications_header.setDefaultAlignment(QtCore.Qt.AlignLeft)
-        active_applications_header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
-        active_applications_header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
-        active_applications_header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
-        self.tbl_active_applications.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
-        self.tbl_active_applications.setDragEnabled(True)
-        self.tbl_active_applications.setItemDelegate(self.ApplicationTableDelegate())
-        self.tbl_active_applications.selectionModel().currentRowChanged.connect(self.cc)
-
-        self._tracker.rules_model().rulesChanged.connect(self.on_rules_changed)
-        self.tbl_category_rules.setModel(self._tracker.rules_model())
-
-        category_rules_header = self.tbl_category_rules.horizontalHeader()
-        category_rules_header.setDefaultAlignment(QtCore.Qt.AlignLeft)
-        category_rules_header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
-        category_rules_header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
-        self.tbl_category_rules.setItemDelegate(self.RulesTableDelegate())
+        self._update_timer = QtCore.QTimer(self)
+        self._update_timer.timeout.connect(self.update_idle)
 
     def cc(self, current):
         if not current.column() == 0:
@@ -381,6 +381,7 @@ def main() -> int:
     """
     args = parse_arguments()
     util.setup_logging(args)
+    log().name = "track-ui"
     app = QtWidgets.QApplication(sys.argv)
 
     window = TrackUI(args)

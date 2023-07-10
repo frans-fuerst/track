@@ -10,6 +10,7 @@ import os.path
 import subprocess
 from contextlib import suppress
 from typing import Any
+import os
 
 try:
     from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
@@ -26,18 +27,21 @@ from .qreordertableview import ReorderTableView
 from .time_tracker_qt import TimeTrackerClientQt
 from .timegraph import EvaluationWidget, FileDataprovider
 from .qt_common import CategoryColor, SimpleQtThread
-
+from pathlib import Path
 
 def start_server_process(args) -> None:
     """Start the track server"""
     log().info('start track server daemon')
-    server_file = os.path.join(os.path.dirname(__file__), '../../track-server')
+    module_path = Path(__file__).parent.parent
+    server_file = module_path / "track-server"
     subprocess.Popen([
         sys.executable, server_file,
-        "--log-level", args.log_level,
+                "--log-level", args.log_level,
         "--data-dir", args.data_dir,
         "--port", str(args.port),
-    ])
+    ],
+    env={** os.environ, ** {"PYTHONPATH": module_path.parent}},
+    )
 
 
 def category_name(value):
@@ -211,7 +215,7 @@ class TrackUI(MainWindow):
         self.setGeometry(0, 0, 700, 800)
         self.tray_icon = self._initialize_tray_icon()
 
-        self._start_git_update_check()
+        # self._start_git_update_check()
 
         self.pb_quit_server.setVisible(os.environ.get("USER", "") in {"frafue", "frans"})
 

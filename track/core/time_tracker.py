@@ -137,6 +137,7 @@ class TimeTracker:
                 'app_title': current_app_title,
                 'process_name': current_process_exe,
             }
+            print(self._current_state)
 
             if user_is_active:
                 self._applications.update(current_minute, app)

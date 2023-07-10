@@ -5,7 +5,7 @@
 """Extension free executable stub for track-cli
 """
 from contextlib import suppress
-from application.cli import main
+from track.cli import main
 
 if __name__ == "__main__":
     with suppress(KeyboardInterrupt, BrokenPipeError):

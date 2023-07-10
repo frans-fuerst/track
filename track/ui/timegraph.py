@@ -11,7 +11,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from ..core import common, ActiveApplications
 from .qt_common import CategoryColor
 from .qt_common import TimechartDataprovider
-from ..core.util import catch, log
+from ..core.util import catch
 
 
 class FileDataprovider(TimechartDataprovider):

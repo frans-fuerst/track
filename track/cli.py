@@ -36,11 +36,17 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
     parser_server.set_defaults(func=fn_server)
     parser_server.add_argument("command")
 
+    parser_server = subparsers.add_parser('serve', help='send command to server')
+    parser_server.set_defaults(func=fn_serve)
+
     parser_show = subparsers.add_parser('show', help='show content of one log file')
     parser_show.set_defaults(func=fn_show)
     parser_show.add_argument("element", nargs="+")
 
-    parser.set_defaults(func=lambda *a: parser.print_usage())
+    parser_ui = subparsers.add_parser('ui', help='start the track ui')
+    parser_ui.set_defaults(func=fn_ui)
+
+    parser.set_defaults(func=fn_ui)
 
     return parser.parse_args(argv)
 
@@ -67,6 +73,14 @@ def convert(data):
 
 def to_time(value):
     return "%2d:%.2d" % (value // 60, value % 60)
+
+def fn_ui(args) -> None:
+    from track.ui import main as main_ui
+    main_ui()
+
+def fn_serve(args) -> None:
+    from track.server import main as main_server
+    main_server()
 
 def fn_server(args) -> None:
     if args.command not in {"quit", "version", "apps", "current", "rules", "save", "note"}:

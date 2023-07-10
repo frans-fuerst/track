@@ -7,15 +7,13 @@ if os.name == 'nt':
 
     from ctypes import Structure, windll, c_uint, sizeof, byref
 
-
     class LASTINPUTINFO(Structure):
         _fields_ = [
             ('cbSize', c_uint),
             ('dwTime', c_uint),
         ]
 
-
-    def getIdleSec():
+    def getIdleSec() -> int:
         lastInputInfo = LASTINPUTINFO()
         lastInputInfo.cbSize = sizeof(lastInputInfo)
         windll.user32.GetLastInputInfo(byref(lastInputInfo))

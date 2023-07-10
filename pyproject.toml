@@ -1,0 +1,112 @@
+[tool.poetry]
+name = "python-time-track"
+version = "0.0.1"
+description = "Automatic Time Tracker"
+authors = ["Frans Fürst <frans.fuerst+gitlab@protonmail.com>"]
+repository = "https://projects.om-office.de/frans/track.git"
+readme = "Readme.md"
+packages = [
+  {include = "track/**/*.py"},
+  {include = "track/track-server"},
+  {include = "track/**/*.ui"},
+  #{include = "medit/styles"},
+]
+#include = [
+#    {path = "track/track-server"},
+#]
+
+[tool.poetry.scripts]
+track = 'track.cli:main'
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+#asyncinotify = "^4.0.1"
+#toml = "^0.10.2"
+#pyqt6 = "^6.5.1"
+#pyqt6-qscintilla = "^2.14.0"
+#pyqt6-webengine = "^6.5.0"
+#markdown = "<3.2"
+#markdown-checklist = "^0.4.4"
+# pygments-solarized-style = "^0.1"
+#pyqtdarktheme = "^2.1.0"
+#pygments = "^2.15.1"
+#plantuml-markdown = "^3.9.2"
+#md-mermaid = "^0.1.1"
+pyqt5 = "^5.15.9"
+psutil = "^5.9.5"
+zmq = "^0.0.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.6.0"
+isort = "^5.10.1"
+flake8 = "^4.0.1"
+pytest = "^7.1.2"
+pytest-cov = "^3.0.0"
+mypy = "^1.2"
+pylint = "^2.15.3"
+ipython = "^8.8.0"
+twine = "^4.0.2"
+yamllint = "^1.31.0"
+types-toml = "^0.10.8.6"
+pylint-per-file-ignores = "^1.2.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+fast = true
+exclude = '''
+(
+  /(                        # exclude a few common directories in the
+    \.git                   # root of the project
+    | \.pytest_cache
+    | untracked
+    | \.venv
+    | dist
+  ))
+'''
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+python_version = "3.11"
+strict="True"
+disallow_untyped_defs = "True"
+disallow_any_unimported = "True"
+no_implicit_optional = "True"
+check_untyped_defs = "True"
+warn_return_any = "True"
+warn_unused_ignores = "True"
+show_error_codes = "True"
+exclude = "tracks"
+#exclude = [
+#    '\.venv',
+#    'untracked',
+#    '/tracks/*.py',
+#]
+mypy_path="typeshed"
+
+[tool.pylint]
+
+# Files or directories matching the regular expression patterns are skipped. The
+# regex matches against base names, not paths. The default value ignores Emacs
+# file locks
+#ignore-patterns = ["^\\.#"]
+#disable = ["multiple-statements"]
+
+# Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
+# number of processors available to use, and will cap the count on Windows to
+# avoid hangs.
+jobs = 0
+
+[tool.pylint.MASTER]
+load-plugins=["pylint_per_file_ignores"]
+
+[tool.pylint-per-file-ignores]
+#"pocketrockit/examples/" = "invalid-name"

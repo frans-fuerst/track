@@ -28,19 +28,23 @@
 
 ### release notes
 
-#### 2020.05.01
+#### 2020.05.26
 - [ ] Remove category indices from UI
 - [ ] track theme
 - [ ] re-establish tests
 - [ ] track-cli cleanup
-- [ ] complexer search: search in hostname, process name, window title
-- [ ] allow case (in)sensitive regexes
+- [ ] Complexer search: search in hostname, process name, window title
+- [ ] Configure case sensibility in rules
 - [ ] Basic evaluation
-- [ ] resizable spoiler sections
+- [ ] Help: Spoiler with Readme
+- [ ] Store spoiler visibility config
+
+#### 2020.05.26
+- [?] resizable spoiler sections
 - [x] Git update notification
 - [x] Log to UI
 - [x] Fix icon/title/status icon
-- [x] Reorder Rules with drag&drop
+- [x] Reorder rules with drag&drop
 - [x] Allow editing private note
 - [x] Allow editing rules
 - [x] Improved UI

@@ -1,0 +1,4 @@
+# https://github.com/python-poetry/poetry/issues/108
+[virtualenvs]
+create = true
+in-project = true

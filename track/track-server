@@ -6,7 +6,7 @@
 """
 
 from contextlib import suppress
-from application.server import main
+from track.server import main
 
 if __name__ == "__main__":
     with suppress(KeyboardInterrupt, BrokenPipeError):

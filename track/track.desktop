@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=Track
+Comment=Record your computer work
+Categories=Office;WordProcessor;
+Exec=track
+Type=Application
+Icon=ReText-7.0.4.data/data/share/retext/icons/retext.svg
+StartupWMClass=ReText
+MimeType=text/markdown;text/x-rst;
+Keywords=Text;Editor;Markdown;reStructuredText;

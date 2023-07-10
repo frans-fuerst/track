@@ -28,7 +28,7 @@ def test_import():
             _begin = a.begin_index()
             _dur = _end - _begin
 
-            (_b, _e), _a = a.info(_lunch_time)
+            (_b, _e), _a = a.info_at(_lunch_time)
             _lunch_dur = _e - _b
             if not (_e - _b >= 30 and _a == 'idle'):
                 _lunch_dur = 0
@@ -41,9 +41,9 @@ def test_import():
                 print('WARNING: ignore "%s" - less than 5h tracked' % _file)
 
             print("f: %23s, count: %3d, begin: %s (%4d), end: %s (%4d), lunch: %7s, dur: %7s" % (
-                _file, a.count(), 
-                track_base.mins_to_date(_begin), _begin, 
-                track_base.mins_to_date(_end), _end, 
+                _file, a.count(),
+                track_base.mins_to_date(_begin), _begin,
+                track_base.mins_to_date(_end), _end,
                 track_base.mins_to_dur(_lunch_dur),
                 track_base.mins_to_dur(_dur)))
             # print(re.search('track-.*.json', _file) is not None)
@@ -54,5 +54,5 @@ def test_import():
 if __name__ == '__main__':
     test_active_applications()
     test_import()
-            
+
 

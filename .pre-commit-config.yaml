@@ -1,0 +1,43 @@
+# To install pre-commit hooks, install `pre-commit` and activate it here:
+#     pip3 install pre-commit
+#     pre-commit install
+#
+---
+default_stages:
+    - commit
+    - push
+    - manual
+repos:
+    - repo: local
+      hooks:
+          - id: check-shellscripts
+            name: Check Shell Scripts
+            entry: dev/check-shellscripts
+            language: script
+            types: [file, shell]
+          - id: check-python-formatters
+            name: Check Python Formatting
+            entry: dev/check-python-format
+            language: script
+            types: [file, python]
+          - id: check-python-linting
+            name: Check Python Linting
+            entry: dev/check-python-linting
+            language: script
+            types: [file, python]
+          #- id: check-python-doctest
+          #  name: Doctests
+          #  entry: dev/check-python-doctests
+          #  language: script
+          #  types: [file, python]
+          #  verbose: true
+          - id: check-python-typing
+            name: Check Python Type Hinting
+            entry: dev/check-python-typing
+            language: script
+            types: [file, python]
+          - id: check-yaml-linting
+            name: Check YAML Linting
+            entry: dev/check-yaml-linting
+            language: script
+            types: [file, yaml]

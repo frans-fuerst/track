@@ -7,7 +7,6 @@ some common features
 """
 
 import logging
-from typing import Any, Dict, List, Set
 import signal
 import threading
 
@@ -41,7 +40,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.windowTitleChanged.connect(self.on_windowTitleChanged)
         with open_in_directory_of(__file__, "mainwindow.ui") as file:
-            uic.loadUi(file, self, package="application.ui")
+            uic.loadUi(file, self, package="track.ui")
 
         for sig in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
             signal.signal(sig, lambda signal, frame: self.handle_signal(signal))

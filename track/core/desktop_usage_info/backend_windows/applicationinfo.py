@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""Retrieve desktop usage info - Windows version"""
+
 from win32gui import GetWindowText, GetForegroundWindow
 
 def _get_active_window_title():
@@ -15,12 +17,3 @@ def get_active_window_information():
         # "PID": ???
         # "COMMAND": ???
     }
-
-if __name__ == '__main__':
-    import time
-    import sys
-    print(sys.version)
-    while True:
-        print(get_active_window_information())
-        time.sleep(1)
-

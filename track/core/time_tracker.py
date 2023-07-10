@@ -6,19 +6,20 @@
 
 import json
 import os
-from typing import Any, Dict, Sequence, Tuple, Optional  # pylint: disable=unused-import
+from typing import Any, Dict, Optional, Sequence, Tuple  # pylint: disable=unused-import
 
-from . import common, ActiveApplications
-from ..core.util import catch, log, exception_to_string
 from ..core import desktop_usage_info
+from ..core.util import catch, exception_to_string, log
+from . import ActiveApplications, common
 
 
 class TimeTracker:
-    """ * retrieves system data
-        * holds the application data object as
-          well as some meta information
-        * provides persistence
+    """* retrieves system data
+    * holds the application data object as
+      well as some meta information
+    * provides persistence
     """
+
     def __init__(self, data_dir: str) -> None:
         self._last_day = common.today_int()
         self._storage_dir = data_dir
@@ -28,7 +29,8 @@ class TimeTracker:
         data = catch(
             lambda: self._load_json("track-%s.json" % common.today_str()),
             (FileNotFoundError, json.JSONDecodeError),
-            {})
+            {},
+        )
         self._applications = ActiveApplications(data.get("tracker_data"))
         self.note = data.get("daily_note")
         log().info("Found app data: %r", self._applications)
@@ -48,7 +50,8 @@ class TimeTracker:
                 (r"Track", 2),
                 (r"^DER SPIEGEL", 3),
                 (r".*SZ.de", 3),
-            ])
+            ],
+        )
         common.recategorize(self._applications.apps(), self._re_rules)
 
     def _load_json(self, filename: str) -> Any:
@@ -59,7 +62,7 @@ class TimeTracker:
     def _save_json(self, data: Dict[str, Any], filename: str) -> None:
         """Properly write data to a JSON file"""
         os.makedirs(self._storage_dir, exist_ok=True)
-        with open(os.path.join(self._storage_dir, filename), 'w') as file:
+        with open(os.path.join(self._storage_dir, filename), "w") as file:
             json.dump(
                 data,
                 file,
@@ -76,11 +79,10 @@ class TimeTracker:
 
     def persist(self, filename: str) -> None:
         """Store tracking info and regex rules on file system"""
-        log().info('Save tracker data to %r', filename)
+        log().info("Save tracker data to %r", filename)
         self._save_json(
-            {"tracker_data": self._applications.__data__(),
-             "daily_note": self.note},
-            filename)
+            {"tracker_data": self._applications.__data__(), "daily_note": self.note}, filename
+        )
         self._save_json(self._re_rules, "category_rules.json")
 
         # just for development
@@ -113,7 +115,7 @@ class TimeTracker:
 
             if midnight:
                 log().info("current minute is %d - it's midnight", current_minute)
-                self.persist('track-backup-%d.json' % self._last_day)
+                self.persist("track-backup-%d.json" % self._last_day)
                 self.clear()
 
             self._last_day = current_day
@@ -129,13 +131,13 @@ class TimeTracker:
             user_is_active = idle_current <= 10
 
             self._current_state = {
-                'minute': current_minute,
-                'category': current_category,
-                'time_total': current_minute - self._applications.begin_index() + 1,
-                'user_idle': idle_current,
-                'user_active': user_is_active,
-                'app_title': current_app_title,
-                'process_name': current_process_exe,
+                "minute": current_minute,
+                "category": current_category,
+                "time_total": current_minute - self._applications.begin_index() + 1,
+                "user_idle": idle_current,
+                "user_active": user_is_active,
+                "app_title": current_app_title,
+                "process_name": current_process_exe,
             }
             print(self._current_state)
 

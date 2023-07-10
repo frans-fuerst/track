@@ -19,15 +19,18 @@
 import ctypes
 import ctypes.util
 
+
 class XScreenSaverInfo(ctypes.Structure):
     _fields_ = [
-            ('window', ctypes.c_ulong),
-            ('state', ctypes.c_int),
-            ('kind', ctypes.c_int),
-            ('til_or_since', ctypes.c_ulong),
-            ('idle', ctypes.c_ulong),
-            ('eventMask', ctypes.c_ulong)
+        ("window", ctypes.c_ulong),
+        ("state", ctypes.c_int),
+        ("kind", ctypes.c_int),
+        ("til_or_since", ctypes.c_ulong),
+        ("idle", ctypes.c_ulong),
+        ("eventMask", ctypes.c_ulong),
     ]
+
+
 XScreenSaverInfo_p = ctypes.POINTER(XScreenSaverInfo)
 
 display_p = ctypes.c_void_p
@@ -35,18 +38,18 @@ xid = ctypes.c_ulong
 c_int_p = ctypes.POINTER(ctypes.c_int)
 
 try:
-    libX11path = ctypes.util.find_library('X11')
+    libX11path = ctypes.util.find_library("X11")
     if libX11path == None:
-        raise OSError('libX11 could not be found.')
+        raise OSError("libX11 could not be found.")
     libX11 = ctypes.cdll.LoadLibrary(libX11path)
     libX11.XOpenDisplay.restype = display_p
-    libX11.XOpenDisplay.argtypes = ctypes.c_char_p,
+    libX11.XOpenDisplay.argtypes = (ctypes.c_char_p,)
     libX11.XDefaultRootWindow.restype = xid
-    libX11.XDefaultRootWindow.argtypes = display_p,
+    libX11.XDefaultRootWindow.argtypes = (display_p,)
 
-    libXsspath = ctypes.util.find_library('Xss')
+    libXsspath = ctypes.util.find_library("Xss")
     if libXsspath == None:
-        raise OSError('libXss could not be found.')
+        raise OSError("libXss could not be found.")
     libXss = ctypes.cdll.LoadLibrary(libXsspath)
     libXss.XScreenSaverQueryExtension.argtypes = display_p, c_int_p, c_int_p
     libXss.XScreenSaverAllocInfo.restype = XScreenSaverInfo_p
@@ -54,23 +57,28 @@ try:
 
     dpy_p = libX11.XOpenDisplay(None)
     if dpy_p == None:
-        raise OSError('Could not open X Display.')
+        raise OSError("Could not open X Display.")
 
     _event_basep = ctypes.c_int()
     _error_basep = ctypes.c_int()
-    if libXss.XScreenSaverQueryExtension(dpy_p, ctypes.byref(_event_basep),
-                    ctypes.byref(_error_basep)) == 0:
-        raise OSError('XScreenSaver Extension not available on display.')
+    if (
+        libXss.XScreenSaverQueryExtension(
+            dpy_p, ctypes.byref(_event_basep), ctypes.byref(_error_basep)
+        )
+        == 0
+    ):
+        raise OSError("XScreenSaver Extension not available on display.")
 
     xss_info_p = libXss.XScreenSaverAllocInfo()
     if xss_info_p == None:
-        raise OSError('XScreenSaverAllocInfo: Out of Memory.')
+        raise OSError("XScreenSaverAllocInfo: Out of Memory.")
 
     rootwindow = libX11.XDefaultRootWindow(dpy_p)
     xss_available = True
 except OSError as e:
     # Logging?
     xss_available = False
+
 
 def getIdleSec():
     global xss_available
@@ -84,6 +92,7 @@ def getIdleSec():
     else:
         return int(xss_info_p.contents.idle) / 1000
 
+
 def close():
     global xss_available
     if xss_available:
@@ -91,9 +100,10 @@ def close():
         libX11.XCloseDisplay(dpy_p)
         xss_available = False
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import time
+
     while True:
         time.sleep(0.5)
         print(getIdleSec())
-

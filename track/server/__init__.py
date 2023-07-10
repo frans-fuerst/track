@@ -6,31 +6,32 @@ application data
 
 import argparse
 import signal
-import time
 import sys
 import threading
-from contextlib import suppress
+import time
 import traceback
-from typing import Dict, Any
+from contextlib import suppress
+from typing import Any, Dict
 
 import zmq  # type: ignore
 
 from .. import core
-from ..core import util, errors, common, desktop_usage_info
+from ..core import common, desktop_usage_info, errors, util
 from ..core.util import log
 
 
 class TrackServer:
-    """ track activities, provide them to a time_tracker instance and
-        run a zmq/json based server which provides the info to external
-        consumers like a UI or a web service"""
+    """track activities, provide them to a time_tracker instance and
+    run a zmq/json based server which provides the info to external
+    consumers like a UI or a web service"""
+
     def __init__(self, args: argparse.Namespace) -> None:
         self._running = False
         self._system_monitoring_thread = threading.Thread(
-            target=self._system_monitoring_fn,
-            daemon=True)
+            target=self._system_monitoring_fn, daemon=True
+        )
         self._tracker = core.TimeTracker(data_dir=args.data_dir)
-        self._last_save_time = 0.
+        self._last_save_time = 0.0
 
     def _save_data(self, interval: int = 20, force: bool = False) -> None:
         if time.time() - self._last_save_time > interval or force:
@@ -54,6 +55,7 @@ class TrackServer:
 
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process a single request"""
+
         def wrong_command_fn(request: Dict[str, Any]) -> Dict[str, Any]:
             raise errors.RequestMalformed("Command %r not known" % request["cmd"])
 
@@ -63,7 +65,7 @@ class TrackServer:
         def quit_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
             self._running = False
             self._system_monitoring_thread.join()
-            return {'type': 'ok'}
+            return {"type": "ok"}
 
         def version_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
             return {"data": {"version": str(core.version_info)}}
@@ -81,7 +83,7 @@ class TrackServer:
             if "data" not in request or "rules" not in request["data"]:
                 raise errors.RequestMalformed('No "rules" provided')
             self._tracker.set_rules(request["data"]["rules"])
-            return {'type': 'ok'}
+            return {"type": "ok"}
 
         def note_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
             return {"data": {"note": self._tracker.note}}
@@ -90,25 +92,25 @@ class TrackServer:
             if "data" not in request or "note" not in request["data"]:
                 raise errors.RequestMalformed('No "note" provided')
             self._tracker.set_note(request["data"]["note"])
-            return {'type': 'ok'}
+            return {"type": "ok"}
 
         def clip_from_fn(request: Dict[str, Any]) -> Dict[str, Any]:
             if "data" not in request or "index" not in request["data"]:
                 raise errors.RequestMalformed('No "index" provided')
             self._tracker.get_applications_model().clip_from(request["data"]["index"])
             # self._save_data(force=True)
-            return {'type': 'ok'}
+            return {"type": "ok"}
 
         def clip_to_fn(request: Dict[str, Any]) -> Dict[str, Any]:
             if "data" not in request or "index" not in request["data"]:
                 raise errors.RequestMalformed('No "index" provided')
             self._tracker.get_applications_model().clip_to(request["data"]["index"])
             # self._save_data(force=True)
-            return {'type': 'ok'}
+            return {"type": "ok"}
 
         def save_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
             self._save_data(force=True)
-            return {'type': 'ok'}
+            return {"type": "ok"}
 
         return {
             None: no_command_fn,
@@ -123,7 +125,7 @@ class TrackServer:
             "clip_from": clip_from_fn,
             "clip_to": clip_to_fn,
             "save": save_fn,
-            }.get(request.get("cmd", None), wrong_command_fn)(request)
+        }.get(request.get("cmd", None), wrong_command_fn)(request)
 
     def run(self, args: argparse.Namespace) -> None:
         """Run zmq message dispatching loop"""
@@ -140,7 +142,7 @@ class TrackServer:
         self._system_monitoring_thread.start()
 
         while self._running:
-            log().debug('listening..')
+            log().debug("listening..")
             try:
                 request = rep_socket.recv_json()
             except zmq.ZMQError:
@@ -153,18 +155,16 @@ class TrackServer:
             try:
                 reply = self.handle_request(request)
             except errors.RequestMalformed as exc:
-                reply = {'type': 'error',
-                         'error_type': 'request_malformed',
-                         'what': str(exc)}
+                reply = {"type": "error", "error_type": "request_malformed", "what": str(exc)}
             except Exception as exc:  # pylint: disable=broad-except
-                reply = {'type': 'error', 'what': str(exc)}
+                reply = {"type": "error", "what": str(exc)}
 
             rep_socket.send_json(reply)
 
         if self._system_monitoring_thread:
             self._system_monitoring_thread.join()
 
-        log().info('close..')
+        log().info("close..")
         rep_socket.close()
 
 

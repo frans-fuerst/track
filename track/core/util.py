@@ -3,11 +3,11 @@
 
 """Provide some non-track-specific helper functions"""
 
-import os
-import sys
+import argparse
 import logging
 import logging.handlers
-import argparse
+import os
+import sys
 from contextlib import contextmanager
 from typing import Any, NoReturn
 
@@ -18,14 +18,15 @@ from . import version_info
 
 class ColorFormatter(logging.Formatter):
     """Logging Formatter to add colors and count warning / errors"""
+
     colors = {
-        'green':    "\x1b[32m",
-        'cyan':     "\x1b[36m",
-        'grey':     "\x1b[38;21m",
-        'yellow':   "\x1b[33;21m",
-        'red':      "\x1b[31;21m",
-        'bold_red': "\x1b[31;1m",
-        'reset':    "\x1b[0m",
+        "green": "\x1b[32m",
+        "cyan": "\x1b[36m",
+        "grey": "\x1b[38;21m",
+        "yellow": "\x1b[33;21m",
+        "red": "\x1b[31;21m",
+        "bold_red": "\x1b[31;1m",
+        "reset": "\x1b[0m",
     }
     level_colors = {
         logging.DEBUG: colors["green"],
@@ -37,26 +38,34 @@ class ColorFormatter(logging.Formatter):
     use_color = "TERM" in os.environ
 
     def format(self, record):
-        return (self.level_colors[record.levelno] + super().format(record) + self.colors["reset"]
-                if self.use_color else super().format(record))
+        return (
+            self.level_colors[record.levelno] + super().format(record) + self.colors["reset"]
+            if self.use_color
+            else super().format(record)
+        )
 
 
 def setup_logging(args: argparse.Namespace, syslog=False) -> None:
     """Setup coloring, syslog etc"""
     handler = logging.StreamHandler()
-    handler.setFormatter(ColorFormatter(
-        fmt="%(levelname)s %(asctime)s %(name)s %(process)s:%(thread)s: %(message)s",
-        datefmt='%Y-%m-%d %H:%M:%S'))
+    handler.setFormatter(
+        ColorFormatter(
+            fmt="%(levelname)s %(asctime)s %(name)s %(process)s:%(thread)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+    )
     logging.getLogger().addHandler(handler)
     for level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"):
         logging.addLevelName(getattr(logging, level), "(%s)" % (level[0] * 2))
 
     log().setLevel(getattr(logging, args.log_level))
-    if syslog and os.name == 'posix':
-        handler = logging.handlers.SysLogHandler(address='/dev/log')
-        handler.setFormatter(logging.Formatter(
-            fmt="%(asctime)s %(name)15s %(levelname)s:  %(message)s",
-            datefmt="%y%m%d-%H%M%S"))
+    if syslog and os.name == "posix":
+        handler = logging.handlers.SysLogHandler(address="/dev/log")
+        handler.setFormatter(
+            logging.Formatter(
+                fmt="%(asctime)s %(name)15s %(levelname)s:  %(message)s", datefmt="%y%m%d-%H%M%S"
+            )
+        )
         logging.getLogger().addHandler(handler)
 
 

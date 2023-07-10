@@ -6,25 +6,24 @@
 import json
 from datetime import datetime
 
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
-from ..core import common, ActiveApplications
-from .qt_common import CategoryColor
-from .qt_common import TimechartDataprovider
+from ..core import ActiveApplications, common
 from ..core.util import catch
+from .qt_common import CategoryColor, TimechartDataprovider
 
 
 class FileDataprovider(TimechartDataprovider):
     """"""
+
     def __init__(self, filename):
         def convert(data):
             return data if "tracker_data" in data else {"tracker_data": data}
 
         with open(filename) as file:
             data = catch(
-                lambda: convert(json.load(file)),
-                (FileNotFoundError, json.JSONDecodeError),
-                {})
+                lambda: convert(json.load(file)), (FileNotFoundError, json.JSONDecodeError), {}
+            )
             self.apps = ActiveApplications(data.get("tracker_data"))
             self._daily_note = data.get("daily_note") or ""
         self._date = datetime.strptime(filename[-13:-5], "%Y%m%d")
@@ -115,13 +114,12 @@ class Timegraph(QtWidgets.QFrame):
         if self._dataprovider.begin_index() <= index <= self._dataprovider.end_index():
             (start, end), app_info = self._dataprovider.info_at(index)
             self.select(start, end)
-            self.setToolTip("%s: %s (%s)" % (
-                common.mins_to_dur(index),
-                app_info,
-                common.mins_to_dur(end - start)))
+            self.setToolTip(
+                "%s: %s (%s)"
+                % (common.mins_to_dur(index), app_info, common.mins_to_dur(end - start))
+            )
         else:
             self.setToolTip(self._dataprovider.daily_note() or "no notes")
-
 
     def contextMenuEvent(self, event):
         menu = QtWidgets.QMenu(self)
@@ -143,10 +141,14 @@ class Timegraph(QtWidgets.QFrame):
             _index = _start_index + i
             qp.setPen(
                 # dark gray on borders of tracked time
-                QtCore.Qt.gray if i < 50 or _index > self._dataprovider.current_minute() else
+                QtCore.Qt.gray
+                if i < 50 or _index > self._dataprovider.current_minute()
+                else
                 # black 'now' line
-                QtCore.Qt.black if self._dataprovider.current_minute() == _index else
-                CategoryColor(self._dataprovider.category_at(_index)))
+                QtCore.Qt.black
+                if self._dataprovider.current_minute() == _index
+                else CategoryColor(self._dataprovider.category_at(_index))
+            )
 
             qp.drawLine(i + 1, 0, i + 1, self.height() - 2)
 
@@ -230,20 +232,24 @@ class EvaluationWidget(QtWidgets.QFrame):
         _time_work = dp.time_work()
         _time_private = dp.time_private()
         _time_idle = dp.time_idle()
-        percentage = 100. / _time_total if _time_total else 0.
-        self.lbl_active.setText("active: %s (%d%%)" % (
-            common.mins_to_dur(_time_active), _time_active * percentage))
-        self.lbl_work.setText("work: %s (%d%%)" % (
-            common.mins_to_dur(_time_work), _time_work * percentage))
-        self.lbl_private.setText("private: %s (%d%%)" % (
-            common.mins_to_dur(_time_private), _time_private * percentage))
-        self.lbl_idle.setText("idle: %s (%d%%)" % (
-            common.mins_to_dur(_time_idle), _time_idle * percentage))
+        percentage = 100.0 / _time_total if _time_total else 0.0
+        self.lbl_active.setText(
+            "active: %s (%d%%)" % (common.mins_to_dur(_time_active), _time_active * percentage)
+        )
+        self.lbl_work.setText(
+            "work: %s (%d%%)" % (common.mins_to_dur(_time_work), _time_work * percentage)
+        )
+        self.lbl_private.setText(
+            "private: %s (%d%%)" % (common.mins_to_dur(_time_private), _time_private * percentage)
+        )
+        self.lbl_idle.setText(
+            "idle: %s (%d%%)" % (common.mins_to_dur(_time_idle), _time_idle * percentage)
+        )
 
-        self.lbl_totals.setText("%s - %s: %s" % (
-            fmt(dp.begin_index()),
-            fmt(dp.current_minute()),
-            common.mins_to_dur(_time_total)))
+        self.lbl_totals.setText(
+            "%s - %s: %s"
+            % (fmt(dp.begin_index()), fmt(dp.current_minute()), common.mins_to_dur(_time_total))
+        )
 
     def recategorize(self, rules: common.Rules):
         self.timegraph.dataprovider().recategorize(rules)

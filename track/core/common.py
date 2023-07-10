@@ -4,21 +4,29 @@
 """All the stuff needed by several components
 """
 
-import os
-import sys
-from datetime import datetime
-import time
 import argparse
+import os
 import re
+import sys
+import time
+from datetime import datetime
 from enum import IntEnum
-from typing import Any, Dict, Sequence, Tuple, List, Optional  # pylint: disable=unused-import
+from typing import (  # pylint: disable=unused-import
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
-from .util import log
 from . import version_info
+from .util import log
 
 
 class Category(IntEnum):
     """One of each currently known time categories"""
+
     IDLE = 0
     UNASSIGNED = 1
     WORK = 2
@@ -34,9 +42,11 @@ class AppInfo:
         self._count = 0
 
     def __eq__(self, other) -> bool:
-        return (self._wndtitle == other._wndtitle and
-                self._cmdline == other._cmdline and
-                self._category == other._category)
+        return (
+            self._wndtitle == other._wndtitle
+            and self._cmdline == other._cmdline
+            and self._category == other._category
+        )
 
     def generate_identifier(self):
         return self._wndtitle
@@ -51,16 +61,15 @@ class AppInfo:
         try:
             self._wndtitle, self._category, self._count, self._cmdline = data
         except:
-            print('tried to expand %s to (title, category, count, cmdline)' % (
-                str(data)))
-            raise Exception('could not load AppInfo data')
+            print("tried to expand %s to (title, category, count, cmdline)" % (str(data)))
+            raise Exception("could not load AppInfo data")
         return self
 
     def __data__(self):  # const
         return (self._wndtitle, self._category, self._count, self._cmdline)
 
-    #def category(self):
-        #return self._category
+    # def category(self):
+    # return self._category
 
     def set_category(self, category):
         self._category = category
@@ -73,8 +82,8 @@ class AppInfo:
 
 
 class Minute:
-    """ a minute holds a category and a list of apps
-    """
+    """a minute holds a category and a list of apps"""
+
     def __init__(self, app_counter=None):
         self._app_counter = app_counter or {}
 
@@ -134,7 +143,7 @@ def secs_to_dur(mins):
     _result = ""
     _minutes = mins
     if _minutes >= 60:
-        _result = str(int(_minutes / 60))+"m "
+        _result = str(int(_minutes / 60)) + "m "
         _minutes %= 60
     _result += str(_minutes) + "s"
     return _result
@@ -145,7 +154,7 @@ def mins_to_dur(mins: int) -> str:
 
 
 def today_str() -> str:
-    return datetime.fromtimestamp(time.time()).strftime('%Y%m%d')
+    return datetime.fromtimestamp(time.time()).strftime("%Y%m%d")
 
 
 def today_int() -> int:
@@ -162,8 +171,9 @@ def minutes_since_midnight() -> int:
     return seconds_since_midnight() // 60
 
 
-def log_files(directory: str, reverse=False, exclude_today: bool=False) -> List[str]:
+def log_files(directory: str, reverse=False, exclude_today: bool = False) -> List[str]:
     """Return a sorted list of Track log file names found in @directory"""
+
     def get_date(filename: str) -> Optional[str]:
         match = re.search(r"track-(\d{8}).json", filename, flags=re.IGNORECASE)
         if not match:
@@ -171,28 +181,39 @@ def log_files(directory: str, reverse=False, exclude_today: bool=False) -> List[
         return match.group(1)
 
     today_timestamp = today_str()
-    return sorted((file
-                   for file in os.listdir(directory)
-                   for date in (get_date(file),)
-                   if date and (date != today_timestamp or not exclude_today)),
-                  reverse=reverse)
+    return sorted(
+        (
+            file
+            for file in os.listdir(directory)
+            for date in (get_date(file),)
+            if date and (date != today_timestamp or not exclude_today)
+        ),
+        reverse=reverse,
+    )
 
 
 def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
     """Set some default arguments for track components"""
-    parser.add_argument('--log-level',
-                        '-l',
-                        choices=['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
-                        default='INFO',)
-    parser.add_argument('--data-dir',
-                        '-d',
-                        default=os.path.expanduser('~/.track'),)
-    parser.add_argument('--port', type=int, default=3456, help='IPv4 port to connect to')
+    parser.add_argument(
+        "--log-level",
+        "-l",
+        choices=["DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"],
+        default="INFO",
+    )
+    parser.add_argument(
+        "--data-dir",
+        "-d",
+        default=os.path.expanduser("~/.track"),
+    )
+    parser.add_argument("--port", type=int, default=3456, help="IPv4 port to connect to")
 
 
 def log_system_info(args) -> None:
     """Print some interestion system information used for problem solving"""
-    log().info("Used Python interpreter: v%s (%s)",
-               '.'.join((str(e) for e in sys.version_info)), sys.executable)
+    log().info(
+        "Used Python interpreter: v%s (%s)",
+        ".".join((str(e) for e in sys.version_info)),
+        sys.executable,
+    )
     log().info("App version:  %s", str(version_info))
     log().info("Track dir:  %s", args.data_dir)

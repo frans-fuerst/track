@@ -3,14 +3,14 @@
 
 import os
 
-if os.name == 'nt':
+if os.name == "nt":
 
-    from ctypes import Structure, windll, c_uint, sizeof, byref
+    from ctypes import Structure, byref, c_uint, sizeof, windll
 
     class LASTINPUTINFO(Structure):
         _fields_ = [
-            ('cbSize', c_uint),
-            ('dwTime', c_uint),
+            ("cbSize", c_uint),
+            ("dwTime", c_uint),
         ]
 
     def getIdleSec() -> int:
@@ -19,4 +19,3 @@ if os.name == 'nt':
         windll.user32.GetLastInputInfo(byref(lastInputInfo))
         millis = windll.kernel32.GetTickCount() - lastInputInfo.dwTime
         return int(millis / 1000.0)
-

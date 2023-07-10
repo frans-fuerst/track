@@ -9,6 +9,7 @@ from PyQt5 import QtCore, QtGui
 
 from ..core import Category
 
+
 def CategoryColor(category):
     return {
         Category.IDLE: QtCore.Qt.white,

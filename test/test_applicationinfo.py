@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-from desktop_usage_info import idle
-from desktop_usage_info import applicationinfo
-
 import time
+
+from desktop_usage_info import applicationinfo, idle
+
 
 def test_application_info():
     for i in range(2):
@@ -21,6 +21,6 @@ def test_application_info():
 
         time.sleep(1)
 
-if __name__ == '__main__':
-    test_application_info()
 
+if __name__ == "__main__":
+    test_application_info()

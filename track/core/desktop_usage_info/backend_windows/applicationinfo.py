@@ -3,13 +3,16 @@
 
 """Retrieve desktop usage info - Windows version"""
 
-from win32gui import GetWindowText, GetForegroundWindow
+from win32gui import GetForegroundWindow, GetWindowText
+
 
 def _get_active_window_title():
     return GetWindowText(GetForegroundWindow())
 
+
 def _get_active_process_name():
     return ""
+
 
 def get_active_window_information():
     return {

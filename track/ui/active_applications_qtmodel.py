@@ -5,32 +5,33 @@
 """Defines ActiveApplicationsModel
 """
 
-from typing import Any, Tuple, Dict  # pylint: disable=unused-import
+from typing import Any, Dict, Tuple  # pylint: disable=unused-import
 
 from PyQt5 import QtCore
 
-from ..core import common, ActiveApplications
+from ..core import ActiveApplications, common
 from .qt_common import change_emitter
 
 
 class ActiveApplicationsModel(QtCore.QAbstractTableModel, ActiveApplications):
     """Data model which holds all application usage data for one
-        day. That is:
+    day. That is:
 
-        app_data:  {app_id: application}
+    app_data:  {app_id: application}
 
-        minutes:   {i_min => [app_id], i_cat}
+    minutes:   {i_min => [app_id], i_cat}
 
-        where
+    where
 
-        application:  (i_secs, i_cat, s_title, s_process)
+    application:  (i_secs, i_cat, s_title, s_process)
 
 
-        model_list:
-            * sortable by key
-            * can be done with list of keys sorted by given value
-            [(app_id, i_secs, i_cat)]
+    model_list:
+        * sortable by key
+        * can be done with list of keys sorted by given value
+        [(app_id, i_secs, i_cat)]
     """
+
     def __init__(self, parent, *args) -> None:
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         ActiveApplications.__init__(self)
@@ -45,9 +46,8 @@ class ActiveApplicationsModel(QtCore.QAbstractTableModel, ActiveApplications):
         return len(self._sorted_keys)
 
     def headerData(self, column, orientation, role):
-        if (orientation == QtCore.Qt.Horizontal and
-                role == QtCore.Qt.DisplayRole):
-            return 'Application title', 'Spent', 'Category'[column]
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            return "Application title", "Spent", "Category"[column]
         return None
 
     def data(self, index, role):
@@ -60,9 +60,12 @@ class ActiveApplicationsModel(QtCore.QAbstractTableModel, ActiveApplications):
         if not role == QtCore.Qt.DisplayRole:
             return None
         return (
-            (self._apps[self._sorted_keys[row]]._wndtitle) if column == 0 else
-            common.secs_to_dur(self._apps[self._sorted_keys[row]]._count) if column == 1 else
-            self._apps[self._sorted_keys[row]]._category)
+            (self._apps[self._sorted_keys[row]]._wndtitle)
+            if column == 0
+            else common.secs_to_dur(self._apps[self._sorted_keys[row]]._count)
+            if column == 1
+            else self._apps[self._sorted_keys[row]]._category
+        )
 
     @QtCore.pyqtSlot()
     def update_all_categories(self, get_category_from_app) -> None:
@@ -72,20 +75,24 @@ class ActiveApplicationsModel(QtCore.QAbstractTableModel, ActiveApplications):
             self._minutes[i].rebuild_categories(get_category_from_app)
 
     def flags(self, _index):
-        return (
-            QtCore.Qt.ItemIsEnabled |
-            QtCore.Qt.ItemIsSelectable |
-            QtCore.Qt.ItemIsDragEnabled)
+        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled
 
     def sort(self, column=1, order=QtCore.Qt.AscendingOrder):
         with change_emitter(self):
             self._sorted_keys = [
-                x[0] for x in sorted(
+                x[0]
+                for x in sorted(
                     self._apps.items(),
-                    key=((lambda x: x[1]._wndtitle) if column == 0 else
-                         (lambda x: x[1]._count) if column == 1 else
-                         (lambda x: x[1]._category)),
-                    reverse=(order != QtCore.Qt.DescendingOrder))]
+                    key=(
+                        (lambda x: x[1]._wndtitle)
+                        if column == 0
+                        else (lambda x: x[1]._count)
+                        if column == 1
+                        else (lambda x: x[1]._category)
+                    ),
+                    reverse=(order != QtCore.Qt.DescendingOrder),
+                )
+            ]
 
     def clear(self):
         with change_emitter(self):

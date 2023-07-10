@@ -6,6 +6,7 @@
 """
 
 from contextlib import suppress
+
 from track.server import main
 
 if __name__ == "__main__":

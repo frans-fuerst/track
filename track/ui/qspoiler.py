@@ -3,21 +3,24 @@
 
 """Defines QSpoiler"""
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtCore, QtWidgets
 
 
 class QSpoiler(QtWidgets.QFrame):
     """Collapsable spoiler widget
-        References:
-            # Adapted from c++ version
-            http://stackoverflow.com/questions/32476006/how-to-make-an-expandable-collapsable-section-widget-in-qt
+    References:
+        # Adapted from c++ version
+        http://stackoverflow.com/questions/32476006/how-to-make-an-expandable-collapsable-section-widget-in-qt
     """
+
     def __init__(self, parent=None, title: str = "", expanded: bool = False) -> None:
         """Improvise a collapsable QFrame"""
+
         def set_widget_properties(checked: bool) -> None:
             self._content_area.setVisible(checked)
             self._toggle_button.setArrowType(
-                QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow)
+                QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow
+            )
 
         super().__init__(parent=parent)
         self._content_area = QtWidgets.QWidget()
@@ -36,10 +39,12 @@ class QSpoiler(QtWidgets.QFrame):
         self._header_line.setFrameShape(QtWidgets.QFrame.HLine)
         self._header_line.setFrameShadow(QtWidgets.QFrame.Sunken)
         self._header_line.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
 
         self._content_area.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
 
         self._main_layout.setVerticalSpacing(0)
         self._main_layout.setHorizontalSpacing(0)

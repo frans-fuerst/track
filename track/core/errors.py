@@ -4,8 +4,10 @@
 """ Contains exception types that can be transported between server and client
 """
 
+
 class RequestMalformed(Exception):
     """Something wrong about the request sent (see .error)"""
+
 
 class NotConnected(RuntimeError):
     """"""

@@ -13,16 +13,13 @@ import threading
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 
 from .. import application_root_dir
-
-from ..core.util import (
-    log,
-    open_in_directory_of,
-)
+from ..core.util import log, open_in_directory_of
 
 
 class MainWindow(QtWidgets.QMainWindow):
     class QPlainTextEditLogger(logging.Handler):
         """Invokes main thread to write to log window"""
+
         def __init__(self, receiver) -> None:
             super().__init__()
             self.log_receiver = receiver
@@ -34,7 +31,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.log_receiver.write_log(msg)
             else:
                 QtCore.QMetaObject.invokeMethod(
-                    self.log_receiver, 'write_log', QtCore.Qt.QueuedConnection, QtCore.Q_ARG(str, msg))
+                    self.log_receiver,
+                    "write_log",
+                    QtCore.Qt.QueuedConnection,
+                    QtCore.Q_ARG(str, msg),
+                )
 
     def __init__(self, _args=None) -> None:
         super().__init__()
@@ -62,8 +63,9 @@ class MainWindow(QtWidgets.QMainWindow):
         font.setPointSize(10)
         self.log_view.setFont(font)
         logTextBox = self.QPlainTextEditLogger(self)
-        logTextBox.setFormatter(logging.Formatter(
-            "%(levelname)s %(asctime)s %(name)s: %(message)s", datefmt='%H:%M:%S'))
+        logTextBox.setFormatter(
+            logging.Formatter("%(levelname)s %(asctime)s %(name)s: %(message)s", datefmt="%H:%M:%S")
+        )
         logging.getLogger().addHandler(logTextBox)
         # self.pb_quit.clicked.connect(self.close)
         # self.pb_log.toggled.connect(self.toggle_log)
@@ -94,8 +96,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log_view.setVisible(self.pb_log.isChecked())
 
     def toggle_fullscreen(self):
-        (self.showNormal if self.isFullScreen() else
-         self.showFullScreen)()
+        (self.showNormal if self.isFullScreen() else self.showFullScreen)()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_F11:
@@ -103,7 +104,9 @@ class MainWindow(QtWidgets.QMainWindow):
         return super().keyPressEvent(event)
 
     def event(self, e):
-        if not isinstance(e, (
+        if not isinstance(
+            e,
+            (
                 QtCore.QEvent,
                 QtCore.QChildEvent,
                 QtCore.QDynamicPropertyChangeEvent,
@@ -124,7 +127,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtGui.QCloseEvent,
                 QtGui.QInputMethodQueryEvent,
                 QtGui.QContextMenuEvent,
-                )):
+            ),
+        ):
             log().warning("unknown event: %r %r", e.type(), e)
         return super().event(e)
 
@@ -139,8 +143,12 @@ class MainWindow(QtWidgets.QMainWindow):
         """Handle posix signals, i.e. shut down on CTRL-C"""
         log().info(
             "got signal %s(%d)",
-            dict((k, v) for v, k in reversed(sorted(signal.__dict__.items()))
-                 if v.startswith('SIG') and not v.startswith('SIG_')).get(sig, "unknown"),
-            sig)
+            dict(
+                (k, v)
+                for v, k in reversed(sorted(signal.__dict__.items()))
+                if v.startswith("SIG") and not v.startswith("SIG_")
+            ).get(sig, "unknown"),
+            sig,
+        )
         if sig == signal.SIGINT:
             self.close()

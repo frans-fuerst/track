@@ -4,43 +4,51 @@
 """Track main UI module
 """
 
-import sys
 import argparse
+import os
 import os.path
 import subprocess
+import sys
 from contextlib import suppress
 from typing import Any
-import os
 
 try:
-    from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
+    from PyQt5 import QtCore, QtGui, QtWidgets  # type: ignore
 except ImportError:
-    print("you have to have PyQt5 for your version of Python (%s) installed"
-          % ".".join(str(x) for x in sys.version_info))
+    print(
+        "you have to have PyQt5 for your version of Python (%s) installed"
+        % ".".join(str(x) for x in sys.version_info)
+    )
     sys.exit(-1)
+
+from pathlib import Path
 
 from ..core import common, errors, util
 from ..core.util import log
-
 from .mainwindow import MainWindow
 from .qreordertableview import ReorderTableView
+from .qt_common import CategoryColor, SimpleQtThread
 from .time_tracker_qt import TimeTrackerClientQt
 from .timegraph import EvaluationWidget, FileDataprovider
-from .qt_common import CategoryColor, SimpleQtThread
-from pathlib import Path
+
 
 def start_server_process(args) -> None:
     """Start the track server"""
-    log().info('start track server daemon')
+    log().info("start track server daemon")
     module_path = Path(__file__).parent.parent
     server_file = module_path / "track-server"
-    subprocess.Popen([
-        sys.executable, server_file,
-                "--log-level", args.log_level,
-        "--data-dir", args.data_dir,
-        "--port", str(args.port),
-    ],
-    env={** os.environ, ** {"PYTHONPATH": module_path.parent}},
+    subprocess.Popen(
+        [
+            sys.executable,
+            server_file,
+            "--log-level",
+            args.log_level,
+            "--data-dir",
+            args.data_dir,
+            "--port",
+            str(args.port),
+        ],
+        env={**os.environ, **{"PYTHONPATH": module_path.parent}},
     )
 
 
@@ -52,13 +60,14 @@ def category_name(value):
         2: "work",
         3: "private",
         4: "break",
-        }.get(value, "?")
+    }.get(value, "?")
 
 
 def check_for_updates() -> None:
     """Identifies whether the track instance is git versioned, fetches from upstream and
     checks whether there are updates to pull"""
     log().info("Check for remote app updates on git remote..")
+
     def git_cmd(cmd) -> str:
         result = subprocess.run(
             ["git"] + cmd,
@@ -66,7 +75,8 @@ def check_for_updates() -> None:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=True,
-            universal_newlines=True)
+            universal_newlines=True,
+        )
         for line in (l for l in result.stderr.split("\n") if l.strip() != ""):
             log().debug("git: %r", line)
         return result.stdout.rstrip("\n")
@@ -82,22 +92,28 @@ def check_for_updates() -> None:
         local_sha = git_cmd(["rev-parse", "@"])
         remote_sha = git_cmd(["rev-parse", "@{u}"])
         base_sha = git_cmd(["merge-base", "@", "@{u}"])
-        return (0 if local_sha == remote_sha else
-                1 if remote_sha == base_sha else
-                2 if local_sha == base_sha else
-                3)
+        return (
+            0
+            if local_sha == remote_sha
+            else 1
+            if remote_sha == base_sha
+            else 2
+            if local_sha == base_sha
+            else 3
+        )
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         log().warning("Was not able to check for git updates: %r", exc)
 
 
 class TrackUI(MainWindow):
     """Track recorder UI"""
+
     class ApplicationTableDelegate(QtWidgets.QStyledItemDelegate):
         """Delegator which draws a coloured background for a certain column"""
+
         def initStyleOption(
-                self,
-                option: QtWidgets.QStyleOptionViewItem,
-                index: QtCore.QModelIndex) -> None:
+            self, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex
+        ) -> None:
             """Set text style and color"""
             super().initStyleOption(option, index)
             if index.column() == 2:
@@ -105,15 +121,18 @@ class TrackUI(MainWindow):
 
         def displayText(self, value: Any, locale: QtCore.QLocale) -> Any:
             """Convert from category to category names"""
-            return (category_name(value) if isinstance(value, int) else
-                    super().displayText(value, locale))
+            return (
+                category_name(value)
+                if isinstance(value, int)
+                else super().displayText(value, locale)
+            )
 
     class RulesTableDelegate(QtWidgets.QStyledItemDelegate):
         """Delegator which draws a coloured background for a certain column"""
+
         def initStyleOption(
-                self,
-                option: QtWidgets.QStyleOptionViewItem,
-                index: QtCore.QModelIndex) -> None:
+            self, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex
+        ) -> None:
             """Set text style and color"""
             super().initStyleOption(option, index)
             if index.column() == 0:
@@ -126,9 +145,13 @@ class TrackUI(MainWindow):
 
         def displayText(self, value: Any, locale: QtCore.QLocale) -> Any:
             """Convert from category to category names"""
-            return (category_name(value) if isinstance(value, int) else
-                    "new rule" if value == "" else
-                    super().displayText(value, locale))
+            return (
+                category_name(value)
+                if isinstance(value, int)
+                else "new rule"
+                if value == ""
+                else super().displayText(value, locale)
+            )
 
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
@@ -201,7 +224,8 @@ class TrackUI(MainWindow):
         self.tbl_evaluation = QtWidgets.QListWidget()
         for filename in common.log_files(args.data_dir, reverse=True, exclude_today=True):
             myQCustomQWidget = EvaluationWidget(
-                dataprovider=FileDataprovider(os.path.join(args.data_dir, filename)))
+                dataprovider=FileDataprovider(os.path.join(args.data_dir, filename))
+            )
             myQListWidgetItem = QtWidgets.QListWidgetItem(self.tbl_evaluation)
             myQListWidgetItem.setSizeHint(myQCustomQWidget.sizeHint())
             self.tbl_evaluation.addItem(myQListWidgetItem)
@@ -242,8 +266,9 @@ class TrackUI(MainWindow):
     def on_rules_changed(self) -> None:
         self.tbl_category_rules.update()
         for i in range(self.tbl_evaluation.count()):
-            self.tbl_evaluation.itemWidget(
-                self.tbl_evaluation.item(i)).recategorize(self._tracker.rules_model().rules())
+            self.tbl_evaluation.itemWidget(self.tbl_evaluation.item(i)).recategorize(
+                self._tracker.rules_model().rules()
+            )
 
     def update_idle(self) -> None:
         self._tracker.update()
@@ -259,7 +284,9 @@ class TrackUI(MainWindow):
         palette.setColor(
             self.lbl_title.backgroundRole(),
             CategoryColor(self._tracker.get_current_category())
-            if self._tracker.user_is_active() else QtCore.Qt.gray)
+            if self._tracker.user_is_active()
+            else QtCore.Qt.gray,
+        )
         self.lbl_idle.setPalette(palette)
         self.lbl_title.setPalette(palette)
 
@@ -269,9 +296,9 @@ class TrackUI(MainWindow):
         _retried = False
         while True:
             try:
-                log().info('connect to track server..')
+                log().info("connect to track server..")
                 self._tracker.connect(self._endpoint)
-                log().info('connected!')
+                log().info("connected!")
                 return True
             except TimeoutError:
                 if _retried:
@@ -279,19 +306,23 @@ class TrackUI(MainWindow):
                     return False
                 log().info(
                     "could not connect to server - assume "
-                    "it's not running and start a server instance")
+                    "it's not running and start a server instance"
+                )
                 _retried = True
                 start_server_process(self._args)
 
     @QtCore.pyqtSlot()
     def _show_info_popup(self):
-        if QtWidgets.QMessageBox.question(
+        if (
+            QtWidgets.QMessageBox.question(
                 self,
                 "Good news everyone!",
                 "Looks like Track has been updated on GitHub.\n"
                 "Maybe you should give it a try and run `git pull` (manually)!\n"
-                "Do you want to close Track (and its server)?"
-                ) == QtWidgets.QMessageBox.Yes:
+                "Do you want to close Track (and its server)?",
+            )
+            == QtWidgets.QMessageBox.Yes
+        ):
             self._tracker.quit_server()
             self.close()
 
@@ -308,9 +339,11 @@ class TrackUI(MainWindow):
                 log().info("You have local commits not pushed yet")
             elif git_state in {2, 3}:
                 QtCore.QMetaObject.invokeMethod(
-                    self, '_show_info_popup', QtCore.Qt.QueuedConnection)
+                    self, "_show_info_popup", QtCore.Qt.QueuedConnection
+                )
             QtCore.QMetaObject.invokeMethod(
-                self, '_git_update_timer_timeout', QtCore.Qt.QueuedConnection)
+                self, "_git_update_timer_timeout", QtCore.Qt.QueuedConnection
+            )
 
         self._just_to_keep_the_thread = SimpleQtThread(target=check_and_restart)
 
@@ -333,11 +366,13 @@ class TrackUI(MainWindow):
 
             else:
                 QtWidgets.QMessageBox.information(
-                    self, "track service unreachable",
+                    self,
+                    "track service unreachable",
                     "Cannot reach the local track service even after starting "
                     "a new instance.\nPlease restart track on command "
                     "line to get some more info and file a bug!\n\nBye!",
-                    buttons=QtWidgets.QMessageBox.Ok)
+                    buttons=QtWidgets.QMessageBox.Ok,
+                )
                 QtWidgets.QApplication.quit()
         elif _type == QtCore.QEvent.WindowStateChange and self.isMinimized():
             if "gnome" not in os.environ.get("DESKTOP_SESSION", ""):
@@ -360,7 +395,8 @@ class TrackUI(MainWindow):
         """Shut down gracefully (i.e. close threads)"""
         log().info(
             "Application is about to close %s",
-            "(but server still running)" if self._tracker.connected else "")
+            "(but server still running)" if self._tracker.connected else "",
+        )
         self._update_timer.stop()
         if self._tracker.initialized():
             with suppress(errors.NotConnected, RuntimeError):

@@ -5,14 +5,13 @@
 """
 
 import re
-
 from typing import Any
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
 
-from .qt_common import change_emitter
 from ..core.util import log
+from .qt_common import change_emitter
 
 
 class RulesModelQt(QtCore.QAbstractTableModel):
@@ -24,9 +23,9 @@ class RulesModelQt(QtCore.QAbstractTableModel):
 
     def headerData(self, column: int, orientation, role: QtCore.Qt.ItemDataRole) -> Any:
         return (
-            ('Regex', 'Category')[column]
-            if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal else
-            None
+            ("Regex", "Category")[column]
+            if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal
+            else None
         )
 
     def columnCount(self, _parent: QtCore.QModelIndex = None) -> int:
@@ -40,15 +39,16 @@ class RulesModelQt(QtCore.QAbstractTableModel):
             (
                 (
                     self._rules[index.row()][index.column()]
-                    if index.row() < len(self._rules) else
-                    ("", 1)[index.column()]
-                    if role == QtCore.Qt.DisplayRole else
-                    (".*", 2)[index.column()]
+                    if index.row() < len(self._rules)
+                    else ("", 1)[index.column()]
+                    if role == QtCore.Qt.DisplayRole
+                    else (".*", 2)[index.column()]
                 )
-                if role in {QtCore.Qt.DisplayRole, QtCore.Qt.EditRole} else
-                None
+                if role in {QtCore.Qt.DisplayRole, QtCore.Qt.EditRole}
+                else None
             )
-            if index.isValid() else None
+            if index.isValid()
+            else None
         )
 
     def setData(self, index: QtCore.QModelIndex, value: str, role: int):
@@ -89,10 +89,12 @@ class RulesModelQt(QtCore.QAbstractTableModel):
         if not index.isValid():
             return QtCore.Qt.ItemIsDropEnabled
         if index.row() < len(self._rules):
-            return (QtCore.Qt.ItemIsEnabled |
-                    QtCore.Qt.ItemIsEditable |
-                    QtCore.Qt.ItemIsSelectable |
-                    QtCore.Qt.ItemIsDragEnabled)
+            return (
+                QtCore.Qt.ItemIsEnabled
+                | QtCore.Qt.ItemIsEditable
+                | QtCore.Qt.ItemIsSelectable
+                | QtCore.Qt.ItemIsDragEnabled
+            )
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
 
     def supportedDropActions(self) -> bool:
@@ -114,11 +116,12 @@ class RulesModelQt(QtCore.QAbstractTableModel):
         return result
 
     def moveRow(
-            self,
-            sourceParent: QtCore.QModelIndex,
-            sourceRow: int,
-            destinationParent: QtCore.QModelIndex,
-            destinationChild: int) -> bool:
+        self,
+        sourceParent: QtCore.QModelIndex,
+        sourceRow: int,
+        destinationParent: QtCore.QModelIndex,
+        destinationChild: int,
+    ) -> bool:
         row_a, row_b = max(sourceRow, destinationChild), min(sourceRow, destinationChild)
         self.beginMoveRows(QtCore.QModelIndex(), row_a, row_a, QtCore.QModelIndex(), row_b)
         self._rules.insert(destinationChild, self._rules.pop(sourceRow))

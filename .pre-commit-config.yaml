@@ -1,43 +1,121 @@
-# To install pre-commit hooks, install `pre-commit` and activate it here:
-#     pip3 install pre-commit
-#     pre-commit install
+# install pre-commit hooks
+#     uv run pre-commit install
+#
+# run all checks
+#     uv run pre-commit run --hook-stage pre-commit --all-files
 #
 ---
+fail_fast: true
+
 default_stages:
-    - commit
-    - push
-    - manual
+  - pre-commit
+  - pre-push
+  - manual
+
 repos:
-    - repo: local
-      hooks:
-          - id: check-shellscripts
-            name: Check Shell Scripts
-            entry: dev/check-shellscripts
-            language: script
-            types: [file, shell]
-          - id: check-python-formatters
-            name: Check Python Formatting
-            entry: dev/check-python-format
-            language: script
-            types: [file, python]
-          - id: check-python-linting
-            name: Check Python Linting
-            entry: dev/check-python-linting
-            language: script
-            types: [file, python]
-          #- id: check-python-doctest
-          #  name: Doctests
-          #  entry: dev/check-python-doctests
-          #  language: script
-          #  types: [file, python]
-          #  verbose: true
-          - id: check-python-typing
-            name: Check Python Type Hinting
-            entry: dev/check-python-typing
-            language: script
-            types: [file, python]
-          - id: check-yaml-linting
-            name: Check YAML Linting
-            entry: dev/check-yaml-linting
-            language: script
-            types: [file, yaml]
+  - repo: local
+    hooks:
+      # Items are sorted by execution speed and probability of failure
+      # in order to optimize number of iterations
+
+      - name: Check Python linter (ruff)
+        id: check-python-linting
+        language: system
+        entry: uv run ruff
+        args: [check]
+        types: [file, python]
+
+      - name: Fix Python linter (ruff) issues
+        id: fix-python-linting
+        language: system
+        entry: uv run ruff
+        args: [check, --fix, --ignore=I001]
+        types: [file, python]
+
+      - name: Check Python Type Hinting
+        id: check-python-typing
+        language: system
+        entry: uv run mypy
+        types: [python]
+        args: [track]
+        # https://github.com/pytest-dev/pytest/discussions/7793
+        pass_filenames: false
+        always_run: true
+
+      - name: Check Python import order
+        id: check-python-isort
+        language: system
+        entry: uv run ruff
+        args: [check, --select=I001]
+        types: [python]
+
+      - name: Fix Python import order
+        id: fix-python-isort
+        language: system
+        entry: uv run ruff
+        args: [check, --fix, --select=I001]
+        types: [python]
+
+      - name: Check Python formatting (ruff)
+        id: check-python-formatting
+        language: system
+        entry: uv run ruff
+        args: [format, --check, --diff]
+        types: [python]
+
+      - name: Fix Python formatting issues (ruff)
+        id: fix-python-formatting
+        language: system
+        entry: uv run ruff
+        args: [format]
+        types: [python]
+
+      - name: Python Doctests
+        id: check-python-doctest
+        stages: [manual] # no doctests yet
+        language: system
+        entry: uv run pytest
+        args: [
+            # --ignore=tests doesn't do the same here..
+            --ignore-glob=tests/*,
+            --doctest-modules,
+          ]
+        types: [python]
+        # https://github.com/pytest-dev/pytest/discussions/7793
+        pass_filenames: false
+        always_run: true
+
+      - name: Python Unit Tests
+        id: check-python-unittest
+        stages: [manual] # no unit tests yet
+        language: system
+        entry: uv run pytest
+        args: [-m unit]
+        types: [python]
+        # https://github.com/pytest-dev/pytest/discussions/7793
+        pass_filenames: false
+        always_run: true
+
+      - name: Python System Tests
+        id: check-python-systemtests
+        stages: [manual] # system tests should not run automatically
+        language: system
+        entry: uv run pytest
+        args: [-m system]
+        types: [python]
+        # https://github.com/pytest-dev/pytest/discussions/7793
+        pass_filenames: false
+        always_run: true
+
+      - name: Check Shell Scripts
+        id: check-shellscripts
+        entry: dev/check-shellscripts
+        language: script
+        types: [file, shell]
+
+      - name: Check YAML Linting
+        id: check-yaml-linting
+        language: system
+        entry: uv run yamllint
+        args: [--strict]
+        types: [file, yaml]

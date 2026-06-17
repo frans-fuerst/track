@@ -1,112 +1,117 @@
-[tool.poetry]
+[project]
 name = "python-time-track"
-version = "0.0.1"
+version = "0.2.0"
 description = "Automatic Time Tracker"
-authors = ["Frans Fürst <frans.fuerst+gitlab@protonmail.com>"]
-repository = "https://projects.om-office.de/frans/track.git"
-readme = "Readme.md"
-packages = [
-  {include = "track/**/*.py"},
-  {include = "track/track-server"},
-  {include = "track/**/*.ui"},
-  #{include = "medit/styles"},
+authors = [
+    {name = "Frans Fürst", email = "frans.fuerst+gitlab@protonmail.com"},
 ]
-#include = [
-#    {path = "track/track-server"},
-#]
 
-[tool.poetry.scripts]
+readme = "Readme.md"
+
+requires-python=  ">=3.12,<4"
+dependencies = [
+    "psutil>=7.2.2",
+    "pyqt5>=5.15.11",
+    "zmq>=0.0.0",
+]
+
+[project.urls]
+Repository = "https://github.com/frans-fuerst/track"
+
+[project.scripts]
 track = 'track.cli:main'
 
-[tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-#asyncinotify = "^4.0.1"
-#toml = "^0.10.2"
-#pyqt6 = "^6.5.1"
-#pyqt6-qscintilla = "^2.14.0"
-#pyqt6-webengine = "^6.5.0"
-#markdown = "<3.2"
-#markdown-checklist = "^0.4.4"
-# pygments-solarized-style = "^0.1"
-#pyqtdarktheme = "^2.1.0"
-#pygments = "^2.15.1"
-#plantuml-markdown = "^3.9.2"
-#md-mermaid = "^0.1.1"
-pyqt5 = "^5.15.9"
-psutil = "^5.9.5"
-zmq = "^0.0.0"
-
-[tool.poetry.group.dev.dependencies]
-black = "^22.6.0"
-isort = "^5.10.1"
-flake8 = "^4.0.1"
-pytest = "^7.1.2"
-pytest-cov = "^3.0.0"
-mypy = "^1.2"
-pylint = "^2.15.3"
-ipython = "^8.8.0"
-twine = "^4.0.2"
-yamllint = "^1.31.0"
-types-toml = "^0.10.8.6"
-pylint-per-file-ignores = "^1.2.1"
+# see https://docs.astral.sh/uv/concepts/projects/dependencies/
+[dependency-groups]
+dev = [
+    "ruff",
+    "mypy",
+    "pre-commit",
+    "pytest",
+    "types-pyyaml",
+    "yamllint",
+]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["track"]
 
-[tool.black]
-line-length = 100
-target-version = ['py311']
-include = '\.pyi?$'
-fast = true
-exclude = '''
-(
-  /(                        # exclude a few common directories in the
-    \.git                   # root of the project
-    | \.pytest_cache
-    | untracked
-    | \.venv
-    | dist
-  ))
-'''
-
-[tool.isort]
-profile = "black"
-
-[tool.mypy]
-python_version = "3.11"
-strict="True"
-disallow_untyped_defs = "True"
-disallow_any_unimported = "True"
-no_implicit_optional = "True"
-check_untyped_defs = "True"
-warn_return_any = "True"
-warn_unused_ignores = "True"
-show_error_codes = "True"
-exclude = "tracks"
-#exclude = [
-#    '\.venv',
-#    'untracked',
-#    '/tracks/*.py',
+#packages = [
+#  {include = "track/**/*.py"},
+#  {include = "track/track-server"},
+#  {include = "track/**/*.ui"},
+#  #{include = "medit/styles"},
 #]
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: Unit tests (deselect with '-m \"not unit\"')",
+    "system: Tests involving an attached device (deselect with '-m \"not system\"')",
+]
+testpaths = ["track", "test"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 80
+
+[tool.ruff.lint]
+# see https://docs.astral.sh/ruff/linter/
+# https://github.com/astral-sh/ruff-pre-commit
+select = [
+    "ALL",  # all available linting checks
+    "B",    # flake8-bugbear: reports potential bugs
+    "C90",  # Complexity: violations of 90th percentile of cyclomatic complexity
+    "C",    # Complexity: general code complexity issues
+    "E",    # pycodestyle: check PEP 8 style guidelines
+    "F",    # pyflakes: detects potential errors like undefined/unused symbols
+    "I",    # isort: check for proper import sorting
+    "PL",   # pylint: Reports issues related to Pylint checks.
+    "SIM",  # flake8-simplify: Suggests simplifications in code (e.g., replacing complex expressions with simpler ones).
+    "UP",   # pyupgrade: Checks and suggests improvements to modernize Python code (e.g., f-strings).
+    "W",    # Warning: General warnings or potentially problematic code patterns.
+]
+ignore = [
+    # These should be fixed eventually
+    "D101","D102","D103","D104","D105","D107",#docstring
+    "ANN001", #type annotations
+    "E501",     # line too long
+    "ERA001",   # commented out code
+    "FBT001",   # Boolean-typed positional argument in function definition
+    "FBT002",   # Boolean default positional argument in function definition
+    "PLR0913",  # Too many arguments in function definition
+    "PLR2004",  # Magic value used in comparison, consider replacing `127` with a constant variable
+
+    # These are ignored on purpose
+    "COM812",   # missing-trailing-comma
+    "D203",     # incorrect-blank-line-before-class
+    # "D211",    # no-blank-line-before-class
+    "D205",     # 1 blank line required between summary line and description
+    "D212",     # Multi-line docstring summary should start at the first line
+    "D213",     # Multi-line docstring
+    "D400",     # First line should end with a period
+    "D401",     # First line of docstring should be in imperative mood: "Adds generator created from @player_definition_fn to new track definition"
+    "D415",     # First line should end with a period, question mark, or exclamation point
+    "EM101",    # Exception must not use a string literal
+    "EM102",    # Exception must not use an f-string literal, assign to variable first
+    "EXE001",   # Shebang is present but file is not executable
+    "S101",     # Use of `assert` detected
+    "SIM117",   # Use single `with`
+    "TRY003",   # Avoid specifying long messages outside the exception class
+]
+[tool.mypy]
+python_version = "3.12"
+strict=true
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+exclude = '^(\\.venv)'
 mypy_path="typeshed"
-
-[tool.pylint]
-
-# Files or directories matching the regular expression patterns are skipped. The
-# regex matches against base names, not paths. The default value ignores Emacs
-# file locks
-#ignore-patterns = ["^\\.#"]
-#disable = ["multiple-statements"]
-
-# Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
-# number of processors available to use, and will cap the count on Windows to
-# avoid hangs.
-jobs = 0
-
-[tool.pylint.MASTER]
-load-plugins=["pylint_per_file_ignores"]
-
-[tool.pylint-per-file-ignores]
-#"pocketrockit/examples/" = "invalid-name"
+cache_dir = ".mypy_cache"
+explicit_package_bases = true

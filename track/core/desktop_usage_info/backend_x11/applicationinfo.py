@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import logging
 import re
 import subprocess
+from contextlib import suppress
 
 import psutil
 
@@ -84,11 +84,9 @@ def get_active_window_information():
                 _result["PID"] = int(_entry)
 
     if "PID" in _result:
-        process = psutil.Process(_result["PID"])
-        try:
-            #  # in psutil 2+ cmdline is a getter
-            _result["COMMAND"] = " ".join(process.cmdline())
-        except TypeError:
-            _result["COMMAND"] = " ".join(process.cmdline)
+        # process may be gone or inaccessible - the caller falls back to a
+        # placeholder when COMMAND is missing
+        with suppress(psutil.Error):
+            _result["COMMAND"] = " ".join(psutil.Process(_result["PID"]).cmdline())
 
     return _result

@@ -5,11 +5,10 @@ application data
 """
 
 import argparse
+import re
 import signal
-import sys
 import threading
 import time
-import traceback
 from contextlib import suppress
 from typing import Any, Dict, Optional
 
@@ -41,17 +40,18 @@ class TrackServer:
     def _system_monitoring_fn(self) -> None:
         while self._running:
             time.sleep(1)
-            self._save_data(interval=120)
             try:
+                self._save_data(interval=120)
                 self._tracker.update()
             except desktop_usage_info.WindowInformationError:
                 pass
-            except Exception as ex:
-                traceback.print_exc()
-                log().error("Unhandled Exception: %s", ex)
-                raise
+            except Exception:  # pylint: disable=broad-except
+                log().exception("Unhandled exception while sampling")
 
             log().debug(self._tracker.current_state())
+
+    def stop(self) -> None:
+        self._running = False
 
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process a single request"""
@@ -63,8 +63,7 @@ class TrackServer:
             raise errors.RequestMalformed('no "cmd" given')
 
         def quit_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
-            self._running = False
-            self._system_monitoring_thread.join()
+            self.stop()
             return {"type": "ok"}
 
         def version_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
@@ -82,7 +81,13 @@ class TrackServer:
         def set_rules_fn(request: Dict[str, Any]) -> Dict[str, Any]:
             if "data" not in request or "rules" not in request["data"]:
                 raise errors.RequestMalformed('No "rules" provided')
-            self._tracker.set_rules(request["data"]["rules"])
+            rules = request["data"]["rules"]
+            try:
+                for regex, _category in rules:
+                    re.compile(regex)
+            except (re.error, TypeError, ValueError) as exc:
+                raise errors.RequestMalformed("Invalid rules: %s" % exc) from exc
+            self._tracker.set_rules(rules)
             return {"type": "ok"}
 
         def note_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
@@ -141,13 +146,17 @@ class TrackServer:
 
         self._system_monitoring_thread.start()
 
+        # poll instead of a blocking recv() so a signal handler calling
+        # stop() is honoured within half a second
         while self._running:
-            log().debug("listening..")
             try:
+                if not rep_socket.poll(500):
+                    continue
                 request = rep_socket.recv_json()
-            except zmq.ZMQError:
-                self._running = False
-                self._system_monitoring_thread.join()
+            except zmq.error.InterruptedSystemCall:
+                continue
+            except zmq.ZMQError as exc:
+                log().error("zmq error, shutting down: %s", exc)
                 break
 
             log().debug(request)
@@ -161,8 +170,9 @@ class TrackServer:
 
             rep_socket.send_json(reply)
 
-        if self._system_monitoring_thread:
-            self._system_monitoring_thread.join()
+        self._running = False
+        self._system_monitoring_thread.join()
+        self._save_data(force=True)
 
         log().info("close..")
         rep_socket.close()
@@ -183,9 +193,10 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
     log().name = "track-server"
     common.log_system_info(args)
 
-    for sig in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
-        signal.signal(sig, lambda signal, frame: sys.exit)  # type: ignore
-    TrackServer(args).run(args)
+    server = TrackServer(args)
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, lambda _sig, _frame: server.stop())
+    server.run(args)
 
 
 if __name__ == "__main__":

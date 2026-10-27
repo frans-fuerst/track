@@ -77,32 +77,28 @@ result in category 1 (which you might be *private* in your eyes).
 
 ## Requirements
 
-Basically you Python3 with `PyQt5`, `psutil` and `zmq` installed. Some PyQt5 versions do not
-behave well and you will need build-essentials etc to make it work.
-For me installing the following packages worked:
-
-* Linux with X11 (Wayland had some problems when I last checked it)
+* Linux with X11 - `xprop` and `libXss` must be available (Wayland had some problems when I
+  last checked it)
 * or Windows - it once worked but currently I have no way to check it
-* Python 3+
-* `python3-devel` or equivalent via `apt`, `dnf`, etc.
-* `PyQt5` via pip (v5.14 worked for me)
-* `zmq` via pip
-* `psutil` via pip
+* Python 3.12+ and [uv](https://docs.astral.sh/uv/)
 
-Try this pip command: `pip3 install --user --upgrade psutil zmq PyQt5==5.14`
+`PyQt5`, `pyzmq` and `psutil` are pulled in by `uv sync`.
 
 
 ## How to run
 
-Clone the repo:
+Clone the repo and create the environment:
 ```
 git clone https://github.com/frans-fuerst/track
+cd track
+uv sync
 ```
 
-Run `track` to start Track client and server. The server will keep running in background if UI
-gets closed.
+Run `uv run track` to start Track client and server. The server will keep running in background
+if UI gets closed.
 
-To list starting / endings times of recorded days run `track-cli list`
+To list starting / endings times of recorded days run `uv run track list`, to inspect one day
+`uv run track show track-YYYYMMDD.json`.
 
 
 ## Know limitations / Shortcomings
@@ -111,13 +107,12 @@ To list starting / endings times of recorded days run `track-cli list`
   Wayland. When your're on Linux consider using X11.
 * I started this project 5 years ago when my Python skills were still very weak. Please do either
   not look at the code or help me improve it.
-* Track *records* data but still does not evaluate it. `track-cli` does some steps in that
-  direction.
+* Track *records* data but still does not evaluate it. `track list` / `track show` do some
+  steps in that direction.
 * No check for plausibility: if - for example - your computer wakes up at 3:12 for just a second
   this incident will be recorded and currently there is no way to remove this stray event and
   your day will officially start at 3:12
 * Setup / autostart worked once upon a time but doesn't now. But as a Linux Pro you know what to do.
-* Daily note does'nt get cleared on midnight (but you can simply overwrite it)
 * Break (cat 4) cannot be selected in timechart
 * Bug: Gnome Icon not working
 * Categories limited to 0-4
@@ -126,7 +121,9 @@ To list starting / endings times of recorded days run `track-cli list`
 
 ## Tests
 
-Here is how I currently "test" track. It's actually more try and look for crashes :)
+`uv run pytest -m unit` runs the unit tests, `uv run pytest -m system` the ones that need a
+display. Apart from that, here is how I currently "test" track. It's actually more try and
+look for crashes :)
 
 * Delete `~/.track/`, Try to start `track`
 * Open all spoilers

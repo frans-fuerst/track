@@ -72,14 +72,11 @@ repos:
 
       - name: Python Doctests
         id: check-python-doctest
-        stages: [manual] # no doctests yet
+        stages: [manual]  # no doctests yet
         language: system
         entry: uv run pytest
-        args: [
-            # --ignore=test doesn't do the same here..
-            --ignore-glob=test/*,
-            --doctest-modules,
-          ]
+        # --ignore=test doesn't do the same here..
+        args: [--ignore-glob=test/*, --doctest-modules]
         types: [python]
         # https://github.com/pytest-dev/pytest/discussions/7793
         pass_filenames: false
@@ -97,7 +94,7 @@ repos:
 
       - name: Python System Tests
         id: check-python-systemtests
-        stages: [manual] # system tests should not run automatically
+        stages: [manual]  # system tests should not run automatically
         language: system
         entry: uv run pytest
         args: [-m system]

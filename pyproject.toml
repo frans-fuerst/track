@@ -12,7 +12,7 @@ requires-python=  ">=3.12,<4"
 dependencies = [
     "psutil>=7.2.2",
     "pyqt5>=5.15.11",
-    "zmq>=0.0.0",
+    "pyzmq>=27",
 ]
 
 [project.urls]
@@ -55,7 +55,7 @@ testpaths = ["track", "test"]
 
 [tool.ruff]
 target-version = "py312"
-line-length = 80
+line-length = 100
 
 [tool.ruff.lint]
 # see https://docs.astral.sh/ruff/linter/
@@ -85,6 +85,9 @@ ignore = [
     "PLR2004",  # Magic value used in comparison, consider replacing `127` with a constant variable
 
     # These are ignored on purpose
+    "N802",     # Qt virtual methods are camelCase (headerData, rowCount, ...)
+    "N803",     # .. and so are their argument names
+    "N815",     # .. and pyqtSignal attributes (rulesChanged)
     "COM812",   # missing-trailing-comma
     "D203",     # incorrect-blank-line-before-class
     # "D211",    # no-blank-line-before-class
@@ -112,6 +115,5 @@ warn_return_any = true
 warn_unused_ignores = true
 show_error_codes = true
 exclude = '^(\\.venv)'
-mypy_path="typeshed"
 cache_dir = ".mypy_cache"
 explicit_package_bases = true

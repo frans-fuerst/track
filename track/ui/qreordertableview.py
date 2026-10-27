@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Defines QSpoiler"""
+"""Defines ReorderTableView"""
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -56,6 +56,7 @@ class ReorderTableView(QtWidgets.QTableView):
             and self.dragDropMode() != QtWidgets.QAbstractItemView.InternalMove
         ):
             super().dropEvent(event)
+            return
 
         selection = self.selectedIndexes()
         from_index = selection[0].row() if selection else -1

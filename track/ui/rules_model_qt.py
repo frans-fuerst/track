@@ -10,6 +10,7 @@ from typing import Any
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
 
+from ..core import common
 from ..core.util import log
 from .qt_common import change_emitter
 
@@ -53,7 +54,7 @@ class RulesModelQt(QtCore.QAbstractTableModel):
 
     def setData(self, index: QtCore.QModelIndex, value: str, role: int):
         if not role == QtCore.Qt.EditRole:
-            return True
+            return False
         if value is None:
             log().error("setData(value=None)")
             return False
@@ -63,19 +64,20 @@ class RulesModelQt(QtCore.QAbstractTableModel):
         if column == 0:
             try:
                 re.compile(value)
-            except re.error:
-                print("invalid regex")
+            except re.error as exc:
+                log().warning("invalid regex %r: %s", value, exc)
                 return False
             current_rule[0] = value
         if column == 1:
             try:
                 current_rule[1] = int(value)
             except ValueError:
-                print("invalid int")
+                log().warning("invalid category %r", value)
                 return False
 
         if row < len(self._rules):
             self._rules[row] = current_rule
+            self.dataChanged.emit(index, index)
         else:
             self.beginInsertRows(QtCore.QModelIndex(), row, row)
             self._rules.append(current_rule)
@@ -109,9 +111,7 @@ class RulesModelQt(QtCore.QAbstractTableModel):
         self.rulesChanged.emit()
 
     def insertRows(self, row, count, parent=None):
-        print(row, count, parent)
         result = super().insertRows(row, count, parent)
-        print(result)
         self.rulesChanged.emit()
         return result
 
@@ -122,8 +122,17 @@ class RulesModelQt(QtCore.QAbstractTableModel):
         destinationParent: QtCore.QModelIndex,
         destinationChild: int,
     ) -> bool:
-        row_a, row_b = max(sourceRow, destinationChild), min(sourceRow, destinationChild)
-        self.beginMoveRows(QtCore.QModelIndex(), row_a, row_a, QtCore.QModelIndex(), row_b)
+        if sourceRow == destinationChild:
+            return False
+        # Qt wants the destination in pre-move numbering as the row the moved
+        # one gets inserted *before*, hence +1 when moving downwards
+        self.beginMoveRows(
+            QtCore.QModelIndex(),
+            sourceRow,
+            sourceRow,
+            QtCore.QModelIndex(),
+            destinationChild + 1 if destinationChild > sourceRow else destinationChild,
+        )
         self._rules.insert(destinationChild, self._rules.pop(sourceRow))
         self.endMoveRows()
         self.rulesChanged.emit()
@@ -138,9 +147,5 @@ class RulesModelQt(QtCore.QAbstractTableModel):
         return self._rules
 
     def check_string(self, string: str) -> None:
-        print("check", string)
-        for regex, category in self._rules:
-            if re.search(regex, string):
-                print("%r matches: %r" % (string, regex))
-                return
-        print("%r does not match" % string)
+        """Log which category the (server side) rule matching assigns to @string"""
+        log().debug("%r -> %s", string, common.get_category(common.AppInfo(string), self._rules))

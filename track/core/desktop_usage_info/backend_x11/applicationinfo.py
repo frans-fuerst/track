@@ -40,10 +40,10 @@ def _get_stdout(command):
 def get_active_window_information():
     try:
         _xprop = _get_stdout(["xprop", "-root", "_NET_ACTIVE_WINDOW"])
-    except:
-        raise ToolError('Could not run "xprop". Is this an X-Session?')
+    except (OSError, WindowInformationError) as exc:
+        raise ToolError('Could not run "xprop". Is this an X-Session?') from exc
 
-    _id_w = None
+    _window_id = None
     for line in _xprop:
         m = re.search(r"^_NET_ACTIVE_WINDOW.* ([\w]+)$", line)
         if m is not None:
@@ -54,17 +54,15 @@ def get_active_window_information():
 
     try:
         _id_w = _get_stdout(["xprop", "-id", _window_id, "WM_NAME", "_NET_WM_NAME", "_NET_WM_PID"])
-    except WindowInformationError as ex:
-        print(repr(ex))
+    except WindowInformationError as exc:
         raise WindowInformationError(
-            '"xprop" (ran order to get WM_NAME, _NET_WM_NAME and_NET_WM_PID) "'
-            '"returned with error'
-        )
-    except Exception as ex:
-        print(repr(ex))
+            '"xprop" (ran in order to get WM_NAME, _NET_WM_NAME and _NET_WM_PID) '
+            "returned with error: %s" % exc
+        ) from exc
+    except OSError as exc:
         raise ToolError(
-            'Could not run "xprop" in order to get WM_NAME, _NET_WM_NAME and_NET_WM_PID'
-        )
+            'Could not run "xprop" in order to get WM_NAME, _NET_WM_NAME and _NET_WM_PID'
+        ) from exc
 
     _result = {}
 
@@ -73,8 +71,7 @@ def get_active_window_information():
         if _match is not None:
             _entry = _match.group("name").strip('"').strip()
             if _entry == "":
-                print("could not read title from '%s'" % line)
-                raise WindowInformationError("could not read app title")
+                raise WindowInformationError("could not read app title from %r" % line)
             _result["TITLE"] = _entry
 
         _match = re.match(r".*_NET_WM_PID\(\w+\) = (?P<name>.+)$", line)

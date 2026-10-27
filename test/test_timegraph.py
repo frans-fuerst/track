@@ -1,39 +1,20 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+"""System test: constructs the timegraph widgets inside a real QApplication"""
 
-import signal
 import sys
 
-import track_qt
-from PyQt5 import Qt, QtCore, QtWidgets, uic
+import pytest
+from PyQt5 import QtCore, QtWidgets
+
+from track.ui.timegraph import EvaluationWidget
+
+pytestmark = pytest.mark.system
 
 
-class test_ui(QtWidgets.QMainWindow):
-    def __init__(self):
-        super().__init__()
-        tg = track_qt.timegraph(self)
-        self.show()
-        q = QtCore.QTimer()
-        q.singleShot(1000, self.quit)
-
-    def quit(self):
-        print("quit()")
-        QtCore.QCoreApplication.instance().quit()
-
-
-def test_timegraph():
-    app = QtWidgets.QApplication(sys.argv)
-    mainwindow = test_ui()
-    signal.signal(signal.SIGINT, lambda signal, frame: sigint_handler(signal, mainwindow))
-
-    # catch the interpreter every now and then to be able to catch
-    # signals
-    timer = QtCore.QTimer()
-    timer.start(200)
-    timer.timeout.connect(lambda: None)
-
+def test_timegraph_shows_and_quits():
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+    window = QtWidgets.QMainWindow()
+    window.setCentralWidget(EvaluationWidget())
+    window.show()
+    QtCore.QTimer.singleShot(500, app.quit)
     app.exec_()
-
-
-if __name__ == "__main__":
-    test_timegraph()

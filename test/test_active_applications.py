@@ -1,67 +1,58 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+"""Unit tests for the core data model"""
 
-import json
-import os
-import re
+import pytest
 
-import track_base
+from track.core import ActiveApplications, AppInfo, Category, common
 
-
-def test_active_applications():
-    aa = track_base.active_applications()
+pytestmark = pytest.mark.unit
 
 
-def test_import():
-    a = track_base.active_applications()
-    _total_dur = 0
-    _count = 0
-    _lunch_time = 12 * 60 + 50
-    for root, dirs, files in os.walk("."):
-        for _f in [f for f in sorted(files) if f.endswith(".json")]:
-            _file = os.path.join(root, _f)
-            c = json.loads(open(_file).read().decode())
-            try:
-                a.from_dict(c)
-            except Exception as ex:
-                print('ERROR: could not load "%s"' % _file)
-                print('ERROR: "%s"' % ex)
-                continue
-            _end = a.end_index()
-            _begin = a.begin_index()
-            _dur = _end - _begin
-
-            (_b, _e), _a = a.info_at(_lunch_time)
-            _lunch_dur = _e - _b
-            if not (_e - _b >= 30 and _a == "idle"):
-                _lunch_dur = 0
-                print("WARNING: no lunch time found for %s" % _file)
-            _dur -= _lunch_dur
-            if _dur > 300:
-                _total_dur += _dur
-                _count += 1
-            else:
-                print('WARNING: ignore "%s" - less than 5h tracked' % _file)
-
-            print(
-                "f: %23s, count: %3d, begin: %s (%4d), end: %s (%4d), lunch: %7s, dur: %7s"
-                % (
-                    _file,
-                    a.count(),
-                    track_base.mins_to_date(_begin),
-                    _begin,
-                    track_base.mins_to_date(_end),
-                    _end,
-                    track_base.mins_to_dur(_lunch_dur),
-                    track_base.mins_to_dur(_dur),
-                )
-            )
-            # print(re.search('track-.*.json', _file) is not None)
-
-    if _count > 0:
-        print(track_base.mins_to_dur(_total_dur / _count))
+def filled_model() -> ActiveApplications:
+    apps = ActiveApplications()
+    for minute, title in ((0, "midnight"), (0, "midnight"), (1, "other"), (3, "midnight")):
+        apps.update(minute, AppInfo(title, "cmd"))
+    return apps
 
 
-if __name__ == "__main__":
-    test_active_applications()
-    test_import()
+def test_empty_model_is_harmless():
+    apps = ActiveApplications()
+    assert str(apps) == "Apps(empty)"
+    apps.clip_from(10)
+    apps.clip_to(20)
+    assert (apps.begin_index(), apps.end_index()) == (0, 0)
+    assert apps.get_chunk_size(5) == (0, 0)
+
+
+def test_minute_zero_is_a_valid_index():
+    apps = filled_model()
+    assert (apps.begin_index(), apps.end_index()) == (0, 3)
+    assert apps.is_active(0)
+    assert apps.info_at(0)[1].generate_identifier() == "midnight"
+
+
+def test_round_trip():
+    apps = filled_model()
+    assert ActiveApplications(apps.__data__()) == apps
+
+
+def test_clip():
+    apps = filled_model()
+    apps.clip_from(1)
+    assert (apps.begin_index(), apps.end_index()) == (1, 3)
+    apps.clip_to(1)
+    assert (apps.begin_index(), apps.end_index()) == (1, 1)
+    apps.clip_from(99)
+    assert (apps.begin_index(), apps.end_index()) == (0, 0)
+
+
+def test_get_category_ignores_case():
+    rules = [("^slack", Category.WORK)]
+    assert common.get_category(AppInfo("Slack - general"), rules) == Category.WORK
+    assert common.get_category(AppInfo("Firefox"), rules) == Category.UNASSIGNED
+
+
+def test_log_file_date():
+    assert common.log_file_date("/some/dir/track-20200503.json") == "20200503"
+    assert common.log_file_date("track-20200503.json.corrupt") is None
+    assert common.log_file_date("category_rules.json") is None

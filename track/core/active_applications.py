@@ -56,11 +56,15 @@ class ActiveApplications:
     def clip_from(self, index):
         """Removes all timeline data before provided index"""
         self._minutes = {minute: apps for minute, apps in self._minutes.items() if minute >= index}
-        self._index_min = min(self._minutes.keys(), default=None)
+        self._reindex()
 
     def clip_to(self, index):
         """Removes all timeline data after provided index"""
         self._minutes = {minute: apps for minute, apps in self._minutes.items() if minute <= index}
+        self._reindex()
+
+    def _reindex(self):
+        self._index_min = min(self._minutes.keys(), default=None)
         self._index_max = max(self._minutes.keys(), default=None)
 
     def __eq__(self, other):
@@ -101,13 +105,7 @@ class ActiveApplications:
 
         self._apps = _apps
         self._minutes = _minutes
-
-        if len(self._minutes) > 0:
-            self._index_min = min(self._minutes.keys())
-            self._index_max = max(self._minutes.keys())
-        else:
-            self._index_min = None
-            self._index_max = None
+        self._reindex()
 
     def begin_index(self):  # const
         return 0 if self._index_min is None else self._index_min

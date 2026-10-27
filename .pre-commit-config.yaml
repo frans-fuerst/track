@@ -76,8 +76,8 @@ repos:
         language: system
         entry: uv run pytest
         args: [
-            # --ignore=tests doesn't do the same here..
-            --ignore-glob=tests/*,
+            # --ignore=test doesn't do the same here..
+            --ignore-glob=test/*,
             --doctest-modules,
           ]
         types: [python]
@@ -87,7 +87,6 @@ repos:
 
       - name: Python Unit Tests
         id: check-python-unittest
-        stages: [manual] # no unit tests yet
         language: system
         entry: uv run pytest
         args: [-m unit]

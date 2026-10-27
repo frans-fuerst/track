@@ -1,26 +1,19 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
-
+#!/usr/bin/env python3
+"""System test: needs a running X session with a focused window"""
 
 import time
 
-from desktop_usage_info import applicationinfo, idle
+import pytest
+
+from track.core.desktop_usage_info import applicationinfo
+
+pytestmark = pytest.mark.system
 
 
 def test_application_info():
-    for i in range(2):
+    for _ in range(2):
         info = applicationinfo.get_active_window_information()
-        assert "PID" in info
-        print("PID:     ", info["PID"])
-
         assert "TITLE" in info
-        print("TITLE:   ", info["TITLE"])
-
+        assert "PID" in info
         assert "COMMAND" in info
-        print("COMMAND: ", info["COMMAND"])
-
         time.sleep(1)
-
-
-if __name__ == "__main__":
-    test_application_info()

@@ -36,8 +36,8 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
     parser_server.set_defaults(func=fn_server)
     parser_server.add_argument("command")
 
-    parser_server = subparsers.add_parser("serve", help="send command to server")
-    parser_server.set_defaults(func=fn_serve)
+    parser_serve = subparsers.add_parser("serve", help="run the track server")
+    parser_serve.set_defaults(func=fn_serve)
 
     parser_show = subparsers.add_parser("show", help="show content of one log file")
     parser_show.set_defaults(func=fn_show)
@@ -51,13 +51,14 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def send_request(request):
+def send_request(request, port: int, timeout_ms: int = 2000):
     context = zmq.Context()
     req_socket = context.socket(zmq.REQ)
-
-    req_socket.connect("tcp://127.0.0.1:3456")
-
+    req_socket.setsockopt(zmq.LINGER, 0)
+    req_socket.connect("tcp://127.0.0.1:%d" % port)
     req_socket.send_json(request)
+    if not req_socket.poll(timeout_ms):
+        raise TimeoutError("no reply from track server on port %d" % port)
     return req_socket.recv_json()
 
 
@@ -78,13 +79,13 @@ def to_time(value):
 def fn_ui(args) -> None:
     from track.ui import main as main_ui
 
-    main_ui()
+    main_ui(args)
 
 
 def fn_serve(args) -> None:
     from track.server import main as main_server
 
-    main_server()
+    main_server(args)
 
 
 def fn_server(args) -> None:
@@ -93,11 +94,14 @@ def fn_server(args) -> None:
         return
 
     try:
-        result = send_request({"cmd": args.command})
-        handle_result(result)
-    except zmq.ZMQError as e:
-        log.error(e)
-        return
+        handle_result(send_request({"cmd": args.command}, args.port))
+    except (zmq.ZMQError, TimeoutError) as exc:
+        log().error("%s", exc)
+
+
+def load_log(log_dir: str, file: str):
+    with open(os.path.join(log_dir, file)) as handle:
+        return convert(json.load(handle))
 
 
 def fn_show(args) -> None:
@@ -105,7 +109,7 @@ def fn_show(args) -> None:
 
     log().info("Show infos for %r", args.element)
     for file in args.element:
-        data = convert(json.load(open(os.path.join(log_dir, file))))
+        data = load_log(log_dir, file)
         apps = ActiveApplications(data["tracker_data"])
         daily_note = data.get("daily_note") or ""
         print(
@@ -127,9 +131,7 @@ def fn_info(args) -> None:
     log_dir = args.data_dir
     log().info("List recorded data")
     for file in common.log_files(log_dir):
-        data = convert(json.load(open(os.path.join(log_dir, file))))
-        if "20200503" in file:
-            print(file)
+        data = load_log(log_dir, file)
         apps = ActiveApplications(data["tracker_data"])
         daily_note = data.get("daily_note") or ""
         print(
@@ -151,11 +153,12 @@ def main(argv=None) -> int:
     """read command line arguments, configure application and run command
     specified on command line"""
 
-    args = parse_arguments(argv or sys.argv[1:])
+    args = parse_arguments(sys.argv[1:] if argv is None else argv)
     util.setup_logging(args)
     common.log_system_info(args)
 
     args.func(args)
+    return 0
 
 
 if __name__ == "__main__":

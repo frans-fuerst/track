@@ -184,7 +184,7 @@ def log_files(directory: str, reverse=False, exclude_today: bool = False) -> Lis
     return sorted(
         (
             file
-            for file in os.listdir(directory)
+            for file in (os.listdir(directory) if os.path.isdir(directory) else [])
             for date in (get_date(file),)
             if date and (date != today_timestamp or not exclude_today)
         ),

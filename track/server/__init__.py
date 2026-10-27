@@ -11,7 +11,7 @@ import threading
 import time
 import traceback
 from contextlib import suppress
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import zmq  # type: ignore
 
@@ -175,10 +175,11 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
-    """Doc"""
-    args = parse_arguments()
-    util.setup_logging(args, syslog=True)
+def main(args: Optional[argparse.Namespace] = None) -> None:
+    """Run the track server until a quit request or signal arrives"""
+    if args is None:
+        args = parse_arguments()
+        util.setup_logging(args, syslog=True)
     log().name = "track-server"
     common.log_system_info(args)
 

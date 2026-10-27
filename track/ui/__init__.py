@@ -10,7 +10,7 @@ import os.path
 import subprocess
 import sys
 from contextlib import suppress
-from typing import Any
+from typing import Any, Optional
 
 try:
     from PyQt5 import QtCore, QtGui, QtWidgets  # type: ignore
@@ -411,12 +411,13 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> int:
+def main(args: Optional[argparse.Namespace] = None) -> int:
     """read command line arguments, configure application and run command
     specified on command line
     """
-    args = parse_arguments()
-    util.setup_logging(args)
+    if args is None:
+        args = parse_arguments()
+        util.setup_logging(args)
     log().name = "track-ui"
     app = QtWidgets.QApplication(sys.argv)
 

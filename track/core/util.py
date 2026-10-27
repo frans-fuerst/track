@@ -7,13 +7,7 @@ import argparse
 import logging
 import logging.handlers
 import os
-import sys
-from contextlib import contextmanager
-from typing import Any, NoReturn
-
-from PyQt5 import QtCore
-
-from . import version_info
+from typing import Any
 
 
 class ColorFormatter(logging.Formatter):
@@ -69,11 +63,6 @@ def setup_logging(args: argparse.Namespace, syslog=False) -> None:
         logging.getLogger().addHandler(handler)
 
 
-def throw(exc: Exception) -> NoReturn:
-    """Use an exception as function"""
-    raise exc
-
-
 def catch(func, exceptions, default=None) -> Any:
     """de-uglyfy assignments with potential known exceptions"""
     try:
@@ -85,16 +74,6 @@ def catch(func, exceptions, default=None) -> Any:
 def log(name: str = "main") -> logging.Logger:
     """Convenience function to access logger 'app logger'"""
     return logging.getLogger(name)
-
-
-@contextmanager
-def open_in_directory_of(file, path):
-    file = QtCore.QFile(os.path.join(os.path.dirname(file), path))
-    if not QtCore.QFile.exists(file):
-        raise FileNotFoundError(path)
-    file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text)
-    yield file
-    file.close()
 
 
 def exception_to_string(exc: Exception) -> str:

@@ -3,11 +3,19 @@
 
 from collections import namedtuple
 
-version_info = namedtuple("version_info", ["major", "minor", "micro", "patch"])
-version_info = version_info(major=2020, minor=5, micro=8, patch=0)
+VersionInfo = namedtuple("VersionInfo", ["major", "minor", "micro", "patch"])
+version_info = VersionInfo(major=0, minor=2, micro=0, patch=0)  # keep in sync with pyproject
 
-from . import errors, util
-from .active_applications import ActiveApplications
-from .common import AppInfo, Category, Minute, mins_to_dur, secs_to_dur, today_int
-from .time_tracker import TimeTracker
-from .util import catch, exception_to_string, log
+# imports below depend on version_info being defined first
+from . import errors, util  # noqa: E402
+from .active_applications import ActiveApplications  # noqa: E402
+from .common import (  # noqa: E402
+    AppInfo,
+    Category,
+    Minute,
+    mins_to_dur,
+    secs_to_dur,
+    today_int,
+)
+from .time_tracker import TimeTracker  # noqa: E402
+from .util import catch, exception_to_string, log  # noqa: E402

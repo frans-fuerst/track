@@ -7,13 +7,28 @@ some common features
 """
 
 import logging
+import os
 import signal
 import threading
+from contextlib import contextmanager
 
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 
 from .. import application_root_dir
-from ..core.util import log, open_in_directory_of
+from ..core.util import log
+
+
+@contextmanager
+def open_in_directory_of(file, path):
+    """Open @path relative to the directory of @file as a QFile"""
+    qfile = QtCore.QFile(os.path.join(os.path.dirname(file), path))
+    if not qfile.exists():
+        raise FileNotFoundError(path)
+    qfile.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text)
+    try:
+        yield qfile
+    finally:
+        qfile.close()
 
 
 class MainWindow(QtWidgets.QMainWindow):

@@ -70,7 +70,7 @@ class TrackServer:
             return {"data": {"version": str(core.version_info)}}
 
         def apps_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
-            return {"data": {"apps": self._tracker.get_applications_model().__data__()}}
+            return {"data": {"apps": self._tracker.applications_data()}}
 
         def current_fn(_request: Dict[str, Any]) -> Dict[str, Any]:
             return {"data": {"current": self._tracker.current_state()}}
@@ -102,15 +102,13 @@ class TrackServer:
         def clip_from_fn(request: Dict[str, Any]) -> Dict[str, Any]:
             if "data" not in request or "index" not in request["data"]:
                 raise errors.RequestMalformed('No "index" provided')
-            self._tracker.get_applications_model().clip_from(request["data"]["index"])
-            # self._save_data(force=True)
+            self._tracker.clip_from(request["data"]["index"])
             return {"type": "ok"}
 
         def clip_to_fn(request: Dict[str, Any]) -> Dict[str, Any]:
             if "data" not in request or "index" not in request["data"]:
                 raise errors.RequestMalformed('No "index" provided')
-            self._tracker.get_applications_model().clip_to(request["data"]["index"])
-            # self._save_data(force=True)
+            self._tracker.clip_to(request["data"]["index"])
             return {"type": "ok"}
 
         def save_fn(_request: Dict[str, Any]) -> Dict[str, Any]:

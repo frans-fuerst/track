@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Client side part of TrimeTracker
+"""Client side part of TimeTracker
 """
 
 from contextlib import suppress
@@ -82,7 +82,7 @@ class TimeTrackerClientQt(TimechartDataprovider):
     def time_idle(self):
         return self.time_total() - len(self._applications._minutes)
 
-    def clip_from(self, index: str) -> None:
+    def clip_from(self, index: int) -> None:
         self._request("clip_from", data={"index": index})
 
     def clip_to(self, index: int) -> None:
@@ -101,15 +101,13 @@ class TimeTrackerClientQt(TimechartDataprovider):
         if not self._receiving or self._req_socket is None:
             raise Exception("wrong send/recv state!")
         self._receiving = False
-        _timeout = timeout
-        while True:
-            if self._req_poller.poll(_timeout) == []:
-                if raise_on_timeout:
-                    raise TimeoutError("timeout on recv()")
-                log().warning("server timeout. did you even start one?")
-                _timeout = 2000
-                continue
-            break
+        if self._req_poller.poll(timeout) == []:
+            if raise_on_timeout:
+                raise TimeoutError("timeout on recv()")
+            # one grace period, then give up - looping forever here froze the GUI
+            log().warning("server did not answer within %dms - waiting a bit longer", timeout)
+            if self._req_poller.poll(5000) == []:
+                raise TimeoutError("no reply from server within 5s")
         return self._req_socket.recv_json()
 
     def _request(
@@ -117,7 +115,7 @@ class TimeTrackerClientQt(TimechartDataprovider):
         cmd: str,
         *,
         data: Optional[Dict[str, Any]] = None,
-        timeout: str = 50,
+        timeout: int = 50,
         raise_on_timeout: bool = False,
     ) -> Dict[str, Any]:
         def result_or_exception(result):
@@ -145,12 +143,12 @@ class TimeTrackerClientQt(TimechartDataprovider):
     def _check_version(self):
         self._req_send({"cmd": "version"})
         server_version = self._req_recv(timeout=1000, raise_on_timeout=True)["data"]["version"]
-        if server_version > str(core.version_info):
-            log().critical("Server version: %s", server_version)
-        elif server_version < str(core.version_info):
-            log().error("Server version: %s", server_version)
+        if server_version == str(core.version_info):
+            log().info("Server version: %s", server_version)
         else:
-            log().error("Server version: %s", server_version)
+            log().warning(
+                "Server version %s differs from UI version %s", server_version, core.version_info
+            )
 
     def _fetch_rules(self):
         rules = self._request("rules").get("rules")
@@ -204,17 +202,19 @@ class TimeTrackerClientQt(TimechartDataprovider):
                 time_dict[category] = app.get_count()
         return time_dict
 
+    # the server reports {} until its first successful sample - don't crash on it
+
     def get_current_category(self):
-        return self._current_data["category"]
+        return self._current_data.get("category", 0)
 
     def get_idle(self):
-        return self._current_data["user_idle"]
+        return self._current_data.get("user_idle", 0)
 
     def get_current_app_title(self):
-        return self._current_data["app_title"]
+        return self._current_data.get("app_title", "")
 
     def get_current_process_name(self):
-        return self._current_data["process_name"]
+        return self._current_data.get("process_name", "")
 
     def user_is_active(self) -> bool:
-        return self._current_data["user_active"]
+        return self._current_data.get("user_active", False)

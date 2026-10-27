@@ -63,7 +63,7 @@ def category_name(value):
     }.get(value, "?")
 
 
-def check_for_updates() -> None:
+def check_for_updates() -> Optional[int]:
     """Identifies whether the track instance is git versioned, fetches from upstream and
     checks whether there are updates to pull"""
     log().info("Check for remote app updates on git remote..")
@@ -87,7 +87,7 @@ def check_for_updates() -> None:
         if "frans-fuerst/track" not in origin:
             log().info("Identified git repo is not the original one - skip fetch")
             return
-        for line in git_cmd(["fetch"]):
+        for line in git_cmd(["fetch"]).splitlines():
             log().debug(line)
         local_sha = git_cmd(["rev-parse", "@"])
         remote_sha = git_cmd(["rev-parse", "@{u}"])
@@ -103,6 +103,7 @@ def check_for_updates() -> None:
         )
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         log().warning("Was not able to check for git updates: %r", exc)
+        return None
 
 
 class TrackUI(MainWindow):
@@ -271,7 +272,15 @@ class TrackUI(MainWindow):
             )
 
     def update_idle(self) -> None:
-        self._tracker.update()
+        try:
+            self._tracker.update()
+        except (TimeoutError, errors.NotConnected, RuntimeError) as exc:
+            # an exception escaping a Qt slot aborts the process - reconnect instead
+            log().error("lost connection to track server: %s", exc)
+            self._tracker.connected = False
+            if not self._connect():
+                self._update_timer.stop()
+            return
         self.frm_timegraph.update_widgets()
         self.lbl_title.setMargin(2)
         self.lbl_idle.setMargin(2)
@@ -373,7 +382,8 @@ class TrackUI(MainWindow):
                     "line to get some more info and file a bug!\n\nBye!",
                     buttons=QtWidgets.QMessageBox.Ok,
                 )
-                QtWidgets.QApplication.quit()
+                # quit() is a no-op before exec_() runs - defer it to the event loop
+                QtCore.QTimer.singleShot(0, QtWidgets.QApplication.quit)
         elif _type == QtCore.QEvent.WindowStateChange and self.isMinimized():
             if "gnome" not in os.environ.get("DESKTOP_SESSION", ""):
                 # The window is already minimized at this point.  AFAIK,

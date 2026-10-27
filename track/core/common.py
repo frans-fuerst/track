@@ -155,21 +155,20 @@ def minutes_since_midnight() -> int:
     return seconds_since_midnight() // 60
 
 
+def log_file_date(filename: str) -> Optional[str]:
+    """'.../track-20200503.json' -> '20200503', None for anything else"""
+    match = re.search(r"track-(\d{8})\.json$", filename, flags=re.IGNORECASE)
+    return match.group(1) if match else None
+
+
 def log_files(directory: str, reverse=False, exclude_today: bool = False) -> List[str]:
     """Return a sorted list of Track log file names found in @directory"""
-
-    def get_date(filename: str) -> Optional[str]:
-        match = re.search(r"track-(\d{8})\.json", filename, flags=re.IGNORECASE)
-        if not match:
-            return None
-        return match.group(1)
-
     today_timestamp = today_str()
     return sorted(
         (
             file
             for file in (os.listdir(directory) if os.path.isdir(directory) else [])
-            for date in (get_date(file),)
+            for date in (log_file_date(file),)
             if date and (date != today_timestamp or not exclude_today)
         ),
         reverse=reverse,

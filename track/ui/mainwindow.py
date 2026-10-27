@@ -43,7 +43,7 @@ class MainWindow(QtWidgets.QMainWindow):
         with open_in_directory_of(__file__, "mainwindow.ui") as file:
             uic.loadUi(file, self, package="track.ui")
 
-        for sig in (signal.SIGABRT, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
+        for sig in (signal.SIGINT, signal.SIGTERM):
             signal.signal(sig, lambda signal, frame: self.handle_signal(signal))
 
         # catch the interpreter every now and then to be able to catch signals
@@ -92,9 +92,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log_view.appendPlainText(message)
         self.log_view.verticalScrollBar().setValue(self.log_view.verticalScrollBar().maximum())
 
-    def toggle_log(self):
-        self.log_view.setVisible(self.pb_log.isChecked())
-
     def toggle_fullscreen(self):
         (self.showNormal if self.isFullScreen() else self.showFullScreen)()
 
@@ -102,35 +99,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if event.key() == QtCore.Qt.Key_F11:
             self.toggle_fullscreen()
         return super().keyPressEvent(event)
-
-    def event(self, e):
-        if not isinstance(
-            e,
-            (
-                QtCore.QEvent,
-                QtCore.QChildEvent,
-                QtCore.QDynamicPropertyChangeEvent,
-                QtGui.QPaintEvent,
-                QtGui.QHoverEvent,
-                QtGui.QMoveEvent,
-                QtGui.QEnterEvent,
-                QtGui.QResizeEvent,
-                QtGui.QShowEvent,
-                QtGui.QPlatformSurfaceEvent,
-                QtGui.QWindowStateChangeEvent,
-                QtGui.QKeyEvent,
-                QtGui.QWheelEvent,
-                QtGui.QMouseEvent,
-                QtGui.QFocusEvent,
-                QtGui.QHelpEvent,
-                QtGui.QHideEvent,
-                QtGui.QCloseEvent,
-                QtGui.QInputMethodQueryEvent,
-                QtGui.QContextMenuEvent,
-            ),
-        ):
-            log().warning("unknown event: %r %r", e.type(), e)
-        return super().event(e)
 
     def closeEvent(self, event):
         for handler in logging.getLogger().handlers:
@@ -140,15 +108,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return super().closeEvent(event)
 
     def handle_signal(self, sig: int) -> None:
-        """Handle posix signals, i.e. shut down on CTRL-C"""
-        log().info(
-            "got signal %s(%d)",
-            dict(
-                (k, v)
-                for v, k in reversed(sorted(signal.__dict__.items()))
-                if v.startswith("SIG") and not v.startswith("SIG_")
-            ).get(sig, "unknown"),
-            sig,
-        )
-        if sig == signal.SIGINT:
-            self.close()
+        """Handle posix signals, i.e. shut down on CTRL-C or SIGTERM"""
+        log().info("got signal %s(%d)", signal.Signals(sig).name, sig)
+        self.close()

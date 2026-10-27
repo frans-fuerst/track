@@ -74,7 +74,7 @@ class TimechartDataprovider(ABC):
         pass
 
     @abstractmethod
-    def clip_from(self, index: str) -> None:
+    def clip_from(self, index: int) -> None:
         pass
 
     @abstractmethod

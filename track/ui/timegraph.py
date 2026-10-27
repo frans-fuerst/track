@@ -26,7 +26,7 @@ class FileDataprovider(TimechartDataprovider):
             )
             self.apps = ActiveApplications(data.get("tracker_data"))
             self._daily_note = data.get("daily_note") or ""
-        self._date = datetime.strptime(filename[-13:-5], "%Y%m%d")
+        self._date = datetime.strptime(common.log_file_date(filename) or "", "%Y%m%d")
 
     def date(self) -> datetime:
         return self._date
@@ -37,7 +37,7 @@ class FileDataprovider(TimechartDataprovider):
     def current_minute(self) -> int:
         return self.end_index()
 
-    def clip_from(self, index: str) -> None:
+    def clip_from(self, index: int) -> None:
         self.apps.clip_from(index)
 
     def clip_to(self, index: int) -> None:
@@ -68,7 +68,7 @@ class FileDataprovider(TimechartDataprovider):
         return sum(minute.main_category() == 3 for _, minute in self.apps._minutes.items())
 
     def time_total(self):
-        return self.end_index() - self.begin_index()
+        return self.end_index() - self.begin_index() + 1
 
     def time_idle(self):
         return self.time_total() - self.time_active()
@@ -122,6 +122,8 @@ class Timegraph(QtWidgets.QFrame):
             self.setToolTip(self._dataprovider.daily_note() or "no notes")
 
     def contextMenuEvent(self, event):
+        if self._dataprovider is None:
+            return
         menu = QtWidgets.QMenu(self)
         index = self._dataprovider.begin_index() + event.x() - 50 - 1
         clip_from = menu.addAction("clip before %s (erases data!)" % common.mins_to_dur(index))
@@ -155,9 +157,11 @@ class Timegraph(QtWidgets.QFrame):
         if self._selected is None:
             return
 
+        # same x offset as the data lines above
         qp.setPen(QtCore.Qt.blue)
         for i in range(self._selected[0], self._selected[1] + 1):
-            qp.drawLine(i - _start_index, 0 + 20, i - _start_index, self.height() - 2 - 20)
+            x = i - _start_index + 1
+            qp.drawLine(x, 0 + 20, x, self.height() - 2 - 20)
 
     def select(self, begin=None, end=None):
         self._selected = (begin, end) if begin is not None and end is not None else None

@@ -35,9 +35,9 @@ class ActiveApplicationsModel(QtCore.QAbstractTableModel, ActiveApplications):
     def __init__(self, parent, *args) -> None:
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         ActiveApplications.__init__(self)
-        self.header = []
         self._sorted_keys = []
-        self._sort_col = 0
+        self._sort_column = 1
+        self._sort_order = QtCore.Qt.DescendingOrder
 
     def columnCount(self, _parent=None):
         return 3
@@ -47,7 +47,7 @@ class ActiveApplicationsModel(QtCore.QAbstractTableModel, ActiveApplications):
 
     def headerData(self, column, orientation, role):
         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-            return "Application title", "Spent", "Category"[column]
+            return ("Application title", "Spent", "Category")[column]
         return None
 
     def data(self, index, role):
@@ -67,30 +67,25 @@ class ActiveApplicationsModel(QtCore.QAbstractTableModel, ActiveApplications):
             else self._apps[self._sorted_keys[row]]._category
         )
 
-    @QtCore.pyqtSlot()
-    def update_all_categories(self, get_category_from_app) -> None:
-        for i in self._apps:
-            self._apps[i].set_new_category(get_category_from_app(self._apps[i]))
-        for i in self._minutes:
-            self._minutes[i].rebuild_categories(get_category_from_app)
-
     def flags(self, _index):
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled
 
-    def sort(self, column=1, order=QtCore.Qt.AscendingOrder):
+    def sort(self, column=1, order=QtCore.Qt.DescendingOrder):
+        """Called by the view on header clicks - remember the choice so that the
+        per-second from_dict() refresh keeps it"""
+        self._sort_column, self._sort_order = column, order
+        key = (
+            (lambda x: x[1]._wndtitle)
+            if column == 0
+            else (lambda x: x[1]._count)
+            if column == 1
+            else (lambda x: x[1]._category)
+        )
         with change_emitter(self):
             self._sorted_keys = [
-                x[0]
-                for x in sorted(
-                    self._apps.items(),
-                    key=(
-                        (lambda x: x[1]._wndtitle)
-                        if column == 0
-                        else (lambda x: x[1]._count)
-                        if column == 1
-                        else (lambda x: x[1]._category)
-                    ),
-                    reverse=(order != QtCore.Qt.DescendingOrder),
+                app_id
+                for app_id, _ in sorted(
+                    self._apps.items(), key=key, reverse=(order == QtCore.Qt.DescendingOrder)
                 )
             ]
 
@@ -101,10 +96,9 @@ class ActiveApplicationsModel(QtCore.QAbstractTableModel, ActiveApplications):
     def from_dict(self, data: Dict[str, Any]) -> None:
         with change_emitter(self):
             super().from_dict(data)
-            self.sort()
+            self.sort(self._sort_column, self._sort_order)
 
     def update(self, minute_index, app):
         with change_emitter(self):
             super().update(minute_index, app)
-            self._sort()
-            # self.dataChanged.emit(QtCore.QModelIndex(), QtCore.QModelIndex())
+            self.sort(self._sort_column, self._sort_order)

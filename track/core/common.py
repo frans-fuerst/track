@@ -38,7 +38,7 @@ class AppInfo:
     def __init__(self, windowtitle="", cmdline=""):
         self._wndtitle = windowtitle
         self._cmdline = cmdline
-        self._category = 0
+        self._category = Category.UNASSIGNED
         self._count = 0
 
     def __eq__(self, other) -> bool:
@@ -60,9 +60,8 @@ class AppInfo:
     def load(self, data):
         try:
             self._wndtitle, self._category, self._count, self._cmdline = data
-        except:
-            print("tried to expand %s to (title, category, count, cmdline)" % (str(data)))
-            raise Exception("could not load AppInfo data")
+        except (TypeError, ValueError) as exc:
+            raise ValueError("could not load AppInfo from %r" % (data,)) from exc
         return self
 
     def __data__(self):  # const
@@ -73,9 +72,6 @@ class AppInfo:
 
     def set_category(self, category):
         self._category = category
-
-    def set_new_category(self, new_category):
-        self._category = new_category
 
     def get_count(self):
         return self._count
@@ -88,13 +84,7 @@ class Minute:
         self._app_counter = app_counter or {}
 
     def __eq__(self, other):
-        if not self._app_counter == other._app_counter:
-            for a, c in self._app_counter.items():
-                print("s: %s:'%s' - %d" % (hex(id(a)), a, c))
-            for a, c in other._app_counter.items():
-                print("o: %s - %d" % (a, c))
-            return False
-        return True
+        return self._app_counter == other._app_counter
 
     def main_category(self):
         # app1(2): 5
@@ -139,14 +129,8 @@ def mins_to_date(mins):
     return _result
 
 
-def secs_to_dur(mins):
-    _result = ""
-    _minutes = mins
-    if _minutes >= 60:
-        _result = str(int(_minutes / 60)) + "m "
-        _minutes %= 60
-    _result += str(_minutes) + "s"
-    return _result
+def secs_to_dur(secs: int) -> str:
+    return "%dm %ds" % divmod(secs, 60) if secs >= 60 else "%ds" % secs
 
 
 def mins_to_dur(mins: int) -> str:
@@ -175,7 +159,7 @@ def log_files(directory: str, reverse=False, exclude_today: bool = False) -> Lis
     """Return a sorted list of Track log file names found in @directory"""
 
     def get_date(filename: str) -> Optional[str]:
-        match = re.search(r"track-(\d{8}).json", filename, flags=re.IGNORECASE)
+        match = re.search(r"track-(\d{8})\.json", filename, flags=re.IGNORECASE)
         if not match:
             return None
         return match.group(1)

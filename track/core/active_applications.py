@@ -38,9 +38,11 @@ class ActiveApplications:
         return str(self)
 
     def __str__(self) -> str:
-        return "Apps(%r to %r)" % (
-            common.mins_to_date(self._index_min),
-            common.mins_to_date(self._index_max),
+        return (
+            "Apps(empty)"
+            if self._index_min is None
+            else "Apps(%s to %s)"
+            % (common.mins_to_date(self._index_min), common.mins_to_date(self._index_max))
         )
 
     def clear(self):
@@ -54,24 +56,16 @@ class ActiveApplications:
     def clip_from(self, index):
         """Removes all timeline data before provided index"""
         self._minutes = {minute: apps for minute, apps in self._minutes.items() if minute >= index}
-        self._index_min = min(self._minutes.keys())
+        self._index_min = min(self._minutes.keys(), default=None)
 
     def clip_to(self, index):
         """Removes all timeline data after provided index"""
         self._minutes = {minute: apps for minute, apps in self._minutes.items() if minute <= index}
-        self._index_max = max(self._minutes.keys())
+        self._index_max = max(self._minutes.keys(), default=None)
 
     def __eq__(self, other):
         """Comparing is only needed for tests"""
-        if not self._apps == other._apps:
-            return False
-        if not self._minutes == other._minutes:
-            if not self._minutes.keys() == other._minutes.keys:
-                return False
-            for key in self._minutes:
-                if not self._minutes[key] == other._minutes[key]:
-                    return False
-        return True
+        return self._apps == other._apps and self._minutes == other._minutes
 
     def __data__(self):  # const
         """we have to create an indexed list here because the minutes
@@ -116,10 +110,10 @@ class ActiveApplications:
             self._index_max = None
 
     def begin_index(self):  # const
-        return self._index_min if self._index_min else 0
+        return 0 if self._index_min is None else self._index_min
 
     def end_index(self):  # const
-        return self._index_max if self._index_max else 0
+        return 0 if self._index_max is None else self._index_max
 
     def update(self, minute_index, app):
         # todo: mutex
@@ -133,16 +127,16 @@ class ActiveApplications:
 
         if minute_index not in self._minutes:
             self._minutes[minute_index] = common.Minute()
-            if not self._index_min or self._index_min > minute_index:
+            if self._index_min is None or self._index_min > minute_index:
                 self._index_min = minute_index
 
-            if not self._index_max or self._index_max < minute_index:
+            if self._index_max is None or self._index_max < minute_index:
                 self._index_max = minute_index
 
         self._minutes[minute_index].add(_app)
 
     def get_chunk_size(self, minute):
-        if not (self._index_max and self._index_min):
+        if self._index_max is None or self._index_min is None:
             return 0, 0
 
         _begin = minute
@@ -178,7 +172,7 @@ class ActiveApplications:
         # todo: currently gap is max 1min - make configurable
         return _begin, _end
 
-    def info_at(self, minute: int) -> Tuple[int, str]:
+    def info_at(self, minute: int) -> Tuple[Tuple[int, int], Any]:
         return (
             self.get_chunk_size(minute),
             self._minutes[minute].main_app() if self.is_active(minute) else "idle",

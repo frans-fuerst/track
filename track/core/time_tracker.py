@@ -5,6 +5,7 @@
 """
 
 import json
+import logging
 import os
 import threading
 from typing import Any, Dict, Optional, Sequence, Tuple  # pylint: disable=unused-import
@@ -44,6 +45,8 @@ class TimeTracker:
         self._storage_dir = data_dir
         self._current_state = {}  # type: Dict[str, Any]
         self._lock = threading.Lock()
+        self._last_tool_error = None  # type: Optional[str]
+        log().info("Desktop backend: %s", desktop_usage_info.backend_name())
 
         # -- data to persist
         data = catch(
@@ -165,7 +168,11 @@ class TimeTracker:
         except desktop_usage_info.WindowInformationError:
             pass
         except desktop_usage_info.ToolError as exc:
-            log().error(exc)
+            # the same failure every second (no X session, extension missing, ..)
+            # is reported once, afterwards only at debug level
+            repeated = str(exc) == self._last_tool_error
+            log().log(logging.DEBUG if repeated else logging.ERROR, "%s", exc)
+            self._last_tool_error = str(exc)
 
     def current_state(self) -> Dict[str, Any]:
         """Retrieve current usage snapshot"""

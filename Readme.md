@@ -77,8 +77,10 @@ result in category 1 (which you might be *private* in your eyes).
 
 ## Requirements
 
-* Linux with X11 - `xprop` and `libXss` must be available (Wayland had some problems when I
-  last checked it)
+* Linux with X11 - `xprop` and `libXss` must be available
+* or GNOME Shell on Wayland - needs `gdbus` (glib) and the
+  [Window Calls Extended](https://extensions.gnome.org/extension/4974/window-calls-extended/)
+  shell extension enabled; other Wayland compositors are not supported
 * or Windows - it once worked but currently I have no way to check it
 * Python 3.12+ and [uv](https://docs.astral.sh/uv/)
 
@@ -103,8 +105,8 @@ To list starting / endings times of recorded days run `uv run track list`, to in
 
 ## Know limitations / Shortcomings
 
-* Currently Track seems to not work well with Wayland, which might be an issue of both Track and
-  Wayland. When your're on Linux consider using X11.
+* On Wayland only GNOME Shell is supported (see Requirements); everywhere else only XWayland
+  windows are visible to Track.
 * I started this project 5 years ago when my Python skills were still very weak. Please do either
   not look at the code or help me improve it.
 * Track *records* data but still does not evaluate it. `track list` / `track show` do some

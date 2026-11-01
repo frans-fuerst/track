@@ -15,8 +15,12 @@ track/core/             Qt-free: data model, sampling, persistence
   active_applications.py  ActiveApplications: one day of {minute -> Minute}
   time_tracker.py       TimeTracker: sampling loop body, JSON persistence,
                         the lock that guards the model (see Threads)
-  desktop_usage_info/   active window + idle time; backend chosen by os.name
+  desktop_usage_info/   active window + idle time; backend_name() picks one
+                        from the environment, TRACK_BACKEND=x11|gnome|windows
+                        overrides
     backend_x11/        xprop subprocess + psutil, libXss via ctypes
+    backend_gnome/      GNOME Shell on Wayland: `gdbus` calls to Mutter's idle
+                        monitor and to the Window Calls Extended extension
     backend_windows/    unmaintained, win32gui is not a declared dependency
   util.py               logging setup, log(), catch()
 track/server/           TrackServer: zmq REP loop + sampler thread
@@ -96,7 +100,10 @@ technical debt, not something to "fix" en passant in an unrelated change.
 
 ## Known gaps
 
-- Wayland is unsupported (needs `xprop` and XScreenSaver).
+- Wayland works only with GNOME Shell and only with the
+  `window-calls-extended@hseliger.eu` extension enabled; there is no portable
+  "focused window" API. Other compositors fall back to the x11 backend, which
+  sees nothing but XWayland clients.
 - `backend_windows` is untested for years.
 - `track.wpr` is a Wing IDE project file pointing at a removed script.
 - `dev/` is a private submodule; `dev/check-shellscripts` is referenced by
